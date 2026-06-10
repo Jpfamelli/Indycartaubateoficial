@@ -1,0 +1,11 @@
+# Render Blueprint — site estático da IndyCar Centro Automotivo
+# Como usar:
+#   1) Suba este repositório no GitHub
+#   2) No Render: New > Blueprint > conecte o repositório
+#      (ou New > Static Site e defina Publish Directory = "." com Build Command vazio)
+services:
+  - type: web
+    name: indycartaubateoficial
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: .
