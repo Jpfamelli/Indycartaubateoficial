@@ -15,11 +15,44 @@
   <meta property="og:description" content="A oficina que os melhores motoristas de Taubaté confiam. Diagnóstico gratuito e sem compromisso." />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="pt_BR" />
+  <meta property="og:url" content="https://indycar-taubate.netlify.app/" />
+  <meta property="og:image" content="https://indycar-taubate.netlify.app/oficina-fachada.png" />
+
+  <!-- Dados estruturados: negócio local (oficina) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "AutoRepair",
+    "name": "IndyCar Centro Automotivo",
+    "description": "Oficina mecânica em Taubaté-SP: especialistas em câmbio automático, revisões, freios, suspensão e diagnóstico eletrônico. Leva e traz grátis.",
+    "url": "https://indycar-taubate.netlify.app/",
+    "image": "https://indycar-taubate.netlify.app/oficina-fachada.png",
+    "telephone": "+55-12-99683-0272",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Av. Bandeirantes, 875 - Parque Paduan",
+      "addressLocality": "Taubaté",
+      "addressRegion": "SP",
+      "postalCode": "12070-100",
+      "addressCountry": "BR"
+    },
+    "openingHoursSpecification": [
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "opens": "08:00", "closes": "18:00" },
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "08:00", "closes": "12:00" }
+    ],
+    "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.8", "reviewCount": "1200" },
+    "priceRange": "$$",
+    "sameAs": [
+      "https://www.instagram.com/indycartaubateoficial/",
+      "https://www.facebook.com/people/Indycar-Centro-Automotivo/61553407254400/"
+    ]
+  }
+  </script>
 
   <!-- ===== Google Fonts: Bebas Neue + Barlow Condensed (display) + DM Sans (corpo) ===== -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600;1,700;1,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' font-family='sans-serif' font-weight='bold' fill='%23e50914'>I</text></svg>" />
@@ -30,7 +63,7 @@
   <!-- ===================================================== -->
   <!-- BARRA DE PROGRESSO DE SCROLL (topo da página)         -->
   <!-- ===================================================== -->
-  <div class="scroll-progress" id="scrollProgress"></div>
+  <div class="scroll-progress" id="scrollProgress"><span class="sp-needle" aria-hidden="true"></span></div>
 
   <!-- Brilho que segue o cursor (background interativo) -->
   <div class="cursor-glow" id="cursorGlow"></div>
@@ -38,11 +71,9 @@
   <!-- Sistema de fundo em camadas: aurora giratória + grid com parallax + blobs + grão -->
   <div class="bg-fx" aria-hidden="true">
     <div class="bg-aurora"></div>
-    <div class="bg-grid" id="bgGrid"></div>
+    <canvas class="bg-grid" id="bgGrid"></canvas>
     <span class="bg-blob b1"></span>
     <span class="bg-blob b2"></span>
-    <span class="bg-blob b3"></span>
-    <span class="bg-blob b4"></span>
     <div class="bg-grain"></div>
   </div>
 
@@ -67,7 +98,7 @@
         <a href="#diferenciais" class="nav-link">Diferenciais</a>
         <a href="#avaliacoes" class="nav-link">Avaliações</a>
         <a href="#contato" class="nav-link">Contato</a>
-        <button class="btn btn-cta-nav pulse" data-open-modal data-magnetic>Agendar Agora</button>
+        <button class="btn btn-cta-nav" data-open-modal data-magnetic>Agendar Agora</button>
       </nav>
 
       <!-- Botão menu mobile -->
@@ -87,6 +118,8 @@
     <canvas class="hero-canvas" id="heroCanvas"></canvas>
     <!-- Linhas diagonais decorativas -->
     <div class="diagonal-lines" aria-hidden="true"></div>
+    <!-- LightRays (port React Bits): feixes vermelhos muito sutis descendo do topo -->
+    <div class="hero-rays" aria-hidden="true"></div>
     <div class="hero-overlay"></div>
 
     <div class="container hero-content">
@@ -119,7 +152,7 @@
           <svg viewBox="0 0 24 24" class="btn-ico"><path d="M9 11.5L11 13.5L15.5 9M21 12a9 9 0 11-18 0 9 9 0 0118 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Fazer Orçamento Grátis
         </button>
-        <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20um%20or%C3%A7amento." target="_blank" rel="noopener" class="btn btn-outline">
+        <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20um%20or%C3%A7amento." target="_blank" rel="noopener" class="btn btn-outline" data-magnetic>
           <svg viewBox="0 0 32 32" class="btn-ico"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3z"/></svg>
           Chamar no WhatsApp
         </a>
@@ -129,10 +162,16 @@
       <div class="rating-badge floaty reveal">
         <div class="rating-badge-stars">★★★★★</div>
         <div class="rating-badge-info">
-          <strong>4,8</strong>
+          <strong data-target="4.8" data-decimals="1">4,8</strong>
           <span>+1.200 avaliações<br><b>no Google</b></span>
         </div>
       </div>
+    </div>
+
+    <!-- CircularText (port React Bits): selo técnico giratório -->
+    <div class="circular-seal" aria-hidden="true">
+      <div class="seal-rotor" id="sealRotor"></div>
+      <span class="seal-center">★</span>
     </div>
 
     <!-- Indicador de scroll -->
@@ -145,6 +184,23 @@
   <!-- 3. BARRA DE CONFIANÇA (marquee animado)               -->
   <!-- ===================================================== -->
   <section class="trust-bar" id="confianca">
+    <!-- Camada fantasma de profundidade: texto maior, translúcido e mais lento -->
+    <div class="trust-ghost" aria-hidden="true">
+      <div class="trust-group">
+        <span class="trust-item">Diagnóstico Gratuito</span>
+        <span class="trust-item">Leva e Traz</span>
+        <span class="trust-item">Garantia Total</span>
+        <span class="trust-item">Câmbio Automático</span>
+        <span class="trust-item">+18 Anos</span>
+      </div>
+      <div class="trust-group">
+        <span class="trust-item">Diagnóstico Gratuito</span>
+        <span class="trust-item">Leva e Traz</span>
+        <span class="trust-item">Garantia Total</span>
+        <span class="trust-item">Câmbio Automático</span>
+        <span class="trust-item">+18 Anos</span>
+      </div>
+    </div>
     <div class="trust-track">
       <!-- Conteúdo duplicado para loop infinito -->
       <div class="trust-group">
@@ -169,6 +225,40 @@
   </section>
 
   <!-- ===================================================== -->
+  <!-- 3.2 MARCAS ATENDIDAS (loop tipográfico)               -->
+  <!-- ===================================================== -->
+  <section class="brands" aria-label="Marcas atendidas: nacionais e importados">
+    <div class="brands-track">
+      <div class="brands-group">
+        <span class="brand">Toyota</span><span class="brand-sep">·</span>
+        <span class="brand">Honda</span><span class="brand-sep">·</span>
+        <span class="brand">Volkswagen</span><span class="brand-sep">·</span>
+        <span class="brand">Fiat</span><span class="brand-sep">·</span>
+        <span class="brand">Chevrolet</span><span class="brand-sep">·</span>
+        <span class="brand">Hyundai</span><span class="brand-sep">·</span>
+        <span class="brand">Jeep</span><span class="brand-sep">·</span>
+        <span class="brand">Renault</span><span class="brand-sep">·</span>
+        <span class="brand">Nissan</span><span class="brand-sep">·</span>
+        <span class="brand">BMW</span><span class="brand-sep">·</span>
+        <span class="brand">Mercedes</span><span class="brand-sep">·</span>
+      </div>
+      <div class="brands-group" aria-hidden="true">
+        <span class="brand">Toyota</span><span class="brand-sep">·</span>
+        <span class="brand">Honda</span><span class="brand-sep">·</span>
+        <span class="brand">Volkswagen</span><span class="brand-sep">·</span>
+        <span class="brand">Fiat</span><span class="brand-sep">·</span>
+        <span class="brand">Chevrolet</span><span class="brand-sep">·</span>
+        <span class="brand">Hyundai</span><span class="brand-sep">·</span>
+        <span class="brand">Jeep</span><span class="brand-sep">·</span>
+        <span class="brand">Renault</span><span class="brand-sep">·</span>
+        <span class="brand">Nissan</span><span class="brand-sep">·</span>
+        <span class="brand">BMW</span><span class="brand-sep">·</span>
+        <span class="brand">Mercedes</span><span class="brand-sep">·</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
   <!-- 3.5 CONHEÇA A INDYCAR (sobre / história)              -->
   <!-- ===================================================== -->
   <section class="section about" id="sobre">
@@ -183,6 +273,9 @@
         <div class="about-cta reveal">
           <button class="btn btn-primary glow" data-open-modal data-magnetic>Fazer Orçamento Grátis</button>
         </div>
+        <figure class="about-photo img-sweep reveal">
+          <img src="oficina-2.png" alt="Interior da oficina IndyCar Centro Automotivo em Taubaté" loading="lazy" />
+        </figure>
       </div>
 
       <div class="about-pillars">
@@ -229,17 +322,7 @@
       </div>
 
       <div class="services-grid">
-        <!-- 1. Troca de Óleo de Motor -->
-        <article class="service-card reveal" data-tilt>
-          <div class="service-ico">
-            <svg viewBox="0 0 24 24"><path d="M12 2s5 6 5 9.5A5 5 0 1112 7" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M7 13h10v5a2 2 0 01-2 2H9a2 2 0 01-2-2v-5z" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
-          </div>
-          <h3>Troca de Óleo de Motor</h3>
-          <p>Serviço rápido de troca de óleo em Taubaté com lubrificantes de alta performance e filtro novo.</p>
-          <span class="service-link" data-open-modal>Fazer Orçamento →</span>
-        </article>
-
-        <!-- 2. Troca de Óleo de Câmbio (ESPECIALIDADE) -->
+        <!-- Tile hero 2x2: Troca de Óleo de Câmbio (ESPECIALIDADE) -->
         <article class="service-card service-card--star reveal" data-tilt>
           <span class="service-flag">★ ESPECIALIDADE</span>
           <div class="service-ico">
@@ -247,107 +330,124 @@
           </div>
           <h3>Troca de Óleo de Câmbio</h3>
           <p>Especialistas em câmbio automático em Taubaté. Troca <strong>total via máquina (diálise)</strong>, que renova todo o fluido e protege o conversor de torque.</p>
-          <span class="service-link" data-open-modal>Fazer Orçamento →</span>
+          <button class="service-link" data-open-modal aria-label="Fazer orçamento de Troca de Óleo de Câmbio">Fazer Orçamento →</button>
         </article>
 
-        <!-- 3. Pastilhas e Discos -->
-        <article class="service-card reveal" data-tilt>
-          <div class="service-ico">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="6.6" r=".9" fill="currentColor"/><circle cx="12" cy="17.4" r=".9" fill="currentColor"/><circle cx="6.6" cy="12" r=".9" fill="currentColor"/><circle cx="17.4" cy="12" r=".9" fill="currentColor"/></svg>
-          </div>
-          <h3>Pastilhas e Discos</h3>
-          <p>Segurança total com nossa revisão de freios em Taubaté para eliminar chiados e devolver a frenagem firme.</p>
-          <span class="service-link" data-open-modal>Fazer Orçamento →</span>
-        </article>
-
-        <!-- 4. Troca de Amortecedores -->
-        <article class="service-card reveal" data-tilt>
-          <div class="service-ico">
-            <svg viewBox="0 0 24 24"><path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10 3v2.2l4 2-4 2 4 2-4 2 4 2v2.6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Troca de Amortecedores</h3>
-          <p>Recupere a estabilidade com amortecedores em Taubaté. Trabalhamos com marcas originais.</p>
-          <span class="service-link" data-open-modal>Fazer Orçamento →</span>
-        </article>
-
-        <!-- 5. Correia Dentada -->
-        <article class="service-card reveal" data-tilt>
-          <div class="service-ico">
-            <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="11" rx="5.5" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="8" cy="11.5" r="2.3" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="16" cy="11.5" r="2.3" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
-          </div>
-          <h3>Correia Dentada</h3>
-          <p>Troca preventiva da correia dentada em Taubaté com ajuste de ponto e tensor original.</p>
-          <span class="service-link" data-open-modal>Fazer Orçamento →</span>
-        </article>
-
-        <!-- 6. Venda de Pneus -->
-        <article class="service-card reveal" data-tilt>
-          <div class="service-ico">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="3.4" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M12 3v3.6M12 17.4V21M3 12h3.6M17.4 12H21M5.6 5.6l2.6 2.6M15.8 15.8l2.6 2.6M18.4 5.6l-2.6 2.6M8.2 15.8l-2.6 2.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Venda de Pneus</h3>
-          <p>Sua melhor opção de loja de pneus em Taubaté, com montagem técnica inclusa.</p>
-          <span class="service-link" data-open-modal>Fazer Orçamento →</span>
-        </article>
-
-        <!-- 7. Alinhamento 3D -->
-        <article class="service-card reveal" data-tilt>
-          <div class="service-ico">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Alinhamento 3D</h3>
-          <p>Precisão a laser com alinhamento e balanceamento em Taubaté. Evite o desgaste irregular dos pneus.</p>
-          <span class="service-link" data-open-modal>Fazer Orçamento →</span>
-        </article>
-
-        <!-- 8. Troca de Embreagem -->
-        <article class="service-card reveal" data-tilt>
-          <div class="service-ico">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M12 4.5l1.8 5M19.5 12l-5 1.8M12 19.5l-1.8-5M4.5 12l5-1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Troca de Embreagem</h3>
-          <p>Instalamos kit de embreagem completo em Taubaté para devolver a maciez ao pedal.</p>
-          <span class="service-link" data-open-modal>Fazer Orçamento →</span>
-        </article>
-
-        <!-- 9. Diagnóstico com Scanner -->
-        <article class="service-card reveal" data-tilt>
+        <!-- Tile 2x1: Diagnóstico com Scanner -->
+        <article class="service-card service-card--wide reveal" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M10 2v3M14 2v3M10 19v3M14 19v3M2 10h3M2 14h3M19 10h3M19 14h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
-          <h3>Diagnóstico com Scanner</h3>
-          <p>Tecnologia de scanner automotivo em Taubaté para identificar falhas eletrônicas com precisão.</p>
-          <span class="service-link" data-open-modal>Fazer Orçamento →</span>
+          <div class="service-body">
+            <h3>Diagnóstico com Scanner</h3>
+            <p>Tecnologia de scanner automotivo em Taubaté para identificar falhas eletrônicas com precisão.</p>
+            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Diagnóstico com Scanner">Fazer Orçamento →</button>
+          </div>
         </article>
 
-        <!-- 10. Revisão de Motor -->
-        <article class="service-card reveal" data-tilt>
+        <!-- Tile 2x1: Revisão de Motor -->
+        <article class="service-card service-card--wide reveal" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 003.6 15a1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09A1.65 1.65 0 003.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 008 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
           </div>
-          <h3>Revisão de Motor</h3>
-          <p>Referência em revisão de motor em Taubaté para vazamentos e barulhos internos.</p>
-          <span class="service-link" data-open-modal>Fazer Orçamento →</span>
+          <div class="service-body">
+            <h3>Revisão de Motor</h3>
+            <p>Referência em revisão de motor em Taubaté para vazamentos e barulhos internos.</p>
+            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Revisão de Motor">Fazer Orçamento →</button>
+          </div>
         </article>
 
-        <!-- 11. Revisão de Suspensão -->
-        <article class="service-card reveal" data-tilt>
+        <!-- Tiles compactos 1x1 -->
+        <article class="service-card service-card--mini reveal" data-tilt title="Serviço rápido de troca de óleo em Taubaté com lubrificantes de alta performance e filtro novo.">
+          <div class="service-ico">
+            <svg viewBox="0 0 24 24"><path d="M12 2s5 6 5 9.5A5 5 0 1112 7" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M7 13h10v5a2 2 0 01-2 2H9a2 2 0 01-2-2v-5z" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+          </div>
+          <div class="service-body">
+            <h3>Troca de Óleo de Motor</h3>
+            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Troca de Óleo de Motor">Fazer Orçamento →</button>
+          </div>
+        </article>
+
+        <article class="service-card service-card--mini reveal" data-tilt title="Segurança total com nossa revisão de freios em Taubaté para eliminar chiados e devolver a frenagem firme.">
+          <div class="service-ico">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="6.6" r=".9" fill="currentColor"/><circle cx="12" cy="17.4" r=".9" fill="currentColor"/><circle cx="6.6" cy="12" r=".9" fill="currentColor"/><circle cx="17.4" cy="12" r=".9" fill="currentColor"/></svg>
+          </div>
+          <div class="service-body">
+            <h3>Pastilhas e Discos</h3>
+            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Pastilhas e Discos">Fazer Orçamento →</button>
+          </div>
+        </article>
+
+        <article class="service-card service-card--mini reveal" data-tilt title="Recupere a estabilidade com amortecedores em Taubaté. Trabalhamos com marcas originais.">
+          <div class="service-ico">
+            <svg viewBox="0 0 24 24"><path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10 3v2.2l4 2-4 2 4 2-4 2 4 2v2.6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>
+          </div>
+          <div class="service-body">
+            <h3>Troca de Amortecedores</h3>
+            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Troca de Amortecedores">Fazer Orçamento →</button>
+          </div>
+        </article>
+
+        <article class="service-card service-card--mini reveal" data-tilt title="Troca preventiva da correia dentada em Taubaté com ajuste de ponto e tensor original.">
+          <div class="service-ico">
+            <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="11" rx="5.5" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="8" cy="11.5" r="2.3" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="16" cy="11.5" r="2.3" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          </div>
+          <div class="service-body">
+            <h3>Correia Dentada</h3>
+            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Correia Dentada">Fazer Orçamento →</button>
+          </div>
+        </article>
+
+        <article class="service-card service-card--mini reveal" data-tilt title="Sua melhor opção de loja de pneus em Taubaté, com montagem técnica inclusa.">
+          <div class="service-ico">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="3.4" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M12 3v3.6M12 17.4V21M3 12h3.6M17.4 12H21M5.6 5.6l2.6 2.6M15.8 15.8l2.6 2.6M18.4 5.6l-2.6 2.6M8.2 15.8l-2.6 2.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </div>
+          <div class="service-body">
+            <h3>Venda de Pneus</h3>
+            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Pneus">Fazer Orçamento →</button>
+          </div>
+        </article>
+
+        <article class="service-card service-card--mini reveal" data-tilt title="Precisão a laser com alinhamento e balanceamento em Taubaté. Evite o desgaste irregular dos pneus.">
+          <div class="service-ico">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div class="service-body">
+            <h3>Alinhamento 3D</h3>
+            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Alinhamento 3D">Fazer Orçamento →</button>
+          </div>
+        </article>
+
+        <article class="service-card service-card--mini reveal" data-tilt title="Instalamos kit de embreagem completo em Taubaté para devolver a maciez ao pedal.">
+          <div class="service-ico">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M12 4.5l1.8 5M19.5 12l-5 1.8M12 19.5l-1.8-5M4.5 12l5-1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div class="service-body">
+            <h3>Troca de Embreagem</h3>
+            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Troca de Embreagem">Fazer Orçamento →</button>
+          </div>
+        </article>
+
+        <article class="service-card service-card--mini reveal" data-tilt title="Elimine barulhos com o check-up completo da suspensão em Taubaté.">
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 10.5l1.8 2 3-3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <h3>Revisão de Suspensão</h3>
-          <p>Elimine barulhos com o check-up completo da suspensão em Taubaté.</p>
-          <span class="service-link" data-open-modal>Fazer Orçamento →</span>
+          <div class="service-body">
+            <h3>Revisão de Suspensão</h3>
+            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Revisão de Suspensão">Fazer Orçamento →</button>
+          </div>
         </article>
 
-        <!-- 12. Limpeza de Bicos -->
-        <article class="service-card reveal" data-tilt>
+        <!-- Faixa 4x1: Limpeza de Bicos -->
+        <article class="service-card service-card--strip reveal" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><path d="M9 3h6v5l-1.5 3h-3L9 8z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M12 11v3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10 17q2 1.8 4 0M9.5 20q2.5 1.8 5 0" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
           </div>
-          <h3>Limpeza de Bicos</h3>
-          <p>Limpeza de bicos em Taubaté via ultrassom para recuperar a potência e a economia de combustível.</p>
-          <span class="service-link" data-open-modal>Fazer Orçamento →</span>
+          <div class="service-body">
+            <h3>Limpeza de Bicos</h3>
+            <p>Limpeza de bicos em Taubaté via ultrassom para recuperar a potência e a economia de combustível.</p>
+          </div>
+          <button class="service-link" data-open-modal aria-label="Fazer orçamento de Limpeza de Bicos">Fazer Orçamento →</button>
         </article>
       </div>
     </div>
@@ -360,10 +460,14 @@
     <div class="container why-grid">
       <!-- Lado visual: foto real da oficina + selo -->
       <div class="why-visual reveal">
-        <div class="why-image">
+        <div class="why-image img-sweep">
           <img class="why-photo" src="oficina-fachada.png" alt="Fachada da IndyCar Centro Automotivo em Taubaté" loading="lazy" />
+          <!-- riscos de velocidade cruzando a foto (CSS .speed-streak) -->
+          <span class="speed-streak" aria-hidden="true"></span>
+          <span class="speed-streak s2" aria-hidden="true"></span>
+          <span class="speed-streak s3" aria-hidden="true"></span>
           <div class="why-badge-float">
-            <span class="why-badge-num">18+</span>
+            <span class="why-badge-num" id="yearsBadge">18+</span>
             <span class="why-badge-txt">ANOS DE<br>ESTRADA</span>
           </div>
         </div>
@@ -616,7 +720,7 @@
             </li>
           </ul>
 
-          <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20gostaria%20de%20um%20or%C3%A7amento." target="_blank" rel="noopener" class="btn btn-whatsapp glow">
+          <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20gostaria%20de%20um%20or%C3%A7amento." target="_blank" rel="noopener" class="btn btn-whatsapp glow" data-magnetic>
             <svg viewBox="0 0 32 32" class="btn-ico wa"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3zm0 22c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-4.9.9.9-4.8-.2-.4C5.5 18.5 5 16.8 5 15 5 9 9.9 4 16 4s11 5 11 11-4.9 10-11 10zm6-7.5c-.3-.2-1.9-1-2.2-1.1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.1-.2.2-.3.2-.6.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.3-.2-.3 0-.5.1-.7.1-.1.3-.3.4-.5.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.2-.7-1.7-1-2.3-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.9-.8 2.1-1.5.3-.7.3-1.4.2-1.5-.1-.1-.3-.2-.6-.4z"/></svg>
             Chamar no WhatsApp
           </a>
@@ -637,8 +741,13 @@
   <section class="final-cta">
     <img class="final-cta-photo" src="oficina-fachada.png" alt="" aria-hidden="true" />
     <div class="final-cta-bg" aria-hidden="true"></div>
+    <!-- Faíscas de pit lane subindo (canvas 2D, pausa fora do viewport) -->
+    <canvas class="cta-embers" id="ctaEmbers" aria-hidden="true"></canvas>
+    <!-- riscos de velocidade cruzando o CTA final (mesmo efeito de #diferenciais) -->
+    <span class="speed-streak" aria-hidden="true"></span>
+    <span class="speed-streak s2" aria-hidden="true"></span>
     <div class="container final-cta-inner reveal">
-      <span class="final-cta-kicker">★ DIAGNÓSTICO GRATUITO · LEVA E TRAZ GRÁTIS EM TAUBATÉ</span>
+      <span class="final-cta-kicker"><span class="shiny-text">★ DIAGNÓSTICO GRATUITO · LEVA E TRAZ GRÁTIS EM TAUBATÉ</span></span>
       <h2>Seu carro merece a oficina que <u>Taubaté mais confia</u>.<br>Agende agora — a gente busca o seu carro.</h2>
       <p>Diagnóstico 100% gratuito e sem compromisso. Garantia em peças e serviços, parcelamento em <strong>até 10x</strong> e o cuidado de quem tem <strong>+18 anos de estrada</strong>. Vagas limitadas para esta semana.</p>
       <button class="btn btn-light glow lg" data-open-modal data-magnetic>Quero Meu Orçamento Gratuito →</button>
