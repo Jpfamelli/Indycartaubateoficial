@@ -49,10 +49,10 @@
   }
   </script>
 
-  <!-- ===== Google Fonts: Bebas Neue + Barlow Condensed (display) + DM Sans (corpo) ===== -->
+  <!-- ===== Google Fonts: Sora (display) + Inter (corpo) + Barlow Condensed (micro-labels racing) ===== -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,500;0,600;0,700;0,800;1,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' font-family='sans-serif' font-weight='bold' fill='%23e50914'>I</text></svg>" />
@@ -261,7 +261,7 @@
   <!-- ===================================================== -->
   <!-- 3.5 CONHEÇA A INDYCAR (sobre / história)              -->
   <!-- ===================================================== -->
-  <section class="section about" id="sobre">
+  <section class="section about sec-light" id="sobre">
     <div class="container about-grid">
       <div class="about-intro">
         <div class="section-head left reveal">
@@ -273,9 +273,16 @@
         <div class="about-cta reveal">
           <button class="btn btn-primary glow" data-open-modal data-magnetic>Fazer Orçamento Grátis</button>
         </div>
-        <figure class="about-photo img-sweep reveal">
-          <img src="oficina-2.png" alt="Interior da oficina IndyCar Centro Automotivo em Taubaté" loading="lazy" />
-        </figure>
+        <!-- Fachada real recortada "saindo" do quadro vermelho + selo circular orbitando -->
+        <div class="cutout-stage reveal">
+          <span class="cutout-frame" aria-hidden="true"></span>
+          <img class="cutout-img" src="fachada-recorte.png" alt="Fachada da IndyCar Centro Automotivo em Taubaté" loading="lazy" data-parallax="0.06"
+               onerror="this.onerror=null;this.src='oficina-fachada.png';this.closest('.cutout-stage').classList.add('no-alpha');" />
+          <div class="circular-seal seal-about" aria-hidden="true" data-parallax="-0.05">
+            <div class="seal-rotor" data-circular-text="OFICINA PREMIUM • TAUBATÉ • +18 ANOS • "></div>
+            <span class="seal-center">★</span>
+          </div>
+        </div>
       </div>
 
       <div class="about-pillars">
@@ -308,12 +315,40 @@
         </div>
       </div>
     </div>
+
+    <!-- ===================================================
+         NOSSA EQUIPE — 3 slots aguardando as fotos reais.
+         PARA TROCAR: substitua cada <span class="team-ph">…</span>
+         por <img src="equipe-nome.jpg" alt="Nome — função na IndyCar" loading="lazy" />
+         (foto quadrada, ideal 600x600) e escreva nome/função reais no figcaption.
+         =================================================== -->
+    <div class="container team reveal" aria-label="Nossa equipe">
+      <div class="team-head">
+        <span class="section-tag">NOSSA EQUIPE</span>
+        <h3 class="team-title">Quem coloca a mão <span class="text-red">no seu carro</span></h3>
+        <p class="team-desc">Mecânicos veteranos, treinados nos manuais das montadoras. Fotos da equipe em breve.</p>
+      </div>
+      <div class="team-grid">
+        <figure class="team-slot">
+          <span class="team-ph" role="img" aria-label="Foto do profissional em breve"><span class="team-mono" aria-hidden="true">IC</span></span>
+          <figcaption><strong>Foto em breve</strong><span>Mecânica geral</span></figcaption>
+        </figure>
+        <figure class="team-slot">
+          <span class="team-ph" role="img" aria-label="Foto do profissional em breve"><span class="team-mono" aria-hidden="true">IC</span></span>
+          <figcaption><strong>Foto em breve</strong><span>Câmbio automático</span></figcaption>
+        </figure>
+        <figure class="team-slot">
+          <span class="team-ph" role="img" aria-label="Foto do profissional em breve"><span class="team-mono" aria-hidden="true">IC</span></span>
+          <figcaption><strong>Foto em breve</strong><span>Diagnóstico eletrônico</span></figcaption>
+        </figure>
+      </div>
+    </div>
   </section>
 
   <!-- ===================================================== -->
   <!-- 4. SERVIÇOS                                           -->
   <!-- ===================================================== -->
-  <section class="section services" id="servicos">
+  <section class="section services sec-light" id="servicos">
     <div class="container">
       <div class="section-head reveal">
         <span class="section-tag">O QUE FAZEMOS</span>
@@ -330,7 +365,10 @@
           </div>
           <h3>Troca de Óleo de Câmbio</h3>
           <p>Especialistas em câmbio automático em Taubaté. Troca <strong>total via máquina (diálise)</strong>, que renova todo o fluido e protege o conversor de torque.</p>
-          <button class="service-link" data-open-modal aria-label="Fazer orçamento de Troca de Óleo de Câmbio">Fazer Orçamento →</button>
+          <div class="service-actions">
+            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Troca de Óleo de Câmbio">Fazer Orçamento →</button>
+            <button class="svc-rev" data-reviews="cambio" data-service-name="Troca de Óleo de Câmbio" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Óleo de Câmbio"><span aria-hidden="true">★</span> 4,8 · Avaliações</button>
+          </div>
         </article>
 
         <!-- Tile 2x1: Diagnóstico com Scanner -->
@@ -341,7 +379,10 @@
           <div class="service-body">
             <h3>Diagnóstico com Scanner</h3>
             <p>Tecnologia de scanner automotivo em Taubaté para identificar falhas eletrônicas com precisão.</p>
-            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Diagnóstico com Scanner">Fazer Orçamento →</button>
+            <div class="service-actions">
+              <button class="service-link" data-open-modal aria-label="Fazer orçamento de Diagnóstico com Scanner">Fazer Orçamento →</button>
+              <button class="svc-rev" data-reviews="scanner" data-service-name="Diagnóstico com Scanner" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Diagnóstico com Scanner"><span aria-hidden="true">★</span> 4,8 · Avaliações</button>
+            </div>
           </div>
         </article>
 
@@ -353,7 +394,10 @@
           <div class="service-body">
             <h3>Revisão de Motor</h3>
             <p>Referência em revisão de motor em Taubaté para vazamentos e barulhos internos.</p>
-            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Revisão de Motor">Fazer Orçamento →</button>
+            <div class="service-actions">
+              <button class="service-link" data-open-modal aria-label="Fazer orçamento de Revisão de Motor">Fazer Orçamento →</button>
+              <button class="svc-rev" data-reviews="motor" data-service-name="Revisão de Motor" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Revisão de Motor"><span aria-hidden="true">★</span> 4,8 · Avaliações</button>
+            </div>
           </div>
         </article>
 
@@ -364,7 +408,10 @@
           </div>
           <div class="service-body">
             <h3>Troca de Óleo de Motor</h3>
-            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Troca de Óleo de Motor">Fazer Orçamento →</button>
+            <div class="service-actions">
+              <button class="service-link" data-open-modal aria-label="Fazer orçamento de Troca de Óleo de Motor">Fazer Orçamento →</button>
+              <button class="svc-rev svc-rev--sm" data-reviews="oleo" data-service-name="Troca de Óleo de Motor" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Óleo de Motor"><span aria-hidden="true">★</span> 4,8</button>
+            </div>
           </div>
         </article>
 
@@ -374,7 +421,10 @@
           </div>
           <div class="service-body">
             <h3>Pastilhas e Discos</h3>
-            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Pastilhas e Discos">Fazer Orçamento →</button>
+            <div class="service-actions">
+              <button class="service-link" data-open-modal aria-label="Fazer orçamento de Pastilhas e Discos">Fazer Orçamento →</button>
+              <button class="svc-rev svc-rev--sm" data-reviews="freios" data-service-name="Pastilhas e Discos" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Pastilhas e Discos"><span aria-hidden="true">★</span> 4,8</button>
+            </div>
           </div>
         </article>
 
@@ -384,7 +434,10 @@
           </div>
           <div class="service-body">
             <h3>Troca de Amortecedores</h3>
-            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Troca de Amortecedores">Fazer Orçamento →</button>
+            <div class="service-actions">
+              <button class="service-link" data-open-modal aria-label="Fazer orçamento de Troca de Amortecedores">Fazer Orçamento →</button>
+              <button class="svc-rev svc-rev--sm" data-reviews="amortecedores" data-service-name="Troca de Amortecedores" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Amortecedores"><span aria-hidden="true">★</span> 4,8</button>
+            </div>
           </div>
         </article>
 
@@ -394,7 +447,10 @@
           </div>
           <div class="service-body">
             <h3>Correia Dentada</h3>
-            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Correia Dentada">Fazer Orçamento →</button>
+            <div class="service-actions">
+              <button class="service-link" data-open-modal aria-label="Fazer orçamento de Correia Dentada">Fazer Orçamento →</button>
+              <button class="svc-rev svc-rev--sm" data-reviews="correia" data-service-name="Correia Dentada" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Correia Dentada"><span aria-hidden="true">★</span> 4,8</button>
+            </div>
           </div>
         </article>
 
@@ -404,7 +460,10 @@
           </div>
           <div class="service-body">
             <h3>Venda de Pneus</h3>
-            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Pneus">Fazer Orçamento →</button>
+            <div class="service-actions">
+              <button class="service-link" data-open-modal aria-label="Fazer orçamento de Pneus">Fazer Orçamento →</button>
+              <button class="svc-rev svc-rev--sm" data-reviews="pneus" data-service-name="Venda de Pneus" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Venda de Pneus"><span aria-hidden="true">★</span> 4,8</button>
+            </div>
           </div>
         </article>
 
@@ -414,7 +473,10 @@
           </div>
           <div class="service-body">
             <h3>Alinhamento 3D</h3>
-            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Alinhamento 3D">Fazer Orçamento →</button>
+            <div class="service-actions">
+              <button class="service-link" data-open-modal aria-label="Fazer orçamento de Alinhamento 3D">Fazer Orçamento →</button>
+              <button class="svc-rev svc-rev--sm" data-reviews="alinhamento" data-service-name="Alinhamento 3D" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Alinhamento 3D"><span aria-hidden="true">★</span> 4,8</button>
+            </div>
           </div>
         </article>
 
@@ -424,7 +486,10 @@
           </div>
           <div class="service-body">
             <h3>Troca de Embreagem</h3>
-            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Troca de Embreagem">Fazer Orçamento →</button>
+            <div class="service-actions">
+              <button class="service-link" data-open-modal aria-label="Fazer orçamento de Troca de Embreagem">Fazer Orçamento →</button>
+              <button class="svc-rev svc-rev--sm" data-reviews="embreagem" data-service-name="Troca de Embreagem" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Embreagem"><span aria-hidden="true">★</span> 4,8</button>
+            </div>
           </div>
         </article>
 
@@ -434,7 +499,10 @@
           </div>
           <div class="service-body">
             <h3>Revisão de Suspensão</h3>
-            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Revisão de Suspensão">Fazer Orçamento →</button>
+            <div class="service-actions">
+              <button class="service-link" data-open-modal aria-label="Fazer orçamento de Revisão de Suspensão">Fazer Orçamento →</button>
+              <button class="svc-rev svc-rev--sm" data-reviews="suspensao" data-service-name="Revisão de Suspensão" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Revisão de Suspensão"><span aria-hidden="true">★</span> 4,8</button>
+            </div>
           </div>
         </article>
 
@@ -447,7 +515,10 @@
             <h3>Limpeza de Bicos</h3>
             <p>Limpeza de bicos em Taubaté via ultrassom para recuperar a potência e a economia de combustível.</p>
           </div>
-          <button class="service-link" data-open-modal aria-label="Fazer orçamento de Limpeza de Bicos">Fazer Orçamento →</button>
+          <div class="service-actions service-actions--strip">
+            <button class="svc-rev" data-reviews="bicos" data-service-name="Limpeza de Bicos" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Limpeza de Bicos"><span aria-hidden="true">★</span> 4,8 · Avaliações</button>
+            <button class="service-link" data-open-modal aria-label="Fazer orçamento de Limpeza de Bicos">Fazer Orçamento →</button>
+          </div>
         </article>
       </div>
     </div>
@@ -547,7 +618,7 @@
   <!-- ===================================================== -->
   <!-- 6. DEPOIMENTOS (carrossel automático)                 -->
   <!-- ===================================================== -->
-  <section class="section reviews" id="avaliacoes">
+  <section class="section reviews sec-light" id="avaliacoes">
     <div class="container">
       <div class="section-head reveal">
         <span class="section-tag">QUEM CONFIA, RECOMENDA</span>
@@ -770,6 +841,9 @@
         </a>
         <p>Referência em oficina mecânica em Taubaté. Confiança, velocidade e excelência técnica para o seu veículo.</p>
         <div class="footer-rating">★★★★★ <span>4,8 · +1.200 avaliações no Google</span></div>
+        <figure class="footer-photo" aria-hidden="true">
+          <img src="fachada-recorte-thumb.png" alt="" loading="lazy" onerror="this.closest('.footer-photo').remove();" />
+        </figure>
       </div>
 
       <div class="footer-col">
@@ -879,6 +953,27 @@
         </button>
         <small class="form-mini">🔒 Seus dados são usados apenas para o atendimento.</small>
       </form>
+    </div>
+  </div>
+
+  <!-- ===================================================== -->
+  <!-- POPOVER DE AVALIAÇÕES POR SERVIÇO                      -->
+  <!-- Depoimentos REAIS do site mapeados por serviço;        -->
+  <!-- sem depoimento específico: nota agregada real 4,8.     -->
+  <!-- ===================================================== -->
+  <div class="rev-pop" id="revPop" role="dialog" aria-labelledby="revPopTitle" hidden>
+    <div class="rev-pop-card">
+      <button class="rev-pop-close" id="revPopClose" aria-label="Fechar avaliações">×</button>
+      <div class="rev-pop-head">
+        <span class="rev-pop-stars" aria-hidden="true">★★★★★</span>
+        <strong id="revPopTitle">Avaliações</strong>
+        <span class="rev-pop-note"><b>4,8</b> no Google · +1.200 avaliações</span>
+      </div>
+      <div class="rev-pop-body" id="revPopBody"></div>
+      <div class="rev-pop-actions">
+        <a class="rev-pop-link" id="revPopGoogle" href="https://www.google.com/maps/search/?api=1&query=IndyCar+Centro+Automotivo+Av.+Bandeirantes+875+Taubat%C3%A9" target="_blank" rel="noopener">Ver avaliações no Google</a>
+        <a class="rev-pop-link rev-pop-link--wa" id="revPopWa" href="#" target="_blank" rel="noopener">Já fez este serviço? Conta pra gente</a>
+      </div>
     </div>
   </div>
 

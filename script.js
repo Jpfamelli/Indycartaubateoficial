@@ -1422,4 +1422,183 @@
     new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()), { threshold: 0 }).observe(sec);
   })();
 
+  /* ================================================================
+     34. RITMO CLARO/ESCURO — hairline vermelha que se desenha na
+         fronteira das seções + variante escura do cursor de mira
+         sobre fundo claro (cantos grafite).
+     ================================================================ */
+  (function lightRhythm() {
+    const secs = $$('.sec-light, .why, .contact');
+    if (secs.length) {
+      const eio = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('edge-in');
+          eio.unobserve(e.target);
+        });
+      }, { threshold: 0.06 });
+      secs.forEach(s => eio.observe(s));
+    }
+    if (hasFinePointer) {
+      document.addEventListener('pointerover', e => {
+        const light = !!(e.target.closest && e.target.closest('.sec-light, .rev-pop-card'));
+        document.body.classList.toggle('tc-light', light);
+      });
+    }
+  })();
+
+  /* ================================================================
+     35. CIRCULARTEXT genérico — monta qualquer rotor com o texto
+         vindo de [data-circular-text] (usado no selo da fachada).
+     ================================================================ */
+  $$('[data-circular-text]').forEach(rotor => {
+    const chars = [...rotor.dataset.circularText];
+    const step = 360 / chars.length;
+    const frag = document.createDocumentFragment();
+    chars.forEach((ch, i) => {
+      const s = document.createElement('span');
+      s.textContent = ch;
+      if (ch === '•') s.className = 'hot';
+      s.style.transform = `rotate(${(i * step).toFixed(2)}deg)`;
+      frag.appendChild(s);
+    });
+    rotor.appendChild(frag);
+  });
+
+  /* ================================================================
+     36. PARALLAX leve nas fotos ([data-parallax]) — mede o PAI
+         (não transformado) para não realimentar o próprio deslocamento.
+         Um rAF por evento de scroll; nada roda com a página parada.
+     ================================================================ */
+  (function photoParallax() {
+    if (reduceMotion) return;
+    const els = $$('[data-parallax]');
+    if (!els.length) return;
+    let raf = null;
+    function frame() {
+      els.forEach(el => {
+        const p = el.parentElement || el;
+        const r = p.getBoundingClientRect();
+        if (r.bottom < -80 || r.top > innerHeight + 80) return; // fora da tela: não mexe
+        const c = (r.top + r.height / 2 - innerHeight / 2) / innerHeight;
+        const f = parseFloat(el.dataset.parallax || '0.05');
+        el.style.transform = `translateY(${(-c * f * 220).toFixed(1)}px)`;
+      });
+      raf = null;
+    }
+    window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(frame); }, { passive: true });
+    frame();
+  })();
+
+  /* ================================================================
+     37. AVALIAÇÕES POR SERVIÇO — popover acessível.
+         REGRA INEGOCIÁVEL: nada é inventado. A fonte é o próprio
+         carrossel de depoimentos REAIS do site; o mapeamento liga
+         cada serviço apenas a quem citou aquele assunto. Serviço sem
+         depoimento correspondente mostra a nota agregada REAL (4,8 ·
+         +1.200 avaliações no Google) + convite para ver no Google ou
+         contar a experiência pelo WhatsApp.
+     ================================================================ */
+  (function serviceReviews() {
+    const pop = $('#revPop');
+    if (!pop) return;
+    const body = $('#revPopBody');
+    const title = $('#revPopTitle');
+    const waLink = $('#revPopWa');
+    const closeBtn = $('#revPopClose');
+
+    // fonte da verdade: os depoimentos reais publicados no carrossel
+    const src = $$('#reviewsTrack .review-card').map(c => ({
+      stars: ($('.review-stars', c) || {}).textContent || '★★★★★',
+      text: ($('.review-text', c) || {}).textContent || '',
+      name: ($('.review-author strong', c) || {}).textContent || '',
+      meta: ($('.review-author small', c) || {}).textContent || '',
+      color: ($('.review-avatar', c) ? $('.review-avatar', c).style.getPropertyValue('--c') : '') || '#e50914',
+      initials: ($('.review-avatar', c) || {}).textContent || ''
+    }));
+
+    // índices do carrossel por assunto citado no texto:
+    // 0 Carlos (suspensão + diagnóstico) · 3 Juliana (freios) ·
+    // 4 Marcos (revisão completa) · 5 Patrícia (alinhamento/balanceamento) ·
+    // 6 Anderson (câmbio automático) · 9 Luciana (kit de embreagem)
+    const MAP = {
+      cambio: [6], scanner: [0], motor: [4], freios: [3],
+      alinhamento: [5], embreagem: [9], suspensao: [0],
+      oleo: [], amortecedores: [], correia: [], pneus: [], bicos: []
+    };
+
+    let trigger = null;
+    const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+    function render(key, serviceName) {
+      const idxs = MAP[key] || [];
+      title.textContent = 'Avaliações — ' + serviceName;
+      waLink.href = 'https://wa.me/' + WPHONE + '?text=' +
+        encodeURIComponent('Olá! Já fiz ' + serviceName + ' na IndyCar e quero contar como foi.');
+      if (idxs.length) {
+        body.innerHTML = idxs.map(i => {
+          const r = src[i];
+          if (!r) return '';
+          return '<div class="rev-pop-item">' +
+            '<span class="rp-stars" aria-hidden="true">' + esc(r.stars) + '</span>' +
+            '<p>' + esc(r.text) + '</p>' +
+            '<div class="rp-author"><span class="rp-avatar" style="--c:' + esc(r.color) + '" aria-hidden="true">' + esc(r.initials) + '</span>' +
+            '<span><strong>' + esc(r.name) + '</strong><small>' + esc(r.meta) + '</small></span></div>' +
+            '</div>';
+        }).join('');
+      } else {
+        body.innerHTML =
+          '<div class="rev-pop-empty">' +
+          '<span class="rp-big">4,8<small> / 5</small></span>' +
+          '<p>Ainda não publicamos aqui um depoimento específico deste serviço — mas nossa nota agregada no Google é <strong>4,8</strong>, com <strong>+1.200 avaliações</strong> reais de clientes.</p>' +
+          '</div>';
+      }
+    }
+
+    function openPop(btn) {
+      trigger = btn;
+      render(btn.dataset.reviews, btn.dataset.serviceName || 'este serviço');
+      pop.hidden = false;
+      document.body.style.overflow = 'hidden';
+      btn.setAttribute('aria-expanded', 'true');
+      closeBtn.focus();
+    }
+    function closePop() {
+      if (pop.hidden) return;
+      pop.hidden = true;
+      if (!promoBackdrop.classList.contains('open') && !formBackdrop.classList.contains('open'))
+        document.body.style.overflow = '';
+      if (trigger) {
+        trigger.setAttribute('aria-expanded', 'false');
+        if (document.contains(trigger)) trigger.focus();
+        trigger = null;
+      }
+    }
+
+    $$('.svc-rev').forEach(b => b.addEventListener('click', () => openPop(b)));
+    closeBtn.addEventListener('click', closePop);
+    pop.addEventListener('click', e => { if (e.target === pop) closePop(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { closePop(); return; }
+      if (e.key !== 'Tab' || pop.hidden) return;
+      const f = $$('button, [href]', pop).filter(x => !x.disabled);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+  })();
+
+  /* ================================================================
+     38. PULSO 1x nos números dos contadores — dispara junto com o
+         CountUp e pulsa quando o número assenta (delay no CSS).
+     ================================================================ */
+  $$('.counter').forEach(c => {
+    new IntersectionObserver(([e], obs) => {
+      if (!e.isIntersecting) return;
+      obs.disconnect();
+      c.classList.add('pulsed');
+    }, { threshold: 0.6 }).observe(c);
+  });
+
 })();
