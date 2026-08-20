@@ -49,10 +49,70 @@
   }
   </script>
 
-  <!-- ===== Google Fonts: Archivo (display expandido 800/900 + subtítulo 400/500) + Inter (corpo) + Barlow Condensed (micro-labels racing) ===== -->
+  <!-- Dados estruturados: FAQ (mesmas perguntas/respostas da seção #faq) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Preciso agendar ou posso chegar direto?",
+        "acceptedAnswer": { "@type": "Answer", "text": "O ideal é agendar pelo WhatsApp (12) 99683-0272 para garantir o seu horário — a resposta é rápida em horário comercial. Atendemos de segunda a sexta, das 08h às 18h, e aos sábados das 08h às 12h." }
+      },
+      {
+        "@type": "Question",
+        "name": "O diagnóstico é pago?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Não. O diagnóstico é 100% gratuito e sem compromisso, feito com scanner automotivo para identificar falhas com precisão. Você acompanha tudo, entende o defeito e só aprova o que for necessário." }
+      },
+      {
+        "@type": "Question",
+        "name": "Vocês atendem carros importados?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Sim — nacionais e importados, de Toyota, Honda e Volkswagen a BMW e Mercedes. Trabalhamos seguindo rigorosamente os manuais das montadoras, com scanners de última geração." }
+      },
+      {
+        "@type": "Question",
+        "name": "Como funciona a troca de óleo do câmbio via máquina (diálise)?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Somos especialistas em câmbio automático e fazemos a troca total do fluido 100% na máquina (diálise), renovando todo o óleo e protegendo o conversor de torque. Poucos fazem como a gente. Quer saber se serve para o seu carro? É só chamar no WhatsApp." }
+      },
+      {
+        "@type": "Question",
+        "name": "Vocês buscam e entregam meu carro?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Sim! Nosso Leva e Traz é grátis em Taubaté: buscamos e devolvemos o seu carro sem custo nenhum, para você não precisar parar o seu dia." }
+      },
+      {
+        "@type": "Question",
+        "name": "Quais são as formas de pagamento?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Você pode parcelar em até 10x no cartão. Para outras condições e formas de pagamento, é só perguntar no WhatsApp que a gente orienta na hora." }
+      },
+      {
+        "@type": "Question",
+        "name": "Os serviços têm garantia?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Sim — garantia de verdade, em peças e mão de obra, para nacionais e importados. Os detalhes da cobertura do seu serviço a gente confirma junto com o orçamento, direto no WhatsApp." }
+      },
+      {
+        "@type": "Question",
+        "name": "Qual é o horário de funcionamento?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Segunda a sexta das 08h às 18h e sábado das 08h às 12h. Domingo a oficina fica fechada." }
+      },
+      {
+        "@type": "Question",
+        "name": "Onde fica a oficina?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Na Av. Bandeirantes, 875 – Parque Paduan, Taubaté-SP (CEP 12070-100) — o mapa está logo abaixo, na seção de contato. E se ficar melhor para você, o Leva e Traz grátis busca e devolve o seu carro em Taubaté." }
+      },
+      {
+        "@type": "Question",
+        "name": "Como acompanho o serviço do meu carro?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Aqui a transparência é absoluta: você acompanha o diagnóstico, entende o defeito e aprova apenas o necessário — sem surpresas na hora de pagar. Qualquer dúvida durante o serviço, é só falar com a gente no WhatsApp (12) 99683-0272 ou no fixo (12) 3624-5957." }
+      }
+    ]
+  }
+  </script>
+
+  <!-- ===== Google Fonts: Archivo (display expandido 800/900 + subtítulo 400/500/600) + Inter (corpo) + Barlow Condensed (micro-labels racing) ===== -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,125,800;0,125,900&family=Inter:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,100,600;0,125,800;0,125,900&family=Inter:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="styles.css" />
   <!-- favicon: versão mínima da logomarca vetorial (paralelogramo vermelho + banda de pneu) -->
@@ -109,6 +169,7 @@
         <a href="#servicos" class="nav-link">Serviços</a>
         <a href="#diferenciais" class="nav-link">Diferenciais</a>
         <a href="#avaliacoes" class="nav-link">Avaliações</a>
+        <a href="#faq" class="nav-link">Dúvidas</a>
         <a href="#contato" class="nav-link">Contato</a>
         <button class="btn btn-cta-nav" data-open-modal data-magnetic>Agendar Agora</button>
       </nav>
@@ -755,6 +816,174 @@
   </section>
 
   <!-- ===================================================== -->
+  <!-- 6.5 PERGUNTAS FREQUENTES (acordeão, tema claro)        -->
+  <!-- Todas as respostas derivam de informações já publicadas -->
+  <!-- neste site. O que não está aqui, a resposta convida a   -->
+  <!-- perguntar no WhatsApp — nunca inventar prazo ou preço.  -->
+  <!-- ===================================================== -->
+  <section class="section faq sec-light" id="faq">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="section-tag">ANTES DE VOCÊ PERGUNTAR</span>
+        <h2 class="section-title">Perguntas <span class="text-red">Frequentes</span></h2>
+        <p class="section-desc">O que os motoristas de Taubaté mais perguntam antes de trazer o carro. Não achou a sua dúvida? <a class="faq-desc-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20tenho%20uma%20d%C3%BAvida." target="_blank" rel="noopener">Chama a gente no WhatsApp</a>.</p>
+      </div>
+
+      <div class="faq-list">
+        <div class="faq-item open reveal">
+          <h3 class="faq-h">
+            <button type="button" class="faq-q" id="faq-q-1" aria-expanded="true" aria-controls="faq-a-1">
+              <span class="faq-num" aria-hidden="true">01</span>
+              <span class="faq-txt">Preciso agendar ou posso chegar direto?</span>
+              <span class="faq-ico" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-a-1" role="region" aria-labelledby="faq-q-1">
+            <div class="faq-a-inner">
+              <p>O ideal é agendar pelo <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%20um%20hor%C3%A1rio." target="_blank" rel="noopener">WhatsApp (12) 99683-0272</a> para garantir o seu horário — a resposta é rápida em horário comercial. Atendemos de segunda a sexta, das 08h às 18h, e aos sábados das 08h às 12h.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-h">
+            <button type="button" class="faq-q" id="faq-q-2" aria-expanded="false" aria-controls="faq-a-2">
+              <span class="faq-num" aria-hidden="true">02</span>
+              <span class="faq-txt">O diagnóstico é pago?</span>
+              <span class="faq-ico" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-a-2" role="region" aria-labelledby="faq-q-2">
+            <div class="faq-a-inner">
+              <p>Não. O diagnóstico é <strong>100% gratuito e sem compromisso</strong>, feito com scanner automotivo para identificar falhas com precisão. Você acompanha tudo, entende o defeito e só aprova o que for necessário.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-h">
+            <button type="button" class="faq-q" id="faq-q-3" aria-expanded="false" aria-controls="faq-a-3">
+              <span class="faq-num" aria-hidden="true">03</span>
+              <span class="faq-txt">Vocês atendem carros importados?</span>
+              <span class="faq-ico" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-a-3" role="region" aria-labelledby="faq-q-3">
+            <div class="faq-a-inner">
+              <p>Sim — <strong>nacionais e importados</strong>, de Toyota, Honda e Volkswagen a BMW e Mercedes. Trabalhamos seguindo rigorosamente os manuais das montadoras, com scanners de última geração.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-h">
+            <button type="button" class="faq-q" id="faq-q-4" aria-expanded="false" aria-controls="faq-a-4">
+              <span class="faq-num" aria-hidden="true">04</span>
+              <span class="faq-txt">Como funciona a troca de óleo do câmbio via máquina (diálise)?</span>
+              <span class="faq-ico" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-a-4" role="region" aria-labelledby="faq-q-4">
+            <div class="faq-a-inner">
+              <p>Somos <strong>especialistas em câmbio automático</strong> e fazemos a troca total do fluido <strong>100% na máquina (diálise)</strong>, renovando todo o óleo e protegendo o conversor de torque. Poucos fazem como a gente. Quer saber se serve para o seu carro? <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20saber%20sobre%20a%20troca%20de%20%C3%B3leo%20do%20c%C3%A2mbio%20via%20di%C3%A1lise." target="_blank" rel="noopener">É só chamar no WhatsApp</a>.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-h">
+            <button type="button" class="faq-q" id="faq-q-5" aria-expanded="false" aria-controls="faq-a-5">
+              <span class="faq-num" aria-hidden="true">05</span>
+              <span class="faq-txt">Vocês buscam e entregam meu carro?</span>
+              <span class="faq-ico" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-a-5" role="region" aria-labelledby="faq-q-5">
+            <div class="faq-a-inner">
+              <p>Sim! Nosso <strong>Leva e Traz é grátis em Taubaté</strong>: buscamos e devolvemos o seu carro sem custo nenhum, para você não precisar parar o seu dia.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-h">
+            <button type="button" class="faq-q" id="faq-q-6" aria-expanded="false" aria-controls="faq-a-6">
+              <span class="faq-num" aria-hidden="true">06</span>
+              <span class="faq-txt">Quais são as formas de pagamento?</span>
+              <span class="faq-ico" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-a-6" role="region" aria-labelledby="faq-q-6">
+            <div class="faq-a-inner">
+              <p>Você pode parcelar em <strong>até 10x no cartão</strong>. Para outras condições e formas de pagamento, <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quais%20s%C3%A3o%20as%20formas%20de%20pagamento%3F" target="_blank" rel="noopener">é só perguntar no WhatsApp</a> que a gente orienta na hora.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-h">
+            <button type="button" class="faq-q" id="faq-q-7" aria-expanded="false" aria-controls="faq-a-7">
+              <span class="faq-num" aria-hidden="true">07</span>
+              <span class="faq-txt">Os serviços têm garantia?</span>
+              <span class="faq-ico" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-a-7" role="region" aria-labelledby="faq-q-7">
+            <div class="faq-a-inner">
+              <p>Sim — garantia de verdade, <strong>em peças e mão de obra</strong>, para nacionais e importados. Os detalhes da cobertura do seu serviço a gente confirma junto com o orçamento, direto no WhatsApp.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-h">
+            <button type="button" class="faq-q" id="faq-q-8" aria-expanded="false" aria-controls="faq-a-8">
+              <span class="faq-num" aria-hidden="true">08</span>
+              <span class="faq-txt">Qual é o horário de funcionamento?</span>
+              <span class="faq-ico" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-a-8" role="region" aria-labelledby="faq-q-8">
+            <div class="faq-a-inner">
+              <p>Segunda a sexta das <strong>08h às 18h</strong> e sábado das <strong>08h às 12h</strong>. Domingo a oficina fica fechada.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-h">
+            <button type="button" class="faq-q" id="faq-q-9" aria-expanded="false" aria-controls="faq-a-9">
+              <span class="faq-num" aria-hidden="true">09</span>
+              <span class="faq-txt">Onde fica a oficina?</span>
+              <span class="faq-ico" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-a-9" role="region" aria-labelledby="faq-q-9">
+            <div class="faq-a-inner">
+              <p>Na <strong>Av. Bandeirantes, 875 – Parque Paduan, Taubaté-SP</strong> (CEP 12070-100) — o mapa está logo abaixo, na <a href="#contato">seção de contato</a>. E se ficar melhor para você, o Leva e Traz grátis busca e devolve o seu carro em Taubaté.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item reveal">
+          <h3 class="faq-h">
+            <button type="button" class="faq-q" id="faq-q-10" aria-expanded="false" aria-controls="faq-a-10">
+              <span class="faq-num" aria-hidden="true">10</span>
+              <span class="faq-txt">Como acompanho o serviço do meu carro?</span>
+              <span class="faq-ico" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-a-10" role="region" aria-labelledby="faq-q-10">
+            <div class="faq-a-inner">
+              <p>Aqui a transparência é absoluta: você acompanha o diagnóstico, entende o defeito e aprova apenas o necessário — sem surpresas na hora de pagar. Qualquer dúvida durante o serviço, é só falar com a gente no <a href="https://wa.me/5512996830272" target="_blank" rel="noopener">WhatsApp (12) 99683-0272</a> ou no fixo <a href="tel:+551236245957">(12) 3624-5957</a>.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
   <!-- 7. LOCALIZAÇÃO + CONTATO                               -->
   <!-- ===================================================== -->
   <section class="section contact" id="contato">
@@ -879,6 +1108,7 @@
         <a href="#servicos">Serviços</a>
         <a href="#diferenciais">Diferenciais</a>
         <a href="#avaliacoes">Avaliações</a>
+        <a href="#faq">Dúvidas</a>
         <a href="#contato">Contato</a>
       </div>
 

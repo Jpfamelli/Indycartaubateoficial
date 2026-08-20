@@ -1329,3 +1329,120 @@ body.tc-light .tc-dot { background: #17181c; box-shadow: none; }
   [data-parallax] { transform: none !important; }
   .sec-light::before, .why::before, .contact::before { transform: scaleX(1); transition: none; }
 }
+
+/* ====================================================================
+   5ª RODADA — PERGUNTAS FREQUENTES (#faq, tema claro)
+   Acordeão editorial: hairlines, índice Barlow, ícone + que vira ×,
+   abertura via grid-template-rows (0fr -> 1fr).
+   ==================================================================== */
+.faq.sec-light {
+  background-color: var(--lt-bg-2);
+  /* vermelho AA para TEXTO sobre --lt-bg-2 (#f2f3f5): o --red puro rende
+     4.3:1 (< 4.5 exigido p/ texto normal); este rende 5.5:1 e mantém a marca.
+     Superfícies/ícones seguem no --red (exigência gráfica é 3:1). */
+  --red-txt: #c40812;
+}
+
+.faq-list {
+  max-width: 820px; margin: 26px auto 0;
+  border-top: 1px solid var(--lt-line);
+}
+.faq-item { border-bottom: 1px solid var(--lt-line); }
+.faq-h { margin: 0; font-size: inherit; font-weight: inherit; }
+
+.faq-q {
+  width: 100%; display: flex; align-items: center; gap: 18px;
+  text-align: left; padding: 22px 4px;
+  font-family: var(--font-display); font-weight: 600; font-size: 1.1rem;
+  line-height: 1.35; letter-spacing: -.005em; color: var(--lt-ink);
+  transition: color .25s, background .25s;
+}
+.faq-q:hover { color: var(--red-txt); background: linear-gradient(90deg, rgba(229,9,20,.045), transparent 70%); }
+.faq-item.open .faq-q { color: var(--lt-ink); }
+
+/* índice racing (Barlow Condensed) */
+.faq-num {
+  font-family: var(--font-cond); font-weight: 700; font-size: .95rem;
+  letter-spacing: .14em; color: var(--red-txt);
+  flex: 0 0 auto; min-width: 26px; padding-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.faq-txt { flex: 1 1 auto; }
+
+/* ícone +: duas barras num aro; gira 135° e vira × quando aberto */
+.faq-ico {
+  position: relative; flex: 0 0 34px; width: 34px; height: 34px;
+  border: 1px solid rgba(23,24,28,.28); border-radius: 50%;
+  color: var(--lt-ink);
+  transition: transform .5s var(--ease), background .3s, border-color .3s, color .3s;
+}
+.faq-ico::before, .faq-ico::after {
+  content: ''; position: absolute; left: 50%; top: 50%;
+  background: currentColor; border-radius: 2px;
+  transform: translate(-50%, -50%);
+}
+.faq-ico::before { width: 14px; height: 2px; }
+.faq-ico::after  { width: 2px;  height: 14px; }
+.faq-q:hover .faq-ico { border-color: var(--red-txt); color: var(--red-txt); }
+.faq-item.open .faq-ico {
+  transform: rotate(135deg);
+  background: var(--red); border-color: var(--red); color: #fff;
+  box-shadow: 0 6px 18px rgba(229,9,20,.30);
+}
+
+/* painel de resposta: anima grid-template-rows; visibility com atraso
+   na saída para tirar links do fluxo de tab quando fechado */
+.faq-a {
+  display: grid; grid-template-rows: 0fr;
+  visibility: hidden;
+  transition: grid-template-rows .55s var(--ease), visibility 0s .55s;
+}
+.faq-item.open .faq-a {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition: grid-template-rows .55s var(--ease);
+}
+.faq-a-inner { overflow: hidden; min-height: 0; }
+.faq-a p {
+  padding: 0 48px 24px 44px; margin: 0;
+  font-family: var(--font-body); font-size: 1rem; line-height: 1.7;
+  color: var(--lt-ink-2);
+}
+.faq-a p strong { color: var(--lt-ink); }
+.faq-a p a, .faq-desc-link {
+  color: var(--red-txt, var(--red)); font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-color: rgba(229,9,20,.35);
+  transition: text-decoration-color .25s;
+}
+.faq-a p a:hover, .faq-desc-link:hover { text-decoration-color: var(--red); }
+
+@media (max-width: 720px) {
+  .faq-q { gap: 12px; padding: 18px 2px; font-size: 1rem; }
+  .faq-ico { flex-basis: 30px; width: 30px; height: 30px; }
+  .faq-a p { padding: 0 8px 20px 38px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .faq-a { transition: none; }
+  .faq-item.open .faq-a { transition: none; }
+  .faq-ico { transition: none; }
+}
+
+/* ===== NAV com 6 links: aperta o passo antes de virar gaveta ===== */
+@media (max-width: 1160px) {
+  .nav-links { gap: 18px; }
+  .nav-link { font-size: .98rem; }
+  .btn-cta-nav { padding: 10px 16px; font-size: .9rem; }
+}
+/* a gaveta mobile assume mais cedo (920px) para a nav nunca estourar */
+@media (max-width: 920px) {
+  .nav-links {
+    position: fixed; inset: 0 0 0 auto; width: min(80vw, 320px); flex-direction: column;
+    justify-content: center; gap: 30px; background: rgba(12,12,14,.98); backdrop-filter: blur(16px);
+    transform: translateX(100%); transition: transform .4s var(--ease); border-left: 1px solid var(--line);
+  }
+  .nav-links.open { transform: translateX(0); }
+  .nav-link { font-size: 1.5rem; }
+  .btn-cta-nav { padding: 11px 22px; font-size: .95rem; }
+  .hamburger { display: flex; }
+}

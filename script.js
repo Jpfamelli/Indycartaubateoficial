@@ -1224,7 +1224,7 @@
   (function targetCursor() {
     if (!hasFinePointer || reduceMotion) return;
 
-    const SEL = '.btn, .nav-link, .service-card, [data-open-modal]';
+    const SEL = '.btn, .nav-link, .service-card, [data-open-modal], .faq-q';
     const root = document.createElement('div');
     root.className = 'target-cursor';
     root.setAttribute('aria-hidden', 'true');
@@ -1944,5 +1944,22 @@
       c.classList.add('pulsed');
     }, { threshold: 0.6 }).observe(c);
   });
+
+  /* ================================================================
+     39. FAQ — acordeão acessível (#faq)
+         Botões reais (Enter/Space nativos), aria-expanded sincronizado,
+         abertura animada no CSS via grid-template-rows (0fr -> 1fr).
+     ================================================================ */
+  (function faqAccordion() {
+    $$('.faq-item').forEach(item => {
+      const btn = $('.faq-q', item);
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const open = !item.classList.contains('open');
+        item.classList.toggle('open', open);
+        btn.setAttribute('aria-expanded', String(open));
+      });
+    });
+  })();
 
 })();
