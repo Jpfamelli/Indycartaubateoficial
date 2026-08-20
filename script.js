@@ -163,127 +163,449 @@
   }
 
   /* ================================================================
-     6. HERO CANVAS — LIGHT TRAILS DE PISTA (3 camadas de profundidade)
-        Rastros horizontais de luz em três camadas: os de cima finos,
-        rápidos e translúcidos; os de baixo grossos, lentos e
-        brilhantes. Perto do cursor os trails ganham velocidade e
-        brilho (sensação de vácuo/aceleração). Custo por frame linear.
+     6. MAR DE METAL FUNDIDO (#bgLive) — motor portado do "mar de ouro"
+        da Eletronic, com a cara da IndyCar: campo caustico fold() com
+        3 senos, 2 passadas 'lighter' (corpo em vermelho profundo +
+        filamentos laranja-brasa que somam em branco-quente), 3 trens
+        de vaga viajantes, maré (~20s) + paralaxe de scroll, fagulhas
+        de solda subindo, vento local no mouse com rastro decaindo
+        (~1.5s) e splash no clique. Rasterizado num offscreen a ~0.6x.
+        Perf: governor EMA>26ms com histerese e recuperação; pausa com
+        a aba oculta; reduced-motion = 1 frame estático; pointer:coarse
+        fica autônomo (sem efeitos de mouse).
      ================================================================ */
-  const canvas = $('#heroCanvas');
-  const ctx = canvas.getContext('2d');
-  let trails = [], W, H, rafId;
-  const mouse = { x: -9999, y: -9999, active: false };
-  const TRAIL_LAYERS = [
-    { count: 10, width: 1,   speed: [8, 12], alpha: .3,  len: [70, 150] },
-    { count: 8,  width: 2,   speed: [5, 8],  alpha: .55, len: [110, 220] },
-    { count: 6,  width: 3.2, speed: [3, 5],  alpha: .85, len: [160, 300] }
-  ];
+  (function metalFundido() {
+    var canvas = document.getElementById('bgLive');
+    if (!canvas || !canvas.getContext) return;
+    var ctx = canvas.getContext('2d');
+    var off = document.createElement('canvas');
+    var octx = off.getContext('2d');
 
-  function resizeCanvas() {
-    W = canvas.width = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
-  }
-  function newTrail(layer, anywhere) {
-    const len = layer.len[0] + Math.random() * (layer.len[1] - layer.len[0]);
-    return {
-      x: anywhere ? Math.random() * (W + len) - len : -len - Math.random() * W * 0.3,
-      y: Math.random() * H,
-      len,
-      speed: layer.speed[0] + Math.random() * (layer.speed[1] - layer.speed[0]),
-      width: layer.width,
-      alpha: layer.alpha,
-      white: Math.random() > 0.62,
-      layer,
-      boost: 0
-    };
-  }
-  function makeTrails() {
-    trails = [];
-    TRAIL_LAYERS.forEach(layer => {
-      for (let i = 0; i < layer.count; i++) trails.push(newTrail(layer, true));
-    });
-  }
+    var COARSE = !hasFinePointer;
+    var PEQUENO = matchMedia('(max-width:480px)').matches;
 
-  function drawCanvas() {
-    ctx.clearRect(0, 0, W, H);
-    ctx.lineCap = 'round';
+    /* --- constantes do mar --- */
+    var BAND_BASE = 0.42;                 /* topo da faixa caustica (fracao de H) */
+    var MARE_AMP = 0.04;                  /* respiracao: ±4% de H */
+    var MARE_T = 20;                      /* periodo da mare (s) */
+    var MARE_SCROLL = 0.05;               /* mare extra no fundo da pagina */
+    var PARALAXE = 0.06;                  /* faixa acompanha o scroll */
+    var TAU = 6.28318530718;
+    /* trens de vaga: [comprimento px, periodo s, amplitude, direcao, fase] */
+    var VAGAS = [[860, 9, 1.0, 1, 0], [1520, 14, 0.75, -1, 2.1], [2400, 23, 0.55, 1, 4.4]];
+    var VNORM = 1 / (1.0 + 0.75 + 0.55);
+    var VENTO_R2 = -1 / (2 * 110 * 110);  /* gaussiana vertical do vento (~raio 200px) */
+    var VENTO_AMP = 0.6;                  /* +60% de amplitude local */
+    var VENTO_DECAI = 450;                /* ms — rastro some em ~1.5s */
+    var TCELLS = 96;
+    var SPLASH_MS = 1200, SPLASH_R = 460, SPLASH_AMP = 26;
+    var SPLASH_K = TAU / 90;
+    var SPLASH_S2 = -1 / (2 * 58 * 58);
 
-    for (let i = 0; i < trails.length; i++) {
-      const t = trails[i];
+    /* densidade (PEQUENO <=480px reduzida) */
+    var N1_BASE = PEQUENO ? 92 : (COARSE ? 128 : 160); /* corpo em vermelho fundido */
+    var N2_BASE = PEQUENO ? 30 : (COARSE ? 42 : 52);   /* filamentos laranja-brasa */
+    var PASSO0 = PEQUENO ? 11 : 9;
+    var N_FAISCAS = PEQUENO ? 24 : 46;
 
-      // interação: num raio de 120px do cursor o trail acelera (+60%) e brilha
-      let near = 0;
-      if (mouse.active) {
-        const dx = t.x - mouse.x, dy = t.y - mouse.y;
-        if (dx * dx + dy * dy < 14400) near = 1;
-      }
-      t.boost += (near - t.boost) * 0.12;
+    var W = 0, H = 0, dpr = 1;
+    var marS = PEQUENO ? 0.55 : 0.6;      /* escala do offscreen do mar */
+    var marS0 = marS;
+    var docH = 1, rolagem = window.scrollY || 0;
+    var fator = 1, passoX = PASSO0, nivel = 0, emaDt = 16.7, lastDrop = 0, bomDesde = 0;
+    var lastT = 0, raf = 0, rodando = false, t0 = performance.now();
+    var spanAtual = 0;
 
-      t.x += t.speed * (1 + 0.6 * t.boost);
-      const a = Math.min(1, t.alpha * (1 + 0.6 * t.boost));
-      const col = t.white ? '255,255,255' : '229,9,20';
+    /* vento (rastro do mouse) */
+    var tE = new Float32Array(TCELLS), tY = new Float32Array(TCELLS);
+    var temVento = false, ventoGlow = 0;
+    var mx = -1e4, my = -1e4, mxS = -1e4, myS = -1e4, lmx = -1e4, lmy = -1e4, temMouse = false;
 
-      const grad = ctx.createLinearGradient(t.x - t.len, t.y, t.x, t.y);
-      grad.addColorStop(0, `rgba(${col},0)`);
-      grad.addColorStop(1, `rgba(${col},${a})`);
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = t.width;
-      ctx.beginPath(); ctx.moveTo(t.x - t.len, t.y); ctx.lineTo(t.x, t.y); ctx.stroke();
+    /* splash */
+    var ondas = [], borrifos = [];
 
-      // cabeça brilhante — halo via gradiente radial (shadowBlur é caro demais
-      // em raster por software; o gradiente dá o mesmo glow por fração do custo)
-      const glowR = t.width * 2.6 + 3;
-      const halo = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, glowR);
-      halo.addColorStop(0, `rgba(${col},${Math.min(1, a + .1)})`);
-      halo.addColorStop(0.35, `rgba(${col},${(a * .5).toFixed(3)})`);
-      halo.addColorStop(1, `rgba(${col},0)`);
-      ctx.fillStyle = halo;
-      ctx.beginPath(); ctx.arc(t.x, t.y, glowR, 0, Math.PI * 2); ctx.fill();
-
-      if (t.x - t.len > W + 20) trails[i] = newTrail(t.layer, false);
+    /* fagulhas de solda (espuma) */
+    var FAISCAS = [];
+    for (var fi = 0; fi < N_FAISCAS; fi++) {
+      FAISCAS.push({
+        x: Math.random(), p: Math.random(),
+        s: 0.018 + Math.random() * 0.035,
+        r: 0.8 + Math.random() * 1.4,
+        tw: Math.random() * TAU
+      });
     }
-    rafId = requestAnimationFrame(drawCanvas);
-  }
 
-  if (!reduceMotion) {
-    resizeCanvas(); makeTrails(); drawCanvas();
-    let canvasResizeTimer;
-    window.addEventListener('resize', () => {
-      clearTimeout(canvasResizeTimer);
-      canvasResizeTimer = setTimeout(() => { resizeCanvas(); makeTrails(); }, 150);
-    });
+    /* brilho quente submerso (forja) + linha de horizonte, pre-renderizado a 1/4 */
+    var amb = document.createElement('canvas');
+    function pintarAmb() {
+      amb.width = Math.max(2, W >> 2); amb.height = Math.max(2, H >> 2);
+      var c = amb.getContext('2d'), w = amb.width, h = amb.height;
+      c.clearRect(0, 0, w, h);
+      var g = c.createRadialGradient(w * .60, h * 1.12, h * .05, w * .60, h * 1.12, h * .85);
+      g.addColorStop(0, 'rgba(220,52,22,0.26)');
+      g.addColorStop(.5, 'rgba(150,22,12,0.10)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = g; c.fillRect(0, h * .3, w, h * .7);
+      var hz = c.createLinearGradient(0, h - 28, 0, h);
+      hz.addColorStop(0, 'rgba(0,0,0,0)');
+      hz.addColorStop(1, 'rgba(255,120,64,0.12)');
+      c.fillStyle = hz; c.fillRect(0, h - 28, w, 28);
+    }
 
-    const heroSec = $('#hero');
-    heroSec.addEventListener('pointermove', e => {
-      const r = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; mouse.active = true;
-    });
-    heroSec.addEventListener('pointerleave', () => { mouse.active = false; mouse.x = mouse.y = -9999; });
+    function medir() {
+      dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      W = window.innerWidth; H = window.innerHeight;
+      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      off.width = Math.ceil(W * marS); off.height = Math.ceil(H * marS);
+      octx.setTransform(marS, 0, 0, marS, 0, 0);
+      docH = Math.max(1, (document.documentElement.scrollHeight || H) - H);
+      pintarAmb();
+    }
 
-    // pausa o canvas quando o hero sai da tela (economia de bateria)
-    const heroIO = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !rafId) drawCanvas();
-      else if (!e.isIntersecting) { cancelAnimationFrame(rafId); rafId = null; }
-    }, { threshold: 0 });
-    heroIO.observe(heroSec);
-  }
+    /* campo de dobras — senos cruzados com fase nao-linear */
+    function fold(x, k, t) {
+      var u = x * 0.0036 + t * 0.34;
+      var v = x * 0.0074 - t * 0.47;
+      var w = x * 0.0014 + t * 0.12;
+      return Math.sin(u + k * 11.0 + Math.sin(v + k * 5.5) * 2.1) * 0.55
+           + Math.sin(v * 1.6 + k * 19.0 - Math.sin(w * 2.3 + t * 0.26) * 1.5) * 0.34
+           + Math.sin(w * 3.4 + k * 7.0 + t * 0.6) * 0.42;
+    }
+
+    /* fases das vagas — recalculadas 1x por frame */
+    var vk1 = 0, vk2 = 0, vk3 = 0, vq1 = 0, vq2 = 0, vq3 = 0, vA1 = 0, vA2 = 0, vA3 = 0;
+    function prepararVagas(t) {
+      vk1 = TAU * VAGAS[0][3] / VAGAS[0][0]; vq1 = -t * TAU / VAGAS[0][1] + VAGAS[0][4]; vA1 = VAGAS[0][2] * VNORM;
+      vk2 = TAU * VAGAS[1][3] / VAGAS[1][0]; vq2 = -t * TAU / VAGAS[1][1] + VAGAS[1][4]; vA2 = VAGAS[1][2] * VNORM;
+      vk3 = TAU * VAGAS[2][3] / VAGAS[2][0]; vq3 = -t * TAU / VAGAS[2][1] + VAGAS[2][4]; vA3 = VAGAS[2][2] * VNORM;
+    }
+    function vagaEm(x) {
+      return Math.sin(x * vk1 + vq1) * vA1 + Math.sin(x * vk2 + vq2) * vA2 + Math.sin(x * vk3 + vq3) * vA3;
+    }
+
+    function desenharPasse(t, n, baseAlpha, lw, corFn, fase, interativo) {
+      octx.lineWidth = lw;
+      var cellInv = TCELLS / W;
+      var nOndas = ondas.length;
+      for (var i = 0; i < n; i++) {
+        var k = n === 1 ? 1 : i / (n - 1);
+        var yBase = H + 14 - spanAtual * Math.pow(k, 1.18) + Math.sin(t * 0.4 + k * 6.0) * 6;
+        var amp = (30 + 55 * k) * (0.9 + 0.1 * Math.sin(t * 0.3 + k * 11));
+        var flick = 0.80 + 0.20 * Math.sin(t * 0.9 + k * 21 + fase * 40);
+        var a = baseAlpha * (0.45 + 0.55 * (1 - k)) * flick;
+        if (a < 0.004) continue;
+        var heave = 10 + 24 * k;
+        octx.strokeStyle = corFn(k, a);
+        octx.beginPath();
+        for (var x = -24; x <= W + 24; x += passoX) {
+          var swn = Math.sin(x * vk1 + vq1) * vA1 + Math.sin(x * vk2 + vq2) * vA2 + Math.sin(x * vk3 + vq3) * vA3;
+          var ampL = amp * (1 + 0.35 * swn);
+          var foldV = fold(x, k + fase, t);
+          var y = yBase + swn * heave + foldV * ampL;
+          if (interativo) {
+            if (temVento) {
+              var c = (x * cellInv) | 0;
+              if (c < 0) c = 0; else if (c >= TCELLS) c = TCELLS - 1;
+              var e = tE[c];
+              if (e > 0.02) {
+                var dvy = yBase - tY[c];
+                var g = e * Math.exp(dvy * dvy * VENTO_R2);
+                if (g > 0.01) {
+                  if (g > 1) g = 1;
+                  y += foldV * ampL * VENTO_AMP * g + g * 7 * Math.sin(x * 0.045 + t * 7.3);
+                }
+              }
+            }
+            for (var oi = 0; oi < nOndas; oi++) {
+              var od = ondas[oi];
+              var dx = x - od.x;
+              if (dx > od.win || dx < -od.win) continue;
+              var dyy = yBase - od.y;
+              var dd = Math.sqrt(dx * dx + dyy * dyy) - od.R;
+              if (dd > 130 || dd < -130) continue;
+              y += Math.exp(dd * dd * SPLASH_S2) * Math.sin(dd * SPLASH_K) * SPLASH_AMP * od.fade;
+            }
+          }
+          if (x === -24) octx.moveTo(x, y); else octx.lineTo(x, y);
+        }
+        octx.stroke();
+      }
+    }
+
+    function quadro(now, estatico) {
+      var t = (now - t0) / 1000 + 11.3;
+      prepararVagas(t);
+
+      var fracScroll = rolagem / docH; if (fracScroll > 1) fracScroll = 1;
+      var mare = MARE_AMP * Math.sin(t * TAU / MARE_T) + MARE_SCROLL * fracScroll;
+      var bandTop = H * (BAND_BASE - mare) - rolagem * PARALAXE;
+      var minTop = H * 0.20;
+      if (bandTop < minTop) bandTop = minTop;
+      spanAtual = H - bandTop;
+
+      octx.clearRect(0, 0, W, H);
+      octx.globalCompositeOperation = 'lighter';
+      octx.drawImage(amb, 0, 0, W, H);
+
+      var interativo = !estatico;
+
+      /* passada 1 — corpo caustico em VERMELHO FUNDIDO (#e50914 → #b00710) */
+      desenharPasse(t, (N1_BASE * fator) | 0, 0.148, 1.4, function (k, a) {
+        var r = 234 - 38 * k, g = 36 - 20 * k, b = 22 - 12 * k;
+        return 'rgba(' + (r | 0) + ',' + (g | 0) + ',' + (b | 0) + ',' + a + ')';
+      }, 0, interativo);
+
+      /* passada 2 — filamentos LARANJA-BRASA (#ff5a1f); o 'lighter' soma
+         os cruzamentos em branco-quente (picos do metal derretido) */
+      desenharPasse(t, (N2_BASE * fator) | 0, 0.20, 1.0, function (k, a) {
+        return 'rgba(255,' + ((124 - 44 * k) | 0) + ',' + ((48 - 24 * k) | 0) + ',' + a + ')';
+      }, 0.006, interativo);
+
+      /* fagulhas de solda — spray quando a crista da vaga passa */
+      for (var si = 0; si < FAISCAS.length; si++) {
+        var s = FAISCAS[si];
+        var aF;
+        if (!estatico) {
+          var swS = vagaEm(s.x * W);
+          var spray = swS > 0.3 ? (swS - 0.3) * 1.6 : 0;
+          s.p += s.s * (1 + spray * 1.5) / 60;
+          if (s.p > 1) { s.p = 0; s.x = Math.random(); }
+          aF = Math.sin(Math.PI * s.p) * (0.28 + 0.22 * Math.sin(t * 3 + s.tw)) * (1 + spray);
+        } else {
+          aF = Math.sin(Math.PI * s.p) * 0.3;
+        }
+        if (aF <= 0) continue;
+        if (aF > 0.9) aF = 0.9;
+        octx.fillStyle = 'rgba(255,176,104,' + aF.toFixed(3) + ')';
+        octx.beginPath();
+        octx.arc(s.x * W, H - s.p * H * 0.55, s.r, 0, TAU);
+        octx.fill();
+      }
+
+      if (interativo) {
+        /* aneis do splash + flash central (respingo de metal) */
+        for (var oi2 = ondas.length - 1; oi2 >= 0; oi2--) {
+          var od2 = ondas[oi2];
+          var aA = od2.fade * 0.45;
+          if (aA > 0.005) {
+            octx.strokeStyle = 'rgba(255,140,72,' + aA.toFixed(3) + ')';
+            octx.lineWidth = 2.2;
+            octx.beginPath(); octx.arc(od2.x, od2.y, od2.R, 0, TAU); octx.stroke();
+            octx.strokeStyle = 'rgba(255,224,190,' + (aA * 0.55).toFixed(3) + ')';
+            octx.lineWidth = 1.2;
+            octx.beginPath(); octx.arc(od2.x, od2.y, od2.R * 0.82, 0, TAU); octx.stroke();
+            var rFl = 70 + od2.R * 0.45;
+            var gf = octx.createRadialGradient(od2.x, od2.y, 0, od2.x, od2.y, rFl);
+            gf.addColorStop(0, 'rgba(255,190,130,' + (od2.fade * od2.fade * 0.34).toFixed(3) + ')');
+            gf.addColorStop(0.55, 'rgba(230,64,22,' + (od2.fade * od2.fade * 0.13).toFixed(3) + ')');
+            gf.addColorStop(1, 'rgba(0,0,0,0)');
+            octx.fillStyle = gf;
+            octx.fillRect(od2.x - rFl, od2.y - rFl, rFl * 2, rFl * 2);
+          }
+        }
+        /* coroa de fagulhas do splash */
+        for (var bi = borrifos.length - 1; bi >= 0; bi--) {
+          var b = borrifos[bi], pb = (now - b.t) / 900;
+          if (pb >= 1) { borrifos.splice(bi, 1); continue; }
+          var bx = b.x + b.vx * pb, by = b.y + b.vy * pb + 260 * pb * pb;
+          var ab = (1 - pb) * (1 - pb) * 0.8;
+          octx.fillStyle = 'rgba(255,182,110,' + ab.toFixed(3) + ')';
+          octx.beginPath(); octx.arc(bx, by, b.r * (1 - pb * 0.5) * 1.3, 0, TAU); octx.fill();
+        }
+        /* brilho que segue o cursor (a "mao na forja"): +40% de luz local */
+        if (ventoGlow > 0.02 && mxS > -9e3) {
+          var bandTopAtual = H - spanAtual;
+          var fadeV = 1 - (bandTopAtual - myS) / 260;
+          if (fadeV > 1) fadeV = 1;
+          if (fadeV > 0.02) {
+            var gm = octx.createRadialGradient(mxS, myS, 0, mxS, myS, 210);
+            gm.addColorStop(0, 'rgba(255,150,84,' + (0.20 * ventoGlow * fadeV).toFixed(3) + ')');
+            gm.addColorStop(0.55, 'rgba(220,50,18,' + (0.08 * ventoGlow * fadeV).toFixed(3) + ')');
+            gm.addColorStop(1, 'rgba(0,0,0,0)');
+            octx.fillStyle = gm;
+            octx.fillRect(mxS - 210, myS - 210, 420, 420);
+          }
+        }
+      }
+
+      octx.globalCompositeOperation = 'source-over';
+
+      /* blit: offscreen ~0.6x ampliado (o upscale suaviza o brilho) */
+      ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(off, 0, 0, off.width, off.height, 0, 0, W, H);
+    }
+
+    function passo(now) {
+      raf = 0;
+      if (!rodando) return;
+      var dt = lastT ? now - lastT : 16.7;
+      if (dt > 100) dt = 16.7;
+      lastT = now;
+      emaDt += (dt - emaDt) * 0.08;
+      /* governor: filamentos → escala do offscreen → passo. COM RECUPERACAO:
+         cai com EMA>26ms; 3s de frames bons (EMA<19ms) desfazem 1 degrau.
+         Os primeiros 4s pos-load nao contam (EMA poluida pela carga). */
+      if (emaDt > 26 && now - t0 > 4000 && now - lastDrop > 1500 && nivel < 3) {
+        nivel++; lastDrop = now; emaDt = 16.7; bomDesde = 0;
+        if (nivel === 1) fator = 0.66;
+        else if (nivel === 2) { marS = Math.max(0.42, marS0 - 0.12); medir(); }
+        else { fator = 0.5; passoX = PASSO0 + 3; }
+      } else if (nivel > 0) {
+        if (emaDt < 19) {
+          if (!bomDesde) bomDesde = now;
+          else if (now - bomDesde > 3000) {
+            nivel--; lastDrop = now; emaDt = 16.7; bomDesde = 0;
+            if (nivel === 2) { fator = 0.66; passoX = PASSO0; }
+            else if (nivel === 1) { marS = marS0; medir(); }
+            else fator = 1;
+          }
+        } else if (emaDt > 21) bomDesde = 0;
+      }
+      /* decaimento do rastro do vento (~1.5s) e do brilho do cursor */
+      if (temVento || ventoGlow > 0.01) {
+        var dk = Math.exp(-dt / VENTO_DECAI), maxE = 0;
+        for (var c = 0; c < TCELLS; c++) {
+          var e = tE[c];
+          if (e > 0.001) { e *= dk; tE[c] = e; if (e > maxE) maxE = e; }
+          else if (e) tE[c] = 0;
+        }
+        temVento = maxE > 0.02;
+        ventoGlow *= dk;
+      }
+      /* cursor suavizado (lerp) */
+      if (temMouse) {
+        if (mxS < -9e3) { mxS = mx; myS = my; }
+        mxS += (mx - mxS) * 0.22; myS += (my - myS) * 0.22;
+      }
+      /* aneis do splash avancam e esmaecem */
+      for (var i = ondas.length - 1; i >= 0; i--) {
+        var od = ondas[i], p = (now - od.t) / SPLASH_MS;
+        if (p >= 1) { ondas.splice(i, 1); continue; }
+        var ease = 1 - (1 - p) * (1 - p);
+        od.R = 36 + (SPLASH_R - 36) * ease;
+        od.fade = (1 - p) * (1 - p);
+        od.win = od.R + 150;
+      }
+      quadro(now, false);
+      raf = requestAnimationFrame(passo);
+    }
+    /* o mar so aparece atras das secoes translucidas (hero, #diferenciais,
+       #contato); no miolo claro da pagina e no rodape ele fica 100% coberto
+       por secoes opacas — o motor dorme para nao queimar frame invisivel */
+    var marVisivel = true;
+
+    function liga() {
+      var quer = !document.hidden && marVisivel;
+      if (quer === rodando) return;
+      rodando = quer;
+      lastT = 0;
+      if (rodando && !raf) raf = requestAnimationFrame(passo);
+    }
+
+    medir();
+
+    if (reduceMotion) { /* forja congelada num instante bonito — sem animacao */
+      quadro(t0 + 4000, true);
+      window.addEventListener('resize', function () { medir(); quadro(t0 + 4000, true); });
+      return;
+    }
+
+    (function vigiarCobertura() {
+      var alvos = document.querySelectorAll('#hero, #diferenciais, #contato');
+      if (!alvos.length || !('IntersectionObserver' in window)) return;
+      var estado = new WeakMap();
+      var io = new IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) estado.set(entries[i].target, entries[i].isIntersecting);
+        var algum = false;
+        for (var j = 0; j < alvos.length; j++) if (estado.get(alvos[j])) { algum = true; break; }
+        marVisivel = algum;
+        liga();
+      }, { rootMargin: '80px 0px' });
+      for (var k = 0; k < alvos.length; k++) io.observe(alvos[k]);
+    })();
+
+    window.addEventListener('resize', function () { medir(); });
+    window.addEventListener('scroll', function () { rolagem = window.scrollY || 0; }, { passive: true });
+
+    if (!COARSE) { /* pointer:coarse fica autonomo: vagas + mare seguem sozinhas */
+      window.addEventListener('mousemove', function (ev) {
+        mx = ev.clientX; my = ev.clientY; temMouse = true;
+        if (lmx > -9e3) {
+          var dxm = mx - lmx, dym = my - lmy;
+          var spd = Math.sqrt(dxm * dxm + dym * dym);
+          if (spd > 0) {
+            var dep = spd * 0.022; if (dep > 0.5) dep = 0.5;
+            var c0 = (mx / W * TCELLS) | 0;
+            for (var o = -2; o <= 2; o++) {
+              var cc = c0 + o;
+              if (cc < 0 || cc >= TCELLS) continue;
+              var wgt = o === 0 ? 1 : (o === -1 || o === 1) ? 0.62 : 0.25;
+              var nv = tE[cc] + dep * wgt;
+              tY[cc] = tE[cc] > 0.01 ? tY[cc] + (my - tY[cc]) * 0.45 : my;
+              tE[cc] = nv > 1 ? 1 : nv;
+            }
+            temVento = true;
+            ventoGlow += spd * 0.006; if (ventoGlow > 1) ventoGlow = 1;
+          }
+        }
+        lmx = mx; lmy = my;
+      });
+      document.documentElement.addEventListener('mouseleave', function () {
+        temMouse = false; mx = my = lmx = lmy = -1e4;
+      });
+      window.addEventListener('pointerdown', function (ev) {
+        ondas.push({ x: ev.clientX, y: ev.clientY, t: performance.now(), R: 36, fade: 1, win: 190 });
+        if (ondas.length > 3) ondas.shift();
+        for (var i = 0; i < 14; i++) {
+          var ang = -Math.PI * (0.15 + Math.random() * 0.7);
+          var vel = 90 + Math.random() * 220;
+          borrifos.push({
+            x: ev.clientX, y: ev.clientY,
+            vx: Math.cos(ang) * vel * (Math.random() < 0.5 ? 1 : -1),
+            vy: Math.sin(ang) * vel,
+            r: 0.8 + Math.random() * 1.4,
+            t: performance.now()
+          });
+        }
+        if (borrifos.length > 60) borrifos.splice(0, borrifos.length - 60);
+      });
+    }
+
+    document.addEventListener('visibilitychange', liga);
+    liga();
+  })();
 
   /* ================================================================
-     7. CARROSSEL DE DEPOIMENTOS (auto + dots + swipe)
+     7. CARROSSEL DE DEPOIMENTOS
+        3 cards visíveis no desktop + setas < > + dots + contador
+        "X de 10" + swipe. Autoplay pausa no hover/foco e, após
+        interação manual (seta, dot ou swipe), fica 15s parado.
      ================================================================ */
   const track = $('#reviewsTrack');
   const cards = $$('.review-card', track);
   const dotsWrap = $('#reviewsDots');
-  let index = 0, autoTimer;
+  const revPrev = $('#revPrev');
+  const revNext = $('#revNext');
+  const revCount = $('#reviewsCount');
+  const revShell = $('.reviews-shell');
+  let index = 0, autoTimer, manualHold = null;
 
-  // cria dots
-  cards.forEach((_, i) => {
-    const b = document.createElement('button');
-    b.setAttribute('aria-label', 'Depoimento ' + (i + 1));
-    if (i === 0) b.classList.add('active');
-    b.addEventListener('click', () => { goTo(i); restartAuto(); });
-    dotsWrap.appendChild(b);
-  });
+  // dots: um por POSIÇÃO alcançável (não por card — com 3 cards visíveis
+  // no desktop só existem maxIndex+1 posições; dots a mais ficariam mortos).
+  // Reconstruídos no resize, quando o nº de posições muda.
+  function buildDots() {
+    const n = maxIndex() + 1;
+    if (dotsWrap.children.length === n) return;
+    dotsWrap.textContent = '';
+    for (let i = 0; i < n; i++) {
+      const b = document.createElement('button');
+      b.setAttribute('aria-label', 'Ir para o depoimento ' + (i + 1));
+      if (i === index) b.classList.add('active');
+      b.addEventListener('click', () => { goTo(i); manualPause(); });
+      dotsWrap.appendChild(b);
+    }
+  }
 
   function cardStep() {
     // largura do card + gap
@@ -298,31 +620,51 @@
     index = Math.max(0, Math.min(i, maxIndex()));
     track.style.transform = `translateX(${ -index * cardStep() }px)`;
     $$('button', dotsWrap).forEach((d, di) => d.classList.toggle('active', di === index));
+    if (revCount) revCount.textContent = (index + 1) + ' de ' + cards.length;
+    if (revPrev) revPrev.disabled = index <= 0;
+    if (revNext) revNext.disabled = index >= maxIndex();
   }
   function next() { goTo(index >= maxIndex() ? 0 : index + 1); }
 
   let reviewsVisible = false;
   function startAuto() { clearInterval(autoTimer); autoTimer = setInterval(next, 3800); }
-  function restartAuto() { clearInterval(autoTimer); if (reviewsVisible) startAuto(); }
+  // interação manual: autoplay para por 15s e depois retoma sozinho
+  function manualPause() {
+    clearInterval(autoTimer);
+    clearTimeout(manualHold);
+    manualHold = setTimeout(() => { manualHold = null; if (reviewsVisible) startAuto(); }, 15000);
+  }
+
+  // setas laterais (o cliente navega no próprio ritmo)
+  if (revPrev) revPrev.addEventListener('click', () => { goTo(index - 1); manualPause(); });
+  if (revNext) revNext.addEventListener('click', () => { goTo(index + 1); manualPause(); });
 
   // autoplay só com a seção visível (economia fora do viewport)
   new IntersectionObserver(([e]) => {
     reviewsVisible = e.isIntersecting;
-    if (e.isIntersecting) startAuto();
+    if (e.isIntersecting) { if (!manualHold) startAuto(); }
     else clearInterval(autoTimer);
   }, { threshold: 0 }).observe($('#avaliacoes'));
 
-  // pausa no hover
-  track.addEventListener('mouseenter', () => clearInterval(autoTimer));
-  track.addEventListener('mouseleave', () => { if (reviewsVisible) startAuto(); });
-  window.addEventListener('resize', () => goTo(index));
+  // pausa no hover e no foco de teclado (setas/dots/cards)
+  if (revShell) {
+    revShell.addEventListener('mouseenter', () => clearInterval(autoTimer));
+    revShell.addEventListener('mouseleave', () => { if (reviewsVisible && !manualHold) startAuto(); });
+    revShell.addEventListener('focusin', () => clearInterval(autoTimer));
+    revShell.addEventListener('focusout', e => {
+      if (!revShell.contains(e.relatedTarget) && reviewsVisible && !manualHold) startAuto();
+    });
+  }
+  window.addEventListener('resize', () => { buildDots(); goTo(index); });
+  buildDots();
+  goTo(0); // estado inicial: contador + setas
 
   // swipe no mobile
   let startX = 0;
   track.addEventListener('touchstart', e => (startX = e.touches[0].clientX), { passive: true });
   track.addEventListener('touchend', e => {
     const dx = e.changedTouches[0].clientX - startX;
-    if (Math.abs(dx) > 50) { dx < 0 ? next() : goTo(index - 1); restartAuto(); }
+    if (Math.abs(dx) > 50) { dx < 0 ? next() : goTo(index - 1); manualPause(); }
   }, { passive: true });
 
   /* ================================================================
@@ -626,7 +968,6 @@
     const heroEl = $('#hero');
     const content = $('.hero-content');
     const lines = $('.diagonal-lines');
-    const heroGrid = $('.hero-grid');
     const seal = $('.circular-seal');
     let hx = 0, hy = 0, hTx = 0, hTy = 0, hRaf = null;
 
@@ -637,11 +978,13 @@
       if (lines) lines.style.transform = `translate(${hx * -34}px, ${hy * -22}px)`;
       // 3º passe: o selo circular flutua em contra-fase (mais profundidade)
       if (seal) seal.style.transform = `translate(${hx * -20}px, ${hy * -14}px)`;
-      if (heroGrid) heroGrid.style.setProperty('--gx', (hx * -26).toFixed(2) + 'px');
       if (Math.abs(hTx - hx) + Math.abs(hTy - hy) > 0.001) hRaf = requestAnimationFrame(heroDepth);
       else hRaf = null;
     }
     heroEl.addEventListener('pointermove', e => {
+      // em perf-lite a paralaxe do hero descansa (repintar o H1 gigante
+      // com text-shadow a cada frame custa caro em máquinas fracas)
+      if (document.body.classList.contains('perf-lite')) return;
       hTx = e.clientX / innerWidth - 0.5;
       hTy = e.clientY / innerHeight - 0.5;
       if (!hRaf) hRaf = requestAnimationFrame(heroDepth);
@@ -1056,6 +1399,9 @@
     if (!hasFinePointer || reduceMotion) return;
 
     window.addEventListener('pointermove', e => {
+      // em perf-lite o realce vermelho da grade sai de cena (repaint caro);
+      // a grade base estática continua desenhada
+      if (document.body.classList.contains('perf-lite')) return;
       pos.x = e.clientX + PAD;
       pos.y = e.clientY + PAD - (window.scrollY * GRID_PAR) % GRID_STEP;
       lastMove = performance.now();
@@ -1158,8 +1504,8 @@
      27b. GOVERNADOR DE FPS — qualidade adaptativa
          Mede o rAF real por ~1,8s depois do load. Se a máquina não
          sustenta ~46fps, entra em body.perf-lite: pausa as camadas
-         puramente decorativas (aurora, grão, listras, blobs) e corta
-         os light trails pela metade. Máquinas boas ficam com tudo.
+         puramente decorativas (aurora, grão, listras, blobs).
+         Máquinas boas ficam com tudo.
      ================================================================ */
   (function perfGovernor() {
     if (reduceMotion) return;
@@ -1170,11 +1516,9 @@
         frames++;
         if (now - t0 < 1800) { requestAnimationFrame(probe); return; }
         const fps = frames / ((now - t0) / 1000);
-        if (fps < 46) {
-          document.body.classList.add('perf-lite');
-          TRAIL_LAYERS.forEach(l => { l.count = Math.max(3, Math.round(l.count / 2)); });
-          if (trails.length) makeTrails();
-        }
+        // corta só as camadas decorativas CSS; o mar de metal fundido
+        // tem governor próprio (EMA com histerese) e se adapta sozinho
+        if (fps < 46) document.body.classList.add('perf-lite');
       }
       requestAnimationFrame(probe);
     }, 1500); // deixa o jank de load passar antes de medir

@@ -49,16 +49,22 @@
   }
   </script>
 
-  <!-- ===== Google Fonts: Sora (display) + Inter (corpo) + Barlow Condensed (micro-labels racing) ===== -->
+  <!-- ===== Google Fonts: Archivo (display expandido 800/900 + subtítulo 400/500) + Inter (corpo) + Barlow Condensed (micro-labels racing) ===== -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,125,800;0,125,900&family=Inter:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' font-family='sans-serif' font-weight='bold' fill='%23e50914'>I</text></svg>" />
+  <!-- favicon: versão mínima da logomarca vetorial (paralelogramo vermelho + banda de pneu) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M16 10h42l-10 44H6z' fill='%23e50914'/><path d='M24 46l8-7 8 7M24 33l8-7 8 7M24 20l8-7 8 7' fill='none' stroke='white' stroke-width='5'/></svg>" />
 </head>
 
 <body>
+
+  <!-- MAR DE METAL FUNDIDO: canvas fixed z-negativo atrás de tudo.
+       As seções claras são opacas e cobrem; nas escuras o metal aparece
+       na faixa inferior (motor portado do "mar de ouro" da Eletronic). -->
+  <canvas id="bgLive" aria-hidden="true"></canvas>
 
   <!-- ===================================================== -->
   <!-- BARRA DE PROGRESSO DE SCROLL (topo da página)         -->
@@ -83,13 +89,19 @@
   <header class="navbar" id="navbar">
     <div class="container nav-inner">
       <a href="#hero" class="logo" aria-label="IndyCar Centro Automotivo - início">
-        <!-- Logo oficial (arquivo logo.png na mesma pasta). Fallback em texto se faltar o arquivo. -->
-        <img class="logo-img" src="logo.png" alt="IndyCar Centro Automotivo"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
-        <span class="logo-fallback" style="display:none">
-          <span class="logo-fallback-name"><span class="lg-indy">INDY</span> <span class="lg-car">CAR</span></span>
-          <span class="logo-sub">CENTRO AUTOMOTIVO</span>
-        </span>
+        <!-- Logomarca vetorial (recriação fiel da logo.png, sem fundo):
+             banda de pneu + paralelogramo vermelho INDY CAR + CENTRO AUTOMOTIVO -->
+        <svg class="logo-svg" viewBox="0 0 320 66" role="img" aria-label="IndyCar Centro Automotivo">
+          <g class="logo-tread" transform="translate(14 0) skewX(-14)" fill="none" stroke="currentColor" stroke-width="5.5">
+            <path d="M0 13.5 L12 6.5 M18 6.5 L30 13.5" />
+            <path d="M0 24.5 L12 17.5 M18 17.5 L30 24.5" />
+            <path d="M0 35.5 L12 28.5 M18 28.5 L30 35.5" />
+            <path d="M0 46.5 L12 39.5 M18 39.5 L30 46.5" />
+          </g>
+          <path class="logo-plate" d="M64 2 H318 L307.5 44 H53.5 Z" fill="#e50914" />
+          <text class="logo-name" x="78" y="33" transform="skewX(-10)" textLength="218" lengthAdjust="spacingAndGlyphs">INDY CAR</text>
+          <text class="logo-sub-t" x="7" y="62" textLength="300" lengthAdjust="spacing">CENTRO AUTOMOTIVO</text>
+        </svg>
       </a>
 
       <nav class="nav-links" id="navLinks" aria-label="Navegação principal">
@@ -112,10 +124,6 @@
   <!-- 2. HERO SECTION                                       -->
   <!-- ===================================================== -->
   <section class="hero" id="hero">
-    <!-- Grid em perspectiva (pista de corrida em movimento) -->
-    <div class="hero-grid" aria-hidden="true"></div>
-    <!-- Canvas com rede de partículas interativa (reage ao mouse) -->
-    <canvas class="hero-canvas" id="heroCanvas"></canvas>
     <!-- Linhas diagonais decorativas -->
     <div class="diagonal-lines" aria-hidden="true"></div>
     <!-- LightRays (port React Bits): feixes vermelhos muito sutis descendo do topo -->
@@ -630,8 +638,16 @@
       </div>
     </div>
 
-    <!-- Carrossel -->
-    <div class="reviews-viewport">
+    <!-- Carrossel: 3 cards visíveis no desktop + setas de navegação.
+         PARA ADICIONAR NOVOS DEPOIMENTOS REAIS DO GOOGLE: copie um
+         <article class="review-card">…</article> abaixo, cole no fim da
+         lista e troque texto/nome/iniciais. NUNCA invente depoimentos —
+         só publique avaliações reais de clientes. -->
+    <div class="reviews-shell">
+      <button class="rev-arrow rev-prev" id="revPrev" aria-label="Ver depoimentos anteriores">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="reviews-viewport">
       <div class="reviews-track" id="reviewsTrack">
 
         <article class="review-card">
@@ -725,10 +741,17 @@
         </article>
 
       </div>
+      </div>
+      <button class="rev-arrow rev-next" id="revNext" aria-label="Ver próximos depoimentos">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
     </div>
 
     <!-- Controles -->
-    <div class="reviews-dots" id="reviewsDots"></div>
+    <div class="reviews-controls">
+      <div class="reviews-dots" id="reviewsDots"></div>
+      <span class="reviews-count" id="reviewsCount" aria-live="polite">1 de 10</span>
+    </div>
   </section>
 
   <!-- ===================================================== -->
@@ -831,13 +854,18 @@
   <footer class="footer">
     <div class="container footer-grid">
       <div class="footer-brand">
-        <a href="#hero" class="logo">
-          <img class="logo-img" src="logo.png" alt="IndyCar Centro Automotivo"
-               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
-          <span class="logo-fallback" style="display:none">
-            <span class="logo-fallback-name"><span class="lg-indy">INDY</span> <span class="lg-car">CAR</span></span>
-            <span class="logo-sub">CENTRO AUTOMOTIVO</span>
-          </span>
+        <a href="#hero" class="logo" aria-label="IndyCar Centro Automotivo - voltar ao topo">
+          <svg class="logo-svg" viewBox="0 0 320 66" role="img" aria-label="IndyCar Centro Automotivo">
+            <g class="logo-tread" transform="translate(14 0) skewX(-14)" fill="none" stroke="currentColor" stroke-width="5.5">
+              <path d="M0 13.5 L12 6.5 M18 6.5 L30 13.5" />
+              <path d="M0 24.5 L12 17.5 M18 17.5 L30 24.5" />
+              <path d="M0 35.5 L12 28.5 M18 28.5 L30 35.5" />
+              <path d="M0 46.5 L12 39.5 M18 39.5 L30 46.5" />
+            </g>
+            <path class="logo-plate" d="M64 2 H318 L307.5 44 H53.5 Z" fill="#e50914" />
+            <text class="logo-name" x="78" y="33" transform="skewX(-10)" textLength="218" lengthAdjust="spacingAndGlyphs">INDY CAR</text>
+            <text class="logo-sub-t" x="7" y="62" textLength="300" lengthAdjust="spacing">CENTRO AUTOMOTIVO</text>
+          </svg>
         </a>
         <p>Referência em oficina mecânica em Taubaté. Confiança, velocidade e excelência técnica para o seu veículo.</p>
         <div class="footer-rating">★★★★★ <span>4,8 · +1.200 avaliações no Google</span></div>
