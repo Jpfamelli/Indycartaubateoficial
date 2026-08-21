@@ -1486,7 +1486,7 @@
   (function circularSeal() {
     const rotor = $('#sealRotor');
     if (!rotor) return;
-    const TEXT = 'ESPECIALISTA EM CÂMBIO AUTOMÁTICO • +18 ANOS • ';
+    const TEXT = 'ESPECIALISTA EM MECÂNICA EM GERAL • +18 ANOS • ';
     const chars = [...TEXT];
     const step = 360 / chars.length;
     const frag = document.createDocumentFragment();
