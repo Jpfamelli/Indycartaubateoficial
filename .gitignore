@@ -9,3 +9,12 @@ desktop.ini
 
 # Logs
 *.log
+
+# Ferramentas e verificação local
+node_modules/
+.netlify/
+.qa-profile/
+qa-*.png
+melhorar.cjs
+finalizar.cjs
+verificar.cjs

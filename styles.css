@@ -1446,3 +1446,20 @@ body.tc-light .tc-dot { background: #17181c; box-shadow: none; }
   .btn-cta-nav { padding: 11px 22px; font-size: .95rem; }
   .hamburger { display: flex; }
 }
+
+/* Acesso por teclado e movimento reduzido — 09/10/2026 */
+:focus-visible { outline: 3px solid #ffbf47; outline-offset: 5px; }
+.skip-link { position: fixed; top: 8px; left: 8px; z-index: 99999; padding: 12px 18px; background: #fff; color: #111; transform: translateY(-160%); }
+.skip-link:focus { transform: none; }
+.service-actions { flex-wrap: wrap; }
+.service-link { white-space: normal; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+
+html, body { max-width: 100%; overflow-x: clip; }
+@media (max-width: 600px) { .service-actions { gap: 8px; } .service-link { font-size: .82rem; } }
+
+@media (max-width: 600px) { .btn { white-space: normal; max-width: 100%; text-align: center; } .promo-modal .btn { width: 100%; } }

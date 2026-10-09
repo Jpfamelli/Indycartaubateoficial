@@ -29,3 +29,8 @@ Basta abrir o `index.html` no navegador. (Ou: `npx serve .`)
 
 ### Domínio próprio
 Registre `indycartaubateoficial.com.br` no registro.br e aponte o DNS para o host escolhido.
+
+## Produção oficial
+https://indycar-taubate.netlify.app/
+
+Publicar de dentro desta pasta: `npx netlify-cli link --name indycar-taubate` e `npx netlify-cli deploy --prod --dir .`. Sem build. Conteúdo aprovado e lista da rodada em MELHORIAS.md.

@@ -35,7 +35,7 @@
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
-  toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }));
 
   /* ================================================================
      2. MENU MOBILE (hamburger)
@@ -53,6 +53,7 @@
     navLinks.classList.toggle('open', open);
     hamburger.setAttribute('aria-expanded', String(open));
   });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && navLinks.classList.contains('open')) { closeMenu(); hamburger.focus(); } });
   // fecha ao clicar num link
   $$('.nav-link', navLinks).forEach(a => a.addEventListener('click', closeMenu));
 
@@ -754,7 +755,7 @@
       `*Nome:* ${encodeURIComponent(name.value.trim())}%0A` +
       `*Telefone:* ${encodeURIComponent(phone.value.trim())}%0A` +
       `*Serviço:* ${encodeURIComponent(service.value)}%0A` +
-      (car ? `*Veículo:* ${encodeURIComponent(car)}%0A` : '') +
+      (car ? `*Carro:* ${encodeURIComponent(car)}%0A` : '') +
       `%0AGostaria de agendar um diagnóstico gratuito.`;
 
     launchConfetti();                 // 🎉 bandeira quadriculada
@@ -776,60 +777,22 @@
   const spClose = $('#spClose');
 
   const proofs = [
-    ['🛢️', 'Marcelo, do Centro', 'fez Troca de Óleo de Motor no Onix'],
-    ['⚙️', 'Patrícia, de Taubaté', 'fez diálise no câmbio do Corolla'],
-    ['🛑', 'Anderson, do Belém', 'trocou Pastilhas e Discos do HB20'],
-    ['🔧', 'Camila, de Tremembé', 'trocou os Amortecedores do Gol'],
-    ['🛞', 'Família Souza', 'comprou Pneus e fez Alinhamento 3D na Toro'],
-    ['🏁', 'Thiago, do Parque Paduan', 'aprovou o orçamento do Civic'],
-    ['🚗', 'Juliana, de Pindamonhangaba', 'usou o Leva e Traz com o Kwid'],
-    ['🔩', 'Fernando, de Caçapava', 'trocou a Correia Dentada do Palio'],
-    ['🧰', 'Bruna, do Jardim das Nações', 'fez Diagnóstico com Scanner no Creta'],
-    ['🛠️', 'Mariana, de Taubaté', 'trocou a Embreagem do Uno'],
-    ['💧', 'Eduardo, da Estiva', 'fez Limpeza de Bicos no Argo'],
-    ['🔧', 'Vanessa, do Gurilândia', 'fez Revisão de Suspensão do Mobi'],
-    ['🏎️', 'Rafael, de Tremembé', 'fez Revisão de Motor no Cruze'],
-    ['🛞', 'Aline, do Independência', 'fez Balanceamento no Sandero'],
-    ['🚙', 'Gustavo, de São José dos Campos', 'trouxe a Compass para revisão'],
-    ['⚙️', 'Leandro, do Cataguá', 'aprovou reparo de câmbio da Renegade'],
-    ['🛑', 'Priscila, de Taubaté', 'resolveu o chiado dos Freios do Polo'],
-    ['🚗', 'Renato, do Parque Paduan', 'pediu o Leva e Traz para o Virtus'],
-    ['🔋', 'Sandra, do Belém', 'fez Diagnóstico Eletrônico no T-Cross'],
-    ['🏁', 'Felipe, de Quiririm', 'parcelou em 10x o serviço da Strada'],
-    ['🛢️', 'Débora, do Cecap', 'fez Troca de Óleo no Tracker'],
-    ['🔧', 'Wesley, do Jardim Russi', 'trocou os Amortecedores da Hilux'],
-    ['⚙️', 'Cristiane, de Roseira', 'fez Troca de Óleo de Câmbio no City'],
-    ['🛞', 'Márcio, da Vila São José', 'comprou 4 Pneus para o Duster'],
-    ['💧', 'Larissa, de Aparecida', 'fez Limpeza de Bicos no Ka'],
-    ['🛑', 'Diego, do Parque São Luís', 'trocou Pastilhas e Discos do Cronos'],
-    ['🔩', 'Simone, de Guaratinguetá', 'trocou a Correia Dentada do Voyage'],
-    ['🏎️', 'Adriana, da Cidade Jardim', 'fez Revisão de Motor no Yaris'],
-    ['🚗', 'Paulo, de Lorena', 'usou o Leva e Traz com a S10'],
-    ['🧰', 'Letícia, do Bonfim', 'fez Diagnóstico com Scanner no Nivus'],
-    ['🛠️', 'Roberto, do Jardim Eulália', 'trocou a Embreagem da Saveiro'],
-    ['⚙️', 'Fabiana, de Campos Elíseos', 'fez diálise no câmbio do Kicks'],
-    ['🛞', 'Henrique, da Vila Aparecida', 'fez Alinhamento 3D no Fastback'],
-    ['🔧', 'Natália, do Jd. Maria Augusta', 'fez Revisão de Suspensão do Spin'],
-    ['🛢️', 'Roberta, de Redenção da Serra', 'fez Troca de Óleo na Ranger'],
-    ['🛑', 'Daniel, da Água Quente', 'resolveu os Freios do Pulse'],
-    ['🏁', 'Michele, de Jambeiro', 'fechou orçamento e parcelou em 10x'],
-    ['🔋', 'Sérgio, da Esplanada', 'fez Diagnóstico no Corolla Cross'],
-    ['🚙', 'Beatriz, de Monteiro Lobato', 'trouxe o Tiguan para revisão'],
+    ['🔎', 'Diagnóstico digital gratuito', 'Scanner + foto · cerca de 30 minutos'],
+    ['🛠️', 'Garantia de 12 meses', 'Em peças e mão de obra'],
+    ['🕗', 'Segunda a sábado', '8h às 17h30 · agende pelo WhatsApp'],
   ];
   let proofIdx = 0, proofDismissed = false, toastActive = false;
 
-  // Horário comercial: Seg–Sex 08h–18h · Sáb 08h–12h · Dom fechado
+  // Horário comercial: Seg–Sáb 8h–17h30 · Dom fechado
   function isBusinessHours() {
-    const now = new Date();
-    const day = now.getDay();                       // 0 = domingo ... 6 = sábado
-    const h = now.getHours() + now.getMinutes() / 60;
-    if (day >= 1 && day <= 5) return h >= 8 && h < 18;  // seg a sex
-    if (day === 6) return h >= 8 && h < 12;             // sábado
-    return false;                                       // domingo
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
+    const part = type => parts.find(p => p.type === type).value;
+    const minutes = Number(part('hour')) * 60 + Number(part('minute'));
+    return part('weekday') !== 'Sun' && minutes >= 480 && minutes < 1050;
   }
 
   function showNextProof() {
-    if (proofDismissed || toastActive) return;
+    if (proofDismissed || toastActive || document.hidden || reduceMotion) return;
     // FORA do horário comercial: não mostra "fulano agendou tal coisa"
     if (!isBusinessHours()) return;
     const [emoji, name, action] = proofs[proofIdx % proofs.length];

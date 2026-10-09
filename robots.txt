@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://indycar-taubate.netlify.app/sitemap.xml
