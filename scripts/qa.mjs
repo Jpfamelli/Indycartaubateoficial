@@ -31,7 +31,7 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(f).pipe(res);
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
-const BASE = 'http://127.0.0.1:' + server.address().port;
+const BASE = (process.env.QA_URL || 'http://127.0.0.1:' + server.address().port).replace(/\/$/, ''); // QA_URL=https://... testa produção
 fs.mkdirSync(OUT, { recursive: true });
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run', '--no-default-browser-check'] });

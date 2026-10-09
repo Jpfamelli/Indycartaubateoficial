@@ -14,3 +14,4 @@ package.json
 package-lock.json
 render.yaml
 oficina-2.png
+dist/**

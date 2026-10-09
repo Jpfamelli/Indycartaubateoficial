@@ -21,3 +21,4 @@ verificar.cjs
 .publicacao/
 .publicacao.zip
 qa-out/
+dist/

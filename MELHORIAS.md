@@ -77,3 +77,5 @@
 72. Teste automático versionado (scripts/qa.mjs, `npm test`): 375 e 1440 px, rolagem horizontal, console, links de WhatsApp, JSON-LD, FAQ, imagens, mapa, formulário, popover, vocabulário, CLS, privacidade e 404.
 73. Ações da faixa "Limpeza de Bicos" não ficam mais cortadas no celular.
 74. Carrossel e mira do cursor protegidos (sem erro sem depoimentos; mira só some sobre o mapa carregado).
+75. Publicação por `npm run publicar` (pasta dist/ só com o site): o deploy por `--dir .` expunha scripts/, package.json, .md e qa-out (o netlify-cli não respeita o .netlifyignore); conferido 404 em produção.
+76. Teste roda também contra produção (`QA_URL=https://indycar-taubate.netlify.app npm test`): tudo certo no ar.

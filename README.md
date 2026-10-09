@@ -36,7 +36,7 @@ Registre `indycartaubateoficial.com.br` no registro.br e aponte o DNS para o hos
 ## Produção oficial
 https://indycar-taubate.netlify.app/
 
-Publicar de dentro desta pasta: `npx netlify-cli link --name indycar-taubate` e `npx netlify-cli deploy --prod --dir .`. Sem build. Conteúdo aprovado e lista da rodada em MELHORIAS.md.
+Publicar de dentro desta pasta: `npx netlify-cli link --name indycar-taubate` (só na 1ª vez) e `npm run publicar` — monta `dist/` só com os arquivos do site e roda `npx netlify-cli deploy --prod --dir dist`. Não use `--dir .`: o netlify-cli ignora o .netlifyignore e publicaria scripts, package.json e .md. Depois confira com `QA_URL=https://indycar-taubate.netlify.app npm test`. Sem build. Conteúdo aprovado e lista da rodada em MELHORIAS.md.
 
 ## Testar
 `npm install` uma vez e `npm test`: abre o site no Chrome instalado (puppeteer-core) em 375 e 1440 px e confere rolagem horizontal, erros de console, links de WhatsApp (mensagem pronta + código "(site/<serviço>)" + UTM), JSON-LD, FAQ, imagens, mapa sob demanda, formulário, vocabulário e CLS. Capturas em `qa-out/` (fora do git e do deploy).
