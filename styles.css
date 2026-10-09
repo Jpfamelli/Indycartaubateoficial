@@ -4,6 +4,17 @@
    Paleta: #0a0a0a (preto) · #e50914 (vermelho-corrida) · #d4a853 (dourado)
    ==================================================================== */
 
+/* ===== FONTE DE RESERVA COM A MESMA LARGURA DA ARCHIVO EXPANDIDA =====
+   Enquanto a Archivo (Google Fonts, display=swap) não chega, o título usa
+   Arial Black/Arial ajustadas para ocupar a mesma largura: as linhas quebram
+   no mesmo lugar e o hero não pula quando a fonte troca (CLS). */
+@font-face { font-family: 'Archivo Fallback'; src: local('Arial Black'), local('ArialBlack'), local('Arial-Black'); size-adjust: 117%; }
+@font-face { font-family: 'Archivo Fallback 2'; src: local('Arial Bold'), local('Arial-BoldMT'); size-adjust: 134%; }
+@font-face { font-family: 'Inter Fallback'; src: local('Arial'), local('ArialMT'); size-adjust: 106%; }
+@font-face { font-family: 'Archivo Text Fallback'; src: local('Arial'), local('ArialMT'); size-adjust: 99%; }
+@font-face { font-family: 'Barlow Fallback'; src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Narrow'); size-adjust: 91%; }
+@font-face { font-family: 'Barlow Fallback 2'; src: local('Arial Bold'), local('Arial-BoldMT'); size-adjust: 74%; }
+
 /* ===== DESIGN TOKENS ===== */
 :root {
   --black:      #0a0a0a;
@@ -22,9 +33,9 @@
   --gray-2:     #6c6c72;
   --wa:         #25d366;
 
-  --font-display: 'Archivo', 'Inter', sans-serif;
-  --font-cond:    'Barlow Condensed', sans-serif;
-  --font-body:    'Inter', sans-serif;
+  --font-display: 'Archivo', 'Archivo Fallback', 'Archivo Fallback 2', 'Inter', sans-serif;
+  --font-cond:    'Barlow Condensed', 'Barlow Fallback', 'Barlow Fallback 2', sans-serif;
+  --font-body:    'Inter', 'Inter Fallback', sans-serif;
 
   /* tema claro (seções .sec-light) */
   --lt-bg:      #fafafa;
@@ -33,7 +44,7 @@
   --lt-line:    #e2e4e9;
   --lt-ink:     #17181c;
   --lt-ink-2:   #55575f;
-  --lt-ink-3:   #83858d;
+  --lt-ink-3:   #696b73;
 
   --max:    1200px;
   --radius: 14px;
@@ -287,7 +298,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* subtítulo em Archivo regular (largura normal): leve, elegante, respirado */
 .hero-subtitle {
-  font-family: 'Archivo', var(--font-body); font-weight: 400; font-stretch: 100%;
+  font-family: 'Archivo', 'Archivo Text Fallback', var(--font-body); font-weight: 400; font-stretch: 100%;
   font-size: clamp(1.02rem, 1.8vw, 1.22rem); letter-spacing: .008em;
   color: #b9bac2; max-width: 640px; margin-bottom: 26px; line-height: 1.62;
 }
@@ -375,7 +386,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .about-pillar:hover { transform: translateX(6px); border-color: rgba(229,9,20,.5); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
 .ap-ico { flex: none; width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; background: rgba(229,9,20,.12); color: var(--red); border: 1px solid rgba(229,9,20,.25); }
 .ap-ico svg { width: 26px; height: 26px; }
-.about-pillar h4 { font-family: var(--font-cond); font-weight: 700; font-size: 1.25rem; letter-spacing: .01em; margin-bottom: 5px; }
+.about-pillar h4, .about-pillar .h-sub { font-family: var(--font-cond); font-weight: 700; font-size: 1.25rem; letter-spacing: .01em; margin-bottom: 5px; }
 .about-pillar p { color: var(--gray); font-size: .95rem; }
 .about-cta { margin-top: 6px; }
 .about-photo {
@@ -477,7 +488,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .why-item-ico { flex: none; width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.1); color: var(--gold); border: 1px solid rgba(255,255,255,.2); transition: transform .3s; }
 .why-item-ico svg { width: 26px; height: 26px; }
 .why-item:hover .why-item-ico { transform: scale(1.1) rotate(5deg); }
-.why-item h4 { font-family: var(--font-cond); font-weight: 700; font-size: 1.3rem; margin-bottom: 4px; }
+.why-item h4, .why-item .h-sub { font-family: var(--font-cond); font-weight: 700; font-size: 1.3rem; margin-bottom: 4px; }
 .why-item p { color: var(--gray); font-size: .96rem; }
 
 /* contadores */
@@ -593,7 +604,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .footer-brand .logo { margin-bottom: 4px; }
 .footer-rating { color: var(--gold); letter-spacing: 2px; }
 .footer-rating span { color: var(--gray); font-size: .85rem; letter-spacing: 0; margin-left: 8px; }
-.footer-col h5 { font-family: var(--font-cond); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 1rem; margin-bottom: 18px; color: #fff; }
+.footer-col h5, .footer-col .footer-h { font-family: var(--font-cond); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 1rem; margin-bottom: 18px; color: #fff; }
 .footer-col a, .footer-col span { display: block; color: var(--gray); font-size: .94rem; margin-bottom: 11px; transition: color .2s; }
 .footer-col a:hover { color: var(--red); }
 .footer-bottom { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 50px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--gray); font-size: .85rem; }
@@ -835,7 +846,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .hero-title.st-split { opacity: 1; transform: none; } /* o reveal passa a ser por letra */
 .hero-title .st-word { display: inline-block; }
 .hero-title .st-char { display: inline-block; opacity: 0; transform: translateY(.55em); will-change: transform, opacity; }
-.hero-title.in .st-char { animation: stCharIn .7s var(--ease) both; animation-delay: calc(var(--i) * 26ms); }
+.hero-title.in .st-char { animation: stCharIn .7s var(--ease) both; animation-delay: calc(var(--i) * 12ms); }
 @keyframes stCharIn {
   from { opacity: 0; transform: translateY(.55em) rotate(5deg); }
   to   { opacity: 1; transform: none; }
@@ -904,7 +915,7 @@ body.tc-on, body.tc-on *:not(input):not(select):not(textarea) { cursor: none; }
 }
 .hero-title.st-split.in .text-red .st-char {
   animation: stCharIn .7s var(--ease) both, redFlow 7s linear infinite;
-  animation-delay: calc(var(--i) * 26ms), 0s;
+  animation-delay: calc(var(--i) * 12ms), 0s;
 }
 @keyframes redFlow {
   from { background-position: calc(var(--i) * -14px) 0; }
@@ -1118,7 +1129,7 @@ body.perf-lite .cta-embers { display: none; }
   box-shadow: 0 10px 30px rgba(23,24,28,.06);
 }
 .sec-light .about-pillar:hover { border-color: rgba(229,9,20,.4); box-shadow: 0 18px 44px rgba(23,24,28,.12); }
-.sec-light .about-pillar h4 { color: var(--lt-ink); }
+.sec-light .about-pillar h4, .sec-light .about-pillar .h-sub { color: var(--lt-ink); }
 .sec-light .about-pillar p { color: var(--lt-ink-2); }
 .sec-light .about-pillar::after {
   mix-blend-mode: multiply;
@@ -1463,3 +1474,115 @@ html, body { max-width: 100%; overflow-x: clip; }
 @media (max-width: 600px) { .service-actions { gap: 8px; } .service-link { font-size: .82rem; } }
 
 @media (max-width: 600px) { .btn { white-space: normal; max-width: 100%; text-align: center; } .promo-modal .btn { width: 100%; } }
+
+/* ====================================================================
+   RODADA 2 (09/10/2026) — diagnóstico passo a passo, garantia,
+   avaliações honestas, mapa sob demanda, mini-descrições de serviço
+   ==================================================================== */
+main:focus { outline: none; }
+.footer-bottom a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.footer-bottom a:hover { color: var(--red); }
+
+/* descrição curta visível nos cards compactos (antes só no tooltip) */
+.svc-mini-desc { font-size: .86rem; line-height: 1.4; margin: 2px 0 8px; color: var(--gray); }
+.sec-light .service-card .svc-mini-desc { color: var(--lt-ink-2); }
+
+/* "também fazemos" — fita técnica abaixo do bento */
+.svc-more { margin-top: 34px; display: grid; grid-template-columns: auto 1fr auto; gap: 18px 26px; align-items: center;
+  padding: 20px 24px; border: 1px dashed #c9ccd3; border-radius: var(--radius); background: rgba(255,255,255,.55); }
+.svc-more-tag { font-family: var(--font-cond); font-weight: 700; letter-spacing: .26em; font-size: .8rem; color: #c40812; }
+.svc-more-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 10px; }
+.svc-more-list li { font-size: .88rem; color: var(--lt-ink); background: #fff; border: 1px solid var(--lt-line); border-radius: 30px; padding: 5px 12px; }
+.svc-more .service-link { white-space: nowrap; }
+
+/* COMO FUNCIONA O DIAGNÓSTICO — "pit lane" de 4 boxes */
+.diag { overflow: hidden; }
+.diag-steps { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; position: relative; }
+.diag-steps::before { content: ""; position: absolute; left: 0; right: 0; top: 37px; height: 2px;
+  background: repeating-linear-gradient(90deg, rgba(255,255,255,.28) 0 14px, transparent 14px 26px); }
+.diag-step { position: relative; padding: 0 4px; }
+.diag-n { display: inline-grid; place-items: center; width: 76px; height: 76px; border-radius: 50%;
+  font-family: var(--font-display); font-weight: 900; font-stretch: 125%; font-size: 1.7rem; color: #fff;
+  background: #121216; border: 2px solid rgba(255,255,255,.18); position: relative; z-index: 1; margin-bottom: 18px; }
+.diag-step--hot .diag-n { background: var(--red); border-color: var(--red); box-shadow: 0 0 0 6px rgba(229,9,20,.18), 0 0 34px var(--red-glow); }
+.diag-meta { display: block; font-family: var(--font-cond); font-weight: 700; letter-spacing: .18em; text-transform: uppercase; font-size: .8rem; color: #ff4d55; margin-bottom: 6px; }
+.diag-step h3 { font-family: var(--font-display); font-weight: 800; font-size: 1.32rem; line-height: 1.15; margin-bottom: 8px; color: #fff; }
+.diag-step p { color: #c4c4ca; font-size: .97rem; }
+.diag-cta { margin-top: 46px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; }
+.diag-note { color: #b4b4ba; font-family: var(--font-cond); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: .9rem; }
+
+/* GARANTIA — numeral gigante + lista */
+.warranty-grid { display: grid; grid-template-columns: minmax(220px, 360px) 1fr; gap: 56px; align-items: center; }
+.warranty-num { display: grid; justify-items: start; line-height: .8; }
+.warranty-num b { font-family: var(--font-display); font-weight: 900; font-stretch: 125%; font-size: clamp(7rem, 17vw, 13rem); color: var(--red); letter-spacing: -.04em; }
+.warranty-num span { font-family: var(--font-cond); font-weight: 700; letter-spacing: .5em; text-transform: uppercase; color: var(--lt-ink); font-size: 1.15rem; margin-top: 14px; padding-left: .3em; }
+.warranty-text .section-head { margin-bottom: 22px; }
+.warranty-list { list-style: none; display: grid; gap: 14px; margin-bottom: 24px; }
+.warranty-list li { padding-left: 22px; position: relative; color: var(--lt-ink-2); font-size: 1.02rem; }
+.warranty-list li::before { content: ""; position: absolute; left: 0; top: .55em; width: 10px; height: 10px; background: var(--red); transform: skewX(-14deg); }
+.warranty-list strong { color: var(--lt-ink); }
+.warranty-link, .rv-wa { font-family: var(--font-cond); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--lt-ink); text-decoration: underline; text-decoration-color: var(--red); text-underline-offset: 5px; }
+.warranty-link:hover, .rv-wa:hover { color: #c40812; }
+
+/* AVALIAÇÕES — placa de nota + caminhos para o Google */
+.rv-card { max-width: 920px; margin: 0 auto; display: grid; grid-template-columns: auto 1fr; gap: 40px; align-items: center;
+  padding: 34px 40px; background: var(--lt-card); border: 1px solid var(--lt-line); border-radius: 18px; box-shadow: 0 18px 50px rgba(23,24,28,.08); position: relative; overflow: hidden; }
+.rv-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--red); }
+.rv-score { display: grid; grid-template-columns: auto auto; column-gap: 16px; align-items: center; }
+.rv-stars { grid-column: 1 / -1; color: var(--red); letter-spacing: 4px; font-size: 1.1rem; }
+.rv-num { font-family: var(--font-display); font-weight: 900; font-stretch: 125%; font-size: 4.6rem; line-height: 1; color: var(--lt-ink); }
+.rv-of { color: var(--lt-ink-2); font-size: .95rem; line-height: 1.35; }
+.rv-of b { color: var(--lt-ink); }
+.rv-actions { display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: center; }
+.btn-ink { background: var(--lt-ink); color: #fff; }
+.btn-ink:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(23,24,28,.3); }
+.rv-wa { flex-basis: 100%; font-size: .92rem; }
+
+/* MAPA SOB DEMANDA */
+.contact-map { background: #111216; display: grid; }
+.map-ph { position: relative; display: grid; place-content: center; justify-items: center; gap: 8px; text-align: center; padding: 34px 22px; min-height: 440px;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(229,9,20,.20), transparent 42%),
+    linear-gradient(32deg, transparent 47%, rgba(255,255,255,.07) 47% 49%, transparent 49%),
+    linear-gradient(-58deg, transparent 60%, rgba(255,255,255,.05) 60% 61.5%, transparent 61.5%),
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px) 0 0 / 34px 34px,
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px) 0 0 / 34px 34px; }
+.map-pin { width: 54px; height: 54px; filter: drop-shadow(0 8px 18px rgba(229,9,20,.5)); margin-bottom: 6px; }
+.map-ph strong { font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; color: #fff; }
+.map-ph > span { color: #c4c4ca; }
+.map-ph-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 14px 0 6px; }
+.map-ph small { color: #a4a4aa; font-size: .8rem; }
+.contact-map.map-on .map-ph { display: none; }
+.contact-map.map-on iframe { width: 100%; height: 100%; min-height: 440px; }
+
+/* formulário: erro do telefone */
+.field-err { color: #ff6b73; font-size: .82rem; }
+.form-mini a { color: inherit; text-decoration: underline; }
+
+@media (max-width: 1024px) {
+  .diag-steps { grid-template-columns: repeat(2, 1fr); row-gap: 34px; }
+  .diag-steps::before { display: none; }
+  .svc-more { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .diag-steps { grid-template-columns: 1fr; gap: 0; }
+  .diag-step { display: grid; grid-template-columns: 58px 1fr; column-gap: 16px; padding-bottom: 26px; }
+  .diag-step::before { content: ""; position: absolute; left: 28px; top: 58px; bottom: 0; width: 2px; background: repeating-linear-gradient(180deg, rgba(255,255,255,.25) 0 8px, transparent 8px 15px); }
+  .diag-step:last-child::before { display: none; }
+  .diag-n { grid-row: span 3; width: 58px; height: 58px; font-size: 1.25rem; margin-bottom: 0; }
+  .diag-step h3 { font-size: 1.18rem; }
+  .warranty-grid { grid-template-columns: 1fr; gap: 18px; }
+  .warranty-num { grid-auto-flow: column; align-items: end; justify-content: start; gap: 14px; }
+  .warranty-num b { font-size: 6.4rem; }
+  .warranty-num span { margin: 0 0 10px; }
+  .rv-card { grid-template-columns: 1fr; gap: 22px; padding: 26px 22px 26px 28px; }
+  .rv-actions .btn { width: 100%; justify-content: center; }
+  .svc-more .service-link { white-space: normal; }
+  .map-ph, .contact-map.map-on iframe { min-height: 340px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .diag-step--hot .diag-n { box-shadow: 0 0 0 6px rgba(229,9,20,.18); }
+}
+
+/* faixa "Limpeza de Bicos": no celular as ações quebram linha em vez de cortar */
+@media (max-width: 760px) { .service-actions--strip { margin-left: 0; flex: 1 1 100%; min-width: 0; } }

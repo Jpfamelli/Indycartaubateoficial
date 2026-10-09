@@ -1,0 +1,13 @@
+{
+  "name": "indycar-landing",
+  "private": true,
+  "description": "Site da IndyCar Centro Automotivo Taubaté (estático, sem build). Dependências só para o teste automático.",
+  "type": "module",
+  "scripts": {
+    "test": "node scripts/qa.mjs",
+    "serve": "npx serve ."
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.0.0"
+  }
+}

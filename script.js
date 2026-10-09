@@ -583,7 +583,9 @@
         "X de 10" + swipe. Autoplay pausa no hover/foco e, após
         interação manual (seta, dot ou swipe), fica 15s parado.
      ================================================================ */
+  (function carrossel() {
   const track = $('#reviewsTrack');
+  if (!track || !$('.review-card', track)) return;
   const cards = $$('.review-card', track);
   const dotsWrap = $('#reviewsDots');
   const revPrev = $('#revPrev');
@@ -667,6 +669,7 @@
     const dx = e.changedTouches[0].clientX - startX;
     if (Math.abs(dx) > 50) { dx < 0 ? next() : goTo(index - 1); manualPause(); }
   }, { passive: true });
+  })();
 
   /* ================================================================
      8. MODAIS — promoção (ao carregar) e agendamento/orçamento
@@ -723,10 +726,20 @@
   });
 
   // promo aparece após 8s (uma vez por sessão)
-  if (!sessionStorage.getItem('indycar_promo')) {
+  const sessao = {
+    get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
+    set(k, v) { try { sessionStorage.setItem(k, v); } catch (_) {} }
+  };
+  // quem já clicou no WhatsApp não precisa do convite
+  document.addEventListener('click', e => {
+    if (e.target.closest && e.target.closest('a[href*="wa.me"]')) sessao.set('indycar_promo', '1');
+  });
+  if (!sessao.get('indycar_promo')) {
     setTimeout(() => {
-      if (!formBackdrop.classList.contains('open')) openEl(promoBackdrop);
-      sessionStorage.setItem('indycar_promo', '1');
+      if (sessao.get('indycar_promo')) return;
+      const algoAberto = formBackdrop.classList.contains('open') || ($('#revPop') && !$('#revPop').hidden);
+      if (!algoAberto) openEl(promoBackdrop);
+      sessao.set('indycar_promo', '1');
     }, 8000);
   }
 
@@ -742,12 +755,16 @@
 
     // validação simples com feedback visual
     let ok = true;
+    const digitos = phone.value.replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
+    const foneOk = digitos.length === 10 || digitos.length === 11;
     [name, phone, service].forEach(f => {
-      const bad = !f.value.trim();
+      const bad = !f.value.trim() || (f === phone && !foneOk);
       f.classList.toggle('invalid', bad);
+      f.setAttribute('aria-invalid', String(bad));
       if (bad) ok = false;
     });
-    if (!ok) { (name.value ? phone : name).focus(); return; }
+    $('#fPhoneErr').hidden = foneOk || !phone.value.trim();
+    if (!ok) { [name, phone, service].find(f => f.classList.contains('invalid')).focus(); return; }
 
     const car = $('#fCar').value.trim();
     const msg =
@@ -756,10 +773,10 @@
       `*Telefone:* ${encodeURIComponent(phone.value.trim())}%0A` +
       `*Serviço:* ${encodeURIComponent(service.value)}%0A` +
       (car ? `*Carro:* ${encodeURIComponent(car)}%0A` : '') +
-      `%0AGostaria de agendar um diagnóstico gratuito.`;
+      `%0AGostaria de agendar um diagnóstico gratuito. (site/formulario)`;
 
     launchConfetti();                 // 🎉 bandeira quadriculada
-    window.open(`https://wa.me/${WPHONE}?text=${msg}`, '_blank');
+    window.open(`https://wa.me/${WPHONE}?text=${msg}&utm_source=site&utm_medium=whatsapp&utm_campaign=formulario`, '_blank', 'noopener');
     closeEl(formBackdrop);
     form.reset();
     showToast('✅', 'Pedido enviado!', 'Continue a conversa pelo WhatsApp.');
@@ -767,7 +784,10 @@
 
   // limpa o estado inválido ao digitar
   $$('#leadForm input, #leadForm select').forEach(f =>
-    f.addEventListener('input', () => f.classList.remove('invalid')));
+    f.addEventListener('input', () => {
+      f.classList.remove('invalid'); f.removeAttribute('aria-invalid');
+      if (f.id === 'fPhone') $('#fPhoneErr').hidden = true;
+    }));
 
   /* ================================================================
      10. PROVA SOCIAL — notificações rotativas (canto inferior esq.)
@@ -1248,7 +1268,7 @@
     // sobre o iframe do mapa o pointermove não dispara: esconde a mira lá
     const mapWrap = $('.contact-map');
     if (mapWrap) {
-      mapWrap.addEventListener('mouseenter', () => tcShow(false));
+      mapWrap.addEventListener('mouseenter', () => { if ($('iframe', mapWrap)) tcShow(false); });
       mapWrap.addEventListener('mouseleave', () => tcShow(true));
     }
     window.addEventListener('mousedown', () => (targetScale = .9));
@@ -1813,53 +1833,24 @@
     const title = $('#revPopTitle');
     const waLink = $('#revPopWa');
     const closeBtn = $('#revPopClose');
-
-    // fonte da verdade: os depoimentos reais publicados no carrossel
-    const src = $$('#reviewsTrack .review-card').map(c => ({
-      stars: ($('.review-stars', c) || {}).textContent || '★★★★★',
-      text: ($('.review-text', c) || {}).textContent || '',
-      name: ($('.review-author strong', c) || {}).textContent || '',
-      meta: ($('.review-author small', c) || {}).textContent || '',
-      color: ($('.review-avatar', c) ? $('.review-avatar', c).style.getPropertyValue('--c') : '') || '#e50914',
-      initials: ($('.review-avatar', c) || {}).textContent || ''
-    }));
-
-    // índices do carrossel por assunto citado no texto:
-    // 0 Carlos (suspensão + diagnóstico) · 3 Juliana (freios) ·
-    // 4 Marcos (revisão completa) · 5 Patrícia (alinhamento/balanceamento) ·
-    // 6 Anderson (câmbio automático) · 9 Luciana (kit de embreagem)
-    const MAP = {
-      cambio: [6], scanner: [0], motor: [4], freios: [3],
-      alinhamento: [5], embreagem: [9], suspensao: [0],
-      oleo: [], amortecedores: [], correia: [], pneus: [], bicos: []
-    };
-
     let trigger = null;
-    const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
 
     function render(key, serviceName) {
-      const idxs = MAP[key] || [];
       title.textContent = 'Avaliações — ' + serviceName;
+      const slug = 'avaliacao-' + (key || 'servico');
       waLink.href = 'https://wa.me/' + WPHONE + '?text=' +
-        encodeURIComponent('Olá! Já fiz ' + serviceName + ' na IndyCar e quero contar como foi.');
-      if (idxs.length) {
-        body.innerHTML = idxs.map(i => {
-          const r = src[i];
-          if (!r) return '';
-          return '<div class="rev-pop-item">' +
-            '<span class="rp-stars" aria-hidden="true">' + esc(r.stars) + '</span>' +
-            '<p>' + esc(r.text) + '</p>' +
-            '<div class="rp-author"><span class="rp-avatar" style="--c:' + esc(r.color) + '" aria-hidden="true">' + esc(r.initials) + '</span>' +
-            '<span><strong>' + esc(r.name) + '</strong><small>' + esc(r.meta) + '</small></span></div>' +
-            '</div>';
-        }).join('');
-      } else {
-        body.innerHTML =
-          '<div class="rev-pop-empty">' +
-          '<span class="rp-big">4,8<small> / 5</small></span>' +
-          '<p>Ainda não publicamos aqui um depoimento específico deste serviço — mas nossa nota agregada no Google é <strong>4,8</strong>, com <strong>+1.200 avaliações</strong> reais de clientes.</p>' +
-          '</div>';
-      }
+        encodeURIComponent('Olá! Vim pelo site. Já fiz ' + serviceName + ' na IndyCar e quero contar como foi. (site/' + slug + ')') +
+        '&utm_source=site&utm_medium=whatsapp&utm_campaign=' + slug;
+      body.textContent = '';
+      const box = document.createElement('div');
+      box.className = 'rev-pop-empty';
+      const big = document.createElement('span');
+      big.className = 'rp-big';
+      big.innerHTML = '4,8<small> / 5</small>';
+      const p = document.createElement('p');
+      p.textContent = 'Nossa nota no Google é 4,8, com mais de 1.200 avaliações. Não publicamos depoimento por serviço aqui: leia as avaliações reais direto no Google.';
+      box.append(big, p);
+      body.appendChild(box);
     }
 
     function openPop(btn) {
@@ -1894,6 +1885,24 @@
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     });
+  })();
+
+  /* ================================================================
+     40. MAPA SOB DEMANDA — nada do Google carrega antes do clique.
+     ================================================================ */
+  (function mapaSobDemanda() {
+    const box = $('#mapBox'), btn = $('#mapLoad');
+    if (!box || !btn) return;
+    btn.addEventListener('click', () => {
+      const f = document.createElement('iframe');
+      f.title = 'Mapa da IndyCar Centro Automotivo, Av. Bandeirantes 875, Taubaté';
+      f.src = box.dataset.mapSrc;
+      f.loading = 'lazy';
+      f.referrerPolicy = 'no-referrer-when-downgrade';
+      box.classList.add('map-on');
+      box.appendChild(f);
+      f.focus();
+    }, { once: true });
   })();
 
   /* ================================================================

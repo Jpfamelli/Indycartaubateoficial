@@ -12,11 +12,14 @@
 
   <!-- Open Graph -->
   <meta property="og:title" content="IndyCar Centro Automotivo Taubaté" />
-  <meta property="og:description" content="A oficina que os melhores motoristas de Taubaté confiam. Diagnóstico gratuito e sem compromisso." />
+  <meta property="og:description" content="Oficina mecânica em Taubaté. Diagnóstico digital gratuito (scanner + foto, ~30 min) e garantia de 12 meses em peças e mão de obra." />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="pt_BR" />
   <meta property="og:url" content="https://indycar-taubate.netlify.app/" />
-  <meta property="og:image" content="https://indycar-taubate.netlify.app/oficina-fachada.png" />
+  <meta property="og:image" content="https://indycar-taubate.netlify.app/og-indycar.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:type" content="image/jpeg" />
 
   <!-- Dados estruturados: negócio local (oficina) -->
   <script type="application/ld+json">
@@ -24,9 +27,15 @@
   "@context": "https://schema.org",
   "@type": "AutoRepair",
   "name": "IndyCar Centro Automotivo",
-  "description": "Oficina mecânica em Taubaté-SP: especialistas em mecânica em geral — revisões, câmbio, freios, suspensão e diagnóstico eletrônico. Leva e traz em Taubaté (consulte condições).",
+  "description": "Oficina mecânica em Taubaté-SP: mecânica em geral para carros nacionais e importados — revisões, troca de óleo do câmbio automático por diálise, freios, suspensão, alinhamento e diagnóstico com scanner. Diagnóstico digital gratuito e garantia de 12 meses em peças e mão de obra.",
+  "slogan": "Quem conhece, Indyca!",
+  "hasMap": "https://www.google.com/maps/search/?api=1&query=IndyCar+Centro+Automotivo+Av.+Bandeirantes+875+Taubat%C3%A9",
+  "contactPoint": [
+    { "@type": "ContactPoint", "telephone": "+55-12-99683-0272", "contactType": "customer service", "availableLanguage": "Portuguese" },
+    { "@type": "ContactPoint", "telephone": "+55-12-3624-5957", "contactType": "customer service", "availableLanguage": "Portuguese" }
+  ],
   "url": "https://indycar-taubate.netlify.app/",
-  "image": "https://indycar-taubate.netlify.app/oficina-fachada.png",
+  "image": ["https://indycar-taubate.netlify.app/oficina-fachada.jpg", "https://indycar-taubate.netlify.app/og-indycar.jpg"],
   "telephone": "+55-12-99683-0272",
   "address": {
     "@type": "PostalAddress",
@@ -51,11 +60,6 @@
       "closes": "17:30"
     }
   ],
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "4.8",
-    "reviewCount": "1200"
-  },
   "priceRange": "$$",
   "sameAs": [
     "https://www.instagram.com/indycartaubateoficial/",
@@ -66,7 +70,25 @@
     "@type": "City",
     "name": "Taubaté"
   },
-  "logo": "https://indycar-taubate.netlify.app/logo.png"
+  "logo": "https://indycar-taubate.netlify.app/logo.png",
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Serviços",
+    "itemListElement": [
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Diagnóstico digital com scanner" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Troca de óleo de câmbio automático por diálise" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Troca de óleo de motor" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Pastilhas e discos de freio" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Troca de amortecedores" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Correia dentada" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Venda de pneus com montagem" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Alinhamento e balanceamento" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Troca de embreagem" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Revisão de motor" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Revisão de suspensão" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Limpeza de bicos injetores" } }
+    ]
+  }
 }
   </script>
 
@@ -88,7 +110,7 @@
       "name": "O diagnóstico é pago?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Não. O diagnóstico digital é gratuito e sem compromisso, com scanner + foto, em cerca de 30 minutos. Usamos o scanner para identificar falhas com precisão. Você acompanha tudo, entende o defeito e só aprova o que for necessário."
+        "text": "Não. O diagnóstico digital é gratuito e sem compromisso, com scanner + foto, em cerca de 30 minutos. Usamos o scanner para identificar falhas com precisão. Você acompanha tudo, entende o defeito e só aprova o que for necessário. Veja o passo a passo."
       }
     },
     {
@@ -104,7 +126,7 @@
       "name": "Como funciona a troca de óleo do câmbio via máquina (diálise)?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Fazemos a troca total do fluido 100% na máquina (diálise), renovando todo o óleo e protegendo o conversor de torque. Poucos fazem como a gente. Quer saber se serve para o seu carro? É só chamar no WhatsApp."
+        "text": "Fazemos a troca total do fluido 100% na máquina (diálise), renovando todo o óleo e protegendo o conversor de torque. Quer saber se serve para o seu carro? É só chamar no WhatsApp."
       }
     },
     {
@@ -112,7 +134,7 @@
       "name": "Vocês buscam e entregam meu carro?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Sim! Nosso Leva e Traz em Taubaté (consulte condições): consulte disponibilidade e condições para buscar e devolver o seu carro, para você não precisar parar o seu dia."
+        "text": "Temos o Leva e Traz em Taubaté, conforme disponibilidade e condições. Pergunte no WhatsApp antes de agendar que a gente confirma para o seu caso."
       }
     },
     {
@@ -144,7 +166,7 @@
       "name": "Onde fica a oficina?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Na Av. Bandeirantes, 875 – Parque Paduan, Taubaté-SP (CEP 12070-100) — o mapa está logo abaixo, na seção de contato. E se ficar melhor para você, o Leva e Traz em Taubaté (consulte) busca e devolve o seu carro em Taubaté."
+        "text": "Na Av. Bandeirantes, 875 – Parque Paduan, Taubaté-SP (CEP 12070-100). O mapa e o botão de rota estão na seção de contato. Se ficar melhor para você, pergunte sobre o Leva e Traz em Taubaté (consulte condições)."
       }
     },
     {
@@ -154,6 +176,14 @@
         "@type": "Answer",
         "text": "Aqui a transparência é absoluta: você acompanha o diagnóstico, entende o defeito e aprova apenas o necessário — sem surpresas na hora de pagar. Qualquer dúvida durante o serviço, é só falar com a gente no WhatsApp (12) 99683-0272 ou no fixo (12) 3624-5957."
       }
+    },
+    {
+      "@type": "Question",
+      "name": "Tem algum serviço que vocês não fazem?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sim. Não fazemos funilaria e pintura, carga de gás ou conserto do ar-condicionado (a higienização a gente faz), parte elétrica como alternador e motor de arranque, reparo interno de câmbio automático, retífica de motor, GNV nem guincho. Também não atendemos carros 100% elétricos, rebaixados, modificados ou caminhões. Na dúvida, pergunte no WhatsApp."
+      }
     }
   ]
 }</script>
@@ -161,23 +191,26 @@
   <!-- ===== Google Fonts: Archivo (display expandido 800/900 + subtítulo 400/500/600) + Inter (corpo) + Barlow Condensed (micro-labels racing) ===== -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,100,600;0,125,800;0,125,900&family=Inter:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+  <!-- fontes fora do caminho crítico: a página pinta já com as reservas calibradas (styles.css) e troca sem pulo -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,100,600;0,125,800;0,125,900&amp;family=Inter:wght@400;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,100,600;0,125,800;0,125,900&amp;family=Inter:wght@400;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,100,600;0,125,800;0,125,900&amp;family=Inter:wght@400;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" /></noscript>
 
   <link rel="stylesheet" href="styles.css" />
   <!-- favicon: versão mínima da logomarca vetorial (paralelogramo vermelho + banda de pneu) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M16 10h42l-10 44H6z' fill='%23e50914'/><path d='M24 46l8-7 8 7M24 33l8-7 8 7M24 20l8-7 8 7' fill='none' stroke='white' stroke-width='5'/></svg>" />
   <link rel="canonical" href="https://indycar-taubate.netlify.app/" />
   <meta property="og:site_name" content="IndyCar Centro Automotivo" />
-  <meta property="og:image:alt" content="Fachada da IndyCar em Taubaté" />
+  <meta property="og:image:alt" content="IndyCar Taubaté: diagnóstico digital gratuito com scanner + foto" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="IndyCar Centro Automotivo Taubaté" />
   <meta name="twitter:description" content="Diagnóstico digital gratuito com scanner + foto. Quem conhece, Indyca! 🏎" />
-  <meta name="twitter:image" content="https://indycar-taubate.netlify.app/oficina-fachada.png" />
+  <meta name="twitter:image" content="https://indycar-taubate.netlify.app/og-indycar.jpg" />
   <link rel="manifest" href="manifest.webmanifest" />
 </head>
 
 <body>
-  <a class="skip-link" href="#servicos">Pular para os serviços</a>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 
   <!-- MAR DE METAL FUNDIDO: canvas fixed z-negativo atrás de tudo.
        As seções claras são opacas e cobrem; nas escuras o metal aparece
@@ -225,7 +258,7 @@
       <nav class="nav-links" id="navLinks" aria-label="Navegação principal">
         <a href="#sobre" class="nav-link">Sobre</a>
         <a href="#servicos" class="nav-link">Serviços</a>
-        <a href="#diferenciais" class="nav-link">Diferenciais</a>
+        <a href="#diagnostico" class="nav-link">Diagnóstico</a>
         <a href="#avaliacoes" class="nav-link">Avaliações</a>
         <a href="#faq" class="nav-link">Dúvidas</a>
         <a href="#contato" class="nav-link">Contato</a>
@@ -233,7 +266,7 @@
       </nav>
 
       <!-- Botão menu mobile -->
-      <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-expanded="false">
+      <button class="hamburger" id="hamburger" aria-label="Abrir menu" aria-expanded="false" aria-controls="navLinks">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -242,6 +275,7 @@
   <!-- ===================================================== -->
   <!-- 2. HERO SECTION                                       -->
   <!-- ===================================================== -->
+  <main id="conteudo" tabindex="-1">
   <section class="hero" id="hero">
     <!-- Linhas diagonais decorativas -->
     <div class="diagonal-lines" aria-hidden="true"></div>
@@ -260,10 +294,9 @@
       </h1>
 
       <p class="hero-subtitle reveal">
-        Mecânica completa para carros <strong>nacionais e importados</strong>, com
-        <strong>garantia de 12 meses em peças e mão de obra</strong>. Somos <strong>especialistas em mecânica
-        em geral</strong> e a gente <strong>oferece leva e traz (consulte condições)</strong> em Taubaté.
-        Diagnóstico digital <strong>gratuito</strong>, com scanner + foto (~30 min), sem compromisso — consulte as condições de pagamento.
+        Mecânica em geral para carros <strong>nacionais e importados</strong>, com
+        <strong>garantia de 12 meses em peças e mão de obra</strong>. Comece pelo
+        <strong>diagnóstico digital gratuito</strong>: scanner + foto, cerca de 30 minutos, sem compromisso.
       </p>
 
       <!-- Faixa de destaques (prova rápida) -->
@@ -276,11 +309,11 @@
 
       <div class="hero-cta reveal">
         <button class="btn btn-primary glow" data-open-modal data-magnetic>
-          <svg viewBox="0 0 24 24" class="btn-ico"><path d="M9 11.5L11 13.5L15.5 9M21 12a9 9 0 11-18 0 9 9 0 0118 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Fazer Orçamento Grátis
+          <svg viewBox="0 0 24 24" class="btn-ico" aria-hidden="true" focusable="false"><path d="M9 11.5L11 13.5L15.5 9M21 12a9 9 0 11-18 0 9 9 0 0118 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Agendar Diagnóstico Grátis
         </button>
-        <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20um%20or%C3%A7amento." target="_blank" rel="noopener" class="btn btn-outline" data-magnetic>
-          <svg viewBox="0 0 32 32" class="btn-ico"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3z"/></svg>
+        <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%20o%20diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fhero)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=hero" target="_blank" rel="noopener" class="btn btn-outline" data-magnetic>
+          <svg viewBox="0 0 32 32" class="btn-ico" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3z"/></svg>
           Chamar no WhatsApp
         </a>
       </div>
@@ -317,14 +350,14 @@
         <span class="trust-item">Diagnóstico Gratuito</span>
         <span class="trust-item">Leva e Traz</span>
         <span class="trust-item">Garantia de 12 meses</span>
-        <span class="trust-item">Câmbio Automático</span>
+        <span class="trust-item">Óleo do Câmbio</span>
         <span class="trust-item">+18 Anos</span>
       </div>
       <div class="trust-group">
         <span class="trust-item">Diagnóstico Gratuito</span>
         <span class="trust-item">Leva e Traz</span>
         <span class="trust-item">Garantia de 12 meses</span>
-        <span class="trust-item">Câmbio Automático</span>
+        <span class="trust-item">Óleo do Câmbio</span>
         <span class="trust-item">+18 Anos</span>
       </div>
     </div>
@@ -403,8 +436,11 @@
         <!-- Fachada real recortada "saindo" do quadro vermelho + selo circular orbitando -->
         <div class="cutout-stage reveal">
           <span class="cutout-frame" aria-hidden="true"></span>
-          <img class="cutout-img" src="fachada-recorte.png" alt="Fachada da IndyCar Centro Automotivo em Taubaté" loading="lazy" data-parallax="0.06"
-               onerror="this.onerror=null;this.src='oficina-fachada.png';this.closest('.cutout-stage').classList.add('no-alpha');" />
+          <picture>
+            <source srcset="fachada-recorte.webp" type="image/webp" />
+            <img class="cutout-img" src="fachada-recorte.png" width="960" height="356" alt="Fachada da IndyCar Centro Automotivo em Taubaté" loading="lazy" decoding="async" data-parallax="0.06"
+               onerror="this.onerror=null;this.src='oficina-fachada.jpg';this.closest('.cutout-stage').classList.add('no-alpha');" />
+          </picture>
           <div class="circular-seal seal-about" aria-hidden="true" data-parallax="-0.05">
             <div class="seal-rotor" data-circular-text="OFICINA PREMIUM • TAUBATÉ • +18 ANOS • "></div>
             <span class="seal-center">★</span>
@@ -418,8 +454,8 @@
             <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M9 9h6v6H9z" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
           <div>
-            <h4>Estrutura e Tecnologia</h4>
-            <p>Scanners de última geração e ferramentas de precisão — da revisão básica ao câmbio automático, seguindo rigorosamente os manuais das montadoras nacionais e importadas.</p>
+            <h3 class="h-sub">Estrutura e Tecnologia</h3>
+            <p>Scanners de última geração e ferramentas de precisão — da revisão básica à troca de óleo do câmbio automático, seguindo rigorosamente os manuais das montadoras nacionais e importadas.</p>
           </div>
         </div>
         <div class="about-pillar reveal">
@@ -427,7 +463,7 @@
             <svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5l8-3z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <div>
-            <h4>Transparência Absoluta</h4>
+            <h3 class="h-sub">Transparência Absoluta</h3>
             <p>Você acompanha o diagnóstico, entende o defeito e aprova apenas o necessário. Sem troca de peças à toa e sem surpresas na hora de pagar.</p>
           </div>
         </div>
@@ -436,8 +472,8 @@
             <svg viewBox="0 0 24 24"><path d="M1 16V6h13v10M14 9h4l3 3v4h-7" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><circle cx="5.5" cy="17.5" r="2" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="17.5" cy="17.5" r="2" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
           </div>
           <div>
-            <h4>Leva e Traz Exclusivo</h4>
-            <p>Ficar sem carro atrapalha sua rotina. A gente busca e entrega o seu carro enquanto você foca no trabalho. Rápido e com qualidade garantida.</p>
+            <h3 class="h-sub">Leva e Traz em Taubaté</h3>
+            <p>Ficar sem carro atrapalha a rotina. Consulte as condições para a gente buscar e devolver o seu carro em Taubaté.</p>
           </div>
         </div>
       </div>
@@ -462,7 +498,7 @@
         </figure>
         <figure class="team-slot">
           <span class="team-ph" role="img" aria-label="Foto do profissional em breve"><span class="team-mono" aria-hidden="true">IC</span></span>
-          <figcaption><strong>Foto em breve</strong><span>Câmbio automático</span></figcaption>
+          <figcaption><strong>Foto em breve</strong><span>Óleo do câmbio automático</span></figcaption>
         </figure>
         <figure class="team-slot">
           <span class="team-ph" role="img" aria-label="Foto do profissional em breve"><span class="team-mono" aria-hidden="true">IC</span></span>
@@ -480,7 +516,7 @@
       <div class="section-head reveal">
         <span class="section-tag">O QUE FAZEMOS</span>
         <h2 class="section-title">Centro Automotivo Completo <span class="text-red">em Taubaté</span></h2>
-        <p class="section-desc">Da troca de óleo ao câmbio automático: tudo o que o seu carro precisa em um só lugar, com peças de qualidade e garantia.</p>
+        <p class="section-desc">Do óleo do motor ao óleo do câmbio automático: o que o seu carro precisa em um só lugar, com garantia de 12 meses em peças e mão de obra.</p>
       </div>
 
       <div class="services-grid">
@@ -491,10 +527,10 @@
             <svg viewBox="0 0 24 24"><circle cx="8.5" cy="5" r="2.4" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M8.5 7.4V13q0 2 2 2h4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 19h15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="6" cy="19" r=".9" fill="currentColor"/><circle cx="10.5" cy="19" r=".9" fill="currentColor"/><circle cx="15" cy="19" r=".9" fill="currentColor"/><circle cx="19.5" cy="19" r=".9" fill="currentColor"/></svg>
           </div>
           <h3>Troca de Óleo de Câmbio</h3>
-          <p>Referência em câmbio automático em Taubaté. Troca <strong>total via máquina (diálise)</strong>, que renova todo o fluido e protege o conversor de torque.</p>
+          <p>Troca de óleo do câmbio automático <strong>100% na máquina (diálise)</strong>: renova todo o fluido, não só uma parte, e ajuda a proteger o conversor de torque.</p>
           <div class="service-actions">
-            <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%3A%20Troca%20de%20%C3%93leo%20de%20C%C3%A2mbio" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
-            <button class="svc-rev" data-reviews="cambio" data-service-name="Troca de Óleo de Câmbio" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Óleo de Câmbio"><span aria-hidden="true">★</span> 4,8 · Avaliações</button>
+            <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20%C3%93leo%20de%20C%C3%A2mbio.%20(site%2Fcambio)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=cambio" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+            <button class="svc-rev" data-reviews="cambio" data-service-name="Troca de Óleo de Câmbio" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Óleo de Câmbio"><span aria-hidden="true">★</span> Avaliações no Google</button>
           </div>
         </article>
 
@@ -505,10 +541,10 @@
           </div>
           <div class="service-body">
             <h3>Diagnóstico com Scanner</h3>
-            <p>Tecnologia de scanner automotivo em Taubaté para identificar falhas eletrônicas com precisão.</p>
+            <p>Luz acesa no painel? O scanner lê as falhas da central eletrônica e a gente mostra, com foto, o que encontrou.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%3A%20Diagn%C3%B3stico%20com%20Scanner" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
-              <button class="svc-rev" data-reviews="scanner" data-service-name="Diagnóstico com Scanner" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Diagnóstico com Scanner"><span aria-hidden="true">★</span> 4,8 · Avaliações</button>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Diagn%C3%B3stico%20com%20Scanner.%20(site%2Fscanner)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=scanner" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <button class="svc-rev" data-reviews="scanner" data-service-name="Diagnóstico com Scanner" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Diagnóstico com Scanner"><span aria-hidden="true">★</span> Avaliações no Google</button>
             </div>
           </div>
         </article>
@@ -520,115 +556,123 @@
           </div>
           <div class="service-body">
             <h3>Revisão de Motor</h3>
-            <p>Referência em revisão de motor em Taubaté para vazamentos e barulhos internos.</p>
+            <p>Vazamento de óleo, barulho estranho ou esquentando? A gente revisa e explica antes de trocar qualquer peça.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%3A%20Revis%C3%A3o%20de%20Motor" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
-              <button class="svc-rev" data-reviews="motor" data-service-name="Revisão de Motor" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Revisão de Motor"><span aria-hidden="true">★</span> 4,8 · Avaliações</button>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Revis%C3%A3o%20de%20Motor.%20(site%2Fmotor)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=motor" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <button class="svc-rev" data-reviews="motor" data-service-name="Revisão de Motor" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Revisão de Motor"><span aria-hidden="true">★</span> Avaliações no Google</button>
             </div>
           </div>
         </article>
 
         <!-- Tiles compactos 1x1 -->
-        <article class="service-card service-card--mini reveal" data-tilt title="Serviço rápido de troca de óleo em Taubaté com lubrificantes de alta performance e filtro novo.">
+        <article class="service-card service-card--mini reveal" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><path d="M12 2s5 6 5 9.5A5 5 0 1112 7" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M7 13h10v5a2 2 0 01-2 2H9a2 2 0 01-2-2v-5z" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
           </div>
           <div class="service-body">
             <h3>Troca de Óleo de Motor</h3>
+            <p class="svc-mini-desc">Óleo e filtro novos, no padrão do manual do seu carro.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%3A%20Troca%20de%20%C3%93leo%20de%20Motor" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
-              <button class="svc-rev svc-rev--sm" data-reviews="oleo" data-service-name="Troca de Óleo de Motor" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Óleo de Motor"><span aria-hidden="true">★</span> 4,8</button>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20%C3%93leo%20de%20Motor.%20(site%2Foleo-motor)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=oleo-motor" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <button class="svc-rev svc-rev--sm" data-reviews="oleo" data-service-name="Troca de Óleo de Motor" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Óleo de Motor"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt title="Segurança total com nossa revisão de freios em Taubaté para eliminar chiados e devolver a frenagem firme.">
+        <article class="service-card service-card--mini reveal" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="6.6" r=".9" fill="currentColor"/><circle cx="12" cy="17.4" r=".9" fill="currentColor"/><circle cx="6.6" cy="12" r=".9" fill="currentColor"/><circle cx="17.4" cy="12" r=".9" fill="currentColor"/></svg>
           </div>
           <div class="service-body">
             <h3>Pastilhas e Discos</h3>
+            <p class="svc-mini-desc">Chiado ou freio fraco? Pastilhas, discos e fluido de freio.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%3A%20Pastilhas%20e%20Discos" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
-              <button class="svc-rev svc-rev--sm" data-reviews="freios" data-service-name="Pastilhas e Discos" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Pastilhas e Discos"><span aria-hidden="true">★</span> 4,8</button>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Pastilhas%20e%20Discos.%20(site%2Ffreios)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=freios" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <button class="svc-rev svc-rev--sm" data-reviews="freios" data-service-name="Pastilhas e Discos" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Pastilhas e Discos"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt title="Recupere a estabilidade com amortecedores em Taubaté. Trabalhamos com marcas originais.">
+        <article class="service-card service-card--mini reveal" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10 3v2.2l4 2-4 2 4 2-4 2 4 2v2.6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>
           </div>
           <div class="service-body">
             <h3>Troca de Amortecedores</h3>
+            <p class="svc-mini-desc">Carro batendo ou balançando? Dianteiros e traseiros.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%3A%20Troca%20de%20Amortecedores" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
-              <button class="svc-rev svc-rev--sm" data-reviews="amortecedores" data-service-name="Troca de Amortecedores" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Amortecedores"><span aria-hidden="true">★</span> 4,8</button>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20Amortecedores.%20(site%2Famortecedores)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=amortecedores" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <button class="svc-rev svc-rev--sm" data-reviews="amortecedores" data-service-name="Troca de Amortecedores" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Amortecedores"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt title="Troca preventiva da correia dentada em Taubaté com ajuste de ponto e tensor original.">
+        <article class="service-card service-card--mini reveal" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="11" rx="5.5" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="8" cy="11.5" r="2.3" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="16" cy="11.5" r="2.3" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
           </div>
           <div class="service-body">
             <h3>Correia Dentada</h3>
+            <p class="svc-mini-desc">Troca preventiva com tensor, no prazo do manual.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%3A%20Correia%20Dentada" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
-              <button class="svc-rev svc-rev--sm" data-reviews="correia" data-service-name="Correia Dentada" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Correia Dentada"><span aria-hidden="true">★</span> 4,8</button>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Correia%20Dentada.%20(site%2Fcorreia)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=correia" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <button class="svc-rev svc-rev--sm" data-reviews="correia" data-service-name="Correia Dentada" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Correia Dentada"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt title="Sua melhor opção de loja de pneus em Taubaté, com montagem técnica inclusa.">
+        <article class="service-card service-card--mini reveal" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="3.4" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M12 3v3.6M12 17.4V21M3 12h3.6M17.4 12H21M5.6 5.6l2.6 2.6M15.8 15.8l2.6 2.6M18.4 5.6l-2.6 2.6M8.2 15.8l-2.6 2.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
           </div>
           <div class="service-body">
             <h3>Venda de Pneus</h3>
+            <p class="svc-mini-desc">Pneu novo com montagem e troca inclusas.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%3A%20Pneus" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
-              <button class="svc-rev svc-rev--sm" data-reviews="pneus" data-service-name="Venda de Pneus" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Venda de Pneus"><span aria-hidden="true">★</span> 4,8</button>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Pneus.%20(site%2Fpneus)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=pneus" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <button class="svc-rev svc-rev--sm" data-reviews="pneus" data-service-name="Venda de Pneus" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Venda de Pneus"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt title="Precisão a laser com alinhamento e balanceamento em Taubaté. Evite o desgaste irregular dos pneus.">
+        <article class="service-card service-card--mini reveal" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
           <div class="service-body">
             <h3>Alinhamento 3D</h3>
+            <p class="svc-mini-desc">Alinhamento, balanceamento, cambagem e caster.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%3A%20Alinhamento%203D" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
-              <button class="svc-rev svc-rev--sm" data-reviews="alinhamento" data-service-name="Alinhamento 3D" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Alinhamento 3D"><span aria-hidden="true">★</span> 4,8</button>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Alinhamento%203D.%20(site%2Falinhamento)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=alinhamento" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <button class="svc-rev svc-rev--sm" data-reviews="alinhamento" data-service-name="Alinhamento 3D" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Alinhamento 3D"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt title="Instalamos kit de embreagem completo em Taubaté para devolver a maciez ao pedal.">
+        <article class="service-card service-card--mini reveal" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M12 4.5l1.8 5M19.5 12l-5 1.8M12 19.5l-1.8-5M4.5 12l5-1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </div>
           <div class="service-body">
             <h3>Troca de Embreagem</h3>
+            <p class="svc-mini-desc">Kit completo e cabo, para o pedal voltar macio.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%3A%20Troca%20de%20Embreagem" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
-              <button class="svc-rev svc-rev--sm" data-reviews="embreagem" data-service-name="Troca de Embreagem" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Embreagem"><span aria-hidden="true">★</span> 4,8</button>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20Embreagem.%20(site%2Fembreagem)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=embreagem" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <button class="svc-rev svc-rev--sm" data-reviews="embreagem" data-service-name="Troca de Embreagem" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Embreagem"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt title="Elimine barulhos com o check-up completo da suspensão em Taubaté.">
+        <article class="service-card service-card--mini reveal" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 10.5l1.8 2 3-3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <div class="service-body">
             <h3>Revisão de Suspensão</h3>
+            <p class="svc-mini-desc">Pivôs, buchas, terminais, coifas e rolamentos.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%3A%20Revis%C3%A3o%20de%20Suspens%C3%A3o" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
-              <button class="svc-rev svc-rev--sm" data-reviews="suspensao" data-service-name="Revisão de Suspensão" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Revisão de Suspensão"><span aria-hidden="true">★</span> 4,8</button>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Revis%C3%A3o%20de%20Suspens%C3%A3o.%20(site%2Fsuspensao)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=suspensao" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <button class="svc-rev svc-rev--sm" data-reviews="suspensao" data-service-name="Revisão de Suspensão" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Revisão de Suspensão"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
@@ -640,13 +684,93 @@
           </div>
           <div class="service-body">
             <h3>Limpeza de Bicos</h3>
-            <p>Limpeza de bicos em Taubaté via ultrassom para recuperar a potência e a economia de combustível.</p>
+            <p>Carro falhando ou bebendo mais? Limpeza dos bicos injetores por ultrassom para recuperar a potência e a economia de combustível.</p>
           </div>
           <div class="service-actions service-actions--strip">
-            <button class="svc-rev" data-reviews="bicos" data-service-name="Limpeza de Bicos" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Limpeza de Bicos"><span aria-hidden="true">★</span> 4,8 · Avaliações</button>
-            <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%3A%20Limpeza%20de%20Bicos" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+            <button class="svc-rev" data-reviews="bicos" data-service-name="Limpeza de Bicos" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Limpeza de Bicos"><span aria-hidden="true">★</span> Avaliações no Google</button>
+            <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Limpeza%20de%20Bicos.%20(site%2Fbicos)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=bicos" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
           </div>
         </article>
+      </div>
+
+      <div class="svc-more reveal">
+        <span class="svc-more-tag">TAMBÉM FAZEMOS</span>
+        <ul class="svc-more-list">
+          <li>Higienização do ar-condicionado</li>
+          <li>Teste e troca de bateria</li>
+          <li>Injeção eletrônica, velas e bobinas</li>
+          <li>Check-up antes de viajar</li>
+          <li>Avaliação mecânica para comprar usado</li>
+          <li>Arrefecimento: bomba d'água, válvula e mangueiras</li>
+          <li>Homocinética e rolamentos</li>
+          <li>Troca de óleo do câmbio manual</li>
+        </ul>
+        <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20saber%20se%20voc%C3%AAs%20fazem%20um%20servi%C3%A7o.%20(site%2Foutro-servico)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=outro-servico" target="_blank" rel="noopener">Não achou o seu? Pergunte no WhatsApp →</a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ===================================================== -->
+  <!-- 4.5 COMO FUNCIONA O DIAGNÓSTICO GRATUITO (passo a passo) -->
+  <!-- ===================================================== -->
+  <section class="section diag" id="diagnostico" aria-labelledby="diagTitle">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="section-tag">DIAGNÓSTICO DIGITAL GRATUITO</span>
+        <h2 class="section-title" id="diagTitle">Como funciona, <span class="text-red">do WhatsApp ao seu sim</span></h2>
+        <p class="section-desc">Sem custo e sem compromisso. Você sai sabendo o que o carro tem e decide com calma.</p>
+      </div>
+      <ol class="diag-steps">
+        <li class="diag-step reveal">
+          <span class="diag-n" aria-hidden="true">01</span>
+          <span class="diag-meta">Agora</span>
+          <h3>Chama no WhatsApp</h3>
+          <p>Conta o que o carro está fazendo e escolhe um horário de segunda a sábado, das 8h às 17h30.</p>
+        </li>
+        <li class="diag-step reveal">
+          <span class="diag-n" aria-hidden="true">02</span>
+          <span class="diag-meta">No horário marcado</span>
+          <h3>Traz o carro</h3>
+          <p>Av. Bandeirantes, 875, Parque Paduan. Se precisar, pergunte sobre o leva e traz (consulte condições).</p>
+        </li>
+        <li class="diag-step diag-step--hot reveal">
+          <span class="diag-n" aria-hidden="true">03</span>
+          <span class="diag-meta">Cerca de 30 min</span>
+          <h3>Scanner + foto</h3>
+          <p>O scanner lê as falhas da central eletrônica e a gente fotografa o que encontrou no carro.</p>
+        </li>
+        <li class="diag-step reveal">
+          <span class="diag-n" aria-hidden="true">04</span>
+          <span class="diag-meta">Sem pressa</span>
+          <h3>Você decide</h3>
+          <p>Mostramos as fotos, explicamos o defeito e você aprova só o que for necessário.</p>
+        </li>
+      </ol>
+      <div class="diag-cta reveal">
+        <a class="btn btn-primary glow" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%20o%20diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fdiagnostico)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=diagnostico" target="_blank" rel="noopener" data-magnetic>Agendar meu diagnóstico</a>
+        <span class="diag-note">Gratuito · sem compromisso · garantia de 12 meses no que você aprovar</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+  <!-- 4.6 GARANTIA                                           -->
+  <!-- ===================================================== -->
+  <section class="section warranty sec-light" id="garantia" aria-labelledby="garTitle">
+    <div class="container warranty-grid">
+      <div class="warranty-num reveal" aria-hidden="true"><b>12</b><span>meses</span></div>
+      <div class="warranty-text">
+        <div class="section-head left reveal">
+          <span class="section-tag">GARANTIA</span>
+          <h2 class="section-title" id="garTitle">12 meses em <span class="text-red">peças e mão de obra</span></h2>
+        </div>
+        <ul class="warranty-list reveal">
+          <li><strong>Peça e serviço.</strong> A garantia não fica só na peça: o trabalho feito aqui também está coberto.</li>
+          <li><strong>Nacionais e importados.</strong> Mesma garantia, seja qual for a marca do seu carro.</li>
+          <li><strong>Combinado antes.</strong> A cobertura do seu serviço é confirmada junto com o orçamento, antes de você aprovar.</li>
+        </ul>
+        <a class="warranty-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20tenho%20uma%20d%C3%BAvida%20sobre%20a%20garantia.%20(site%2Fgarantia)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=garantia" target="_blank" rel="noopener">Tirar dúvida sobre a garantia →</a>
       </div>
     </div>
   </section>
@@ -659,7 +783,10 @@
       <!-- Lado visual: foto real da oficina + selo -->
       <div class="why-visual reveal">
         <div class="why-image img-sweep">
-          <img class="why-photo" src="oficina-fachada.png" alt="Fachada da IndyCar Centro Automotivo em Taubaté" loading="lazy" />
+          <picture>
+            <source type="image/webp" srcset="oficina-fachada-720.webp 720w, oficina-fachada.webp 1080w" sizes="(max-width: 900px) 92vw, 560px" />
+            <img class="why-photo" src="oficina-fachada.jpg" width="1080" height="1080" alt="Fachada da IndyCar Centro Automotivo em Taubaté" loading="lazy" decoding="async" />
+          </picture>
           <!-- riscos de velocidade cruzando a foto (CSS .speed-streak) -->
           <span class="speed-streak" aria-hidden="true"></span>
           <span class="speed-streak s2" aria-hidden="true"></span>
@@ -684,7 +811,7 @@
               <svg viewBox="0 0 24 24"><path d="M1 16V6h13v10M14 9h4l3 3v4h-7" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><circle cx="5.5" cy="17.5" r="2" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="17.5" cy="17.5" r="2" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
             </div>
             <div>
-              <h4>Leva e Traz (consulte)</h4>
+              <h3 class="h-sub">Leva e Traz (consulte)</h3>
               <p>Buscamos e entregamos o seu carro em Taubaté <strong>(consulte condições)</strong>. Você nem precisa parar o seu dia.</p>
             </div>
           </li>
@@ -693,7 +820,7 @@
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 003.6 15a1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09A1.65 1.65 0 003.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 008 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09A1.65 1.65 0 0016 4.6a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 8z" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>
             </div>
             <div>
-              <h4>Mecânica em Geral, do Básico ao Complexo</h4>
+              <h3 class="h-sub">Mecânica em Geral, do Básico ao Complexo</h3>
               <p>Da revisão completa ao câmbio automático com troca <strong>100% na máquina (diálise)</strong>. Tudo em um só lugar, com a mesma qualidade.</p>
             </div>
           </li>
@@ -702,7 +829,7 @@
               <svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5l8-3z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div>
-              <h4>12 meses em peças e mão de obra</h4>
+              <h3 class="h-sub">12 meses em peças e mão de obra</h3>
               <p>Trabalho com garantia de verdade — em peças <strong>e</strong> mão de obra. Atendemos nacionais e importados.</p>
             </div>
           </li>
@@ -711,7 +838,7 @@
               <svg viewBox="0 0 24 24"><path d="M2 12h4l2-7 4 14 2-9 2 4h4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
             <div>
-              <h4>Transparência Total</h4>
+              <h3 class="h-sub">Transparência Total</h3>
               <p>Diagnóstico preciso e orçamento sem surpresas. Explicamos cada serviço e só fazemos com a <strong>sua aprovação</strong>.</p>
             </div>
           </li>
@@ -728,7 +855,7 @@
         </div>
         <div class="counter reveal">
           <span class="counter-prefix text-red">+</span><span class="counter-num" data-target="1200">0</span>
-          <span class="counter-label">Clientes Satisfeitos</span>
+          <span class="counter-label">Avaliações no Google</span>
         </div>
         <div class="counter reveal">
           <span class="counter-prefix text-red">+</span><span class="counter-num" data-target="18">0</span>
@@ -745,131 +872,25 @@
   <!-- ===================================================== -->
   <!-- 6. DEPOIMENTOS (carrossel automático)                 -->
   <!-- ===================================================== -->
-  <section class="section reviews sec-light" id="avaliacoes">
+  <section class="section reviews sec-light" id="avaliacoes" aria-labelledby="revTitle">
     <div class="container">
       <div class="section-head reveal">
         <span class="section-tag">QUEM CONFIA, RECOMENDA</span>
-        <h2 class="section-title">O Que Dizem <span class="text-red">Nossos Clientes</span></h2>
-        <div class="google-badge">
-          <svg viewBox="0 0 24 24" class="g-ico"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0012 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 010-4.2V7.06H2.18a11 11 0 000 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 002.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"/></svg>
-          <span><b>4,8 de 5</b> · Avaliado no Google Maps · <b>+1.200 avaliações</b></span>
+        <h2 class="section-title" id="revTitle">O Que Dizem <span class="text-red">Nossos Clientes</span></h2>
+        <p class="section-desc">A gente não escreve depoimento por ninguém. As avaliações estão no Google, do jeito que os clientes escreveram.</p>
+      </div>
+      <div class="rv-card reveal">
+        <div class="rv-score">
+          <span class="rv-stars" aria-hidden="true">★★★★★</span>
+          <strong class="rv-num">4,8</strong>
+          <span class="rv-of">de 5 no Google<br><b>+1.200 avaliações</b></span>
+        </div>
+        <div class="rv-actions">
+          <a class="btn btn-primary" href="https://www.google.com/maps/search/?api=1&amp;query=IndyCar+Centro+Automotivo+Av.+Bandeirantes+875+Taubat%C3%A9" target="_blank" rel="noopener">Ler as avaliações no Google</a>
+          <a class="btn btn-ink" href="https://www.google.com/maps/search/?api=1&amp;query=IndyCar+Centro+Automotivo+Av.+Bandeirantes+875+Taubat%C3%A9" target="_blank" rel="noopener">Já é cliente? Deixe a sua</a>
+          <a class="rv-wa" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20contar%20como%20foi%20o%20servi%C3%A7o%20no%20meu%20carro.%20(site%2Favaliacao)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=avaliacao" target="_blank" rel="noopener">Prefere contar pra gente? Fale no WhatsApp →</a>
         </div>
       </div>
-    </div>
-
-    <!-- Carrossel: 3 cards visíveis no desktop + setas de navegação.
-         PARA ADICIONAR NOVOS DEPOIMENTOS REAIS DO GOOGLE: copie um
-         <article class="review-card">…</article> abaixo, cole no fim da
-         lista e troque texto/nome/iniciais. NUNCA invente depoimentos —
-         só publique avaliações reais de clientes. -->
-    <div class="reviews-shell">
-      <button class="rev-arrow rev-prev" id="revPrev" aria-label="Ver depoimentos anteriores">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <div class="reviews-viewport">
-      <div class="reviews-track" id="reviewsTrack">
-
-        <article class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"Levei meu carro com um barulho na suspensão que ninguém descobria. Em 30 minutos diagnosticaram e resolveram. Profissionais de verdade!"</p>
-          <div class="review-author">
-            <span class="review-avatar" style="--c:#e50914">CM</span>
-            <div><strong>Carlos Eduardo Menezes</strong><small>★ Local Guide · Google</small></div>
-          </div>
-        </article>
-
-        <article class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"Atendimento impecável do começo ao fim. Me explicaram tudo antes de fazer, orçamento justo e o carro ficou pronto no prazo. Recomendo demais!"</p>
-          <div class="review-author">
-            <span class="review-avatar" style="--c:#d4a853">FL</span>
-            <div><strong>Fernanda Lima</strong><small>★ Google</small></div>
-          </div>
-        </article>
-
-        <article class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"Sou cliente há mais de 5 anos. Confiança total na equipe. Nunca me empurraram serviço desnecessário. Isso não tem preço."</p>
-          <div class="review-author">
-            <span class="review-avatar" style="--c:#3b82f6">RA</span>
-            <div><strong>Roberto Almeida</strong><small>★ Google</small></div>
-          </div>
-        </article>
-
-        <article class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"Meu carro estava com o freio chiando e puxando para o lado. Resolveram rápido. Lugar limpo, organizado e equipe super atenciosa. Virei cliente fiel!"</p>
-          <div class="review-author">
-            <span class="review-avatar" style="--c:#10b981">JS</span>
-            <div><strong>Juliana Santos</strong><small>★ Local Guide · Google</small></div>
-          </div>
-        </article>
-
-        <article class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"A revisão completa mais honesta que já fiz. Mostraram peça por peça o que precisava. Saí de lá com a segurança de que meu carro está 100%."</p>
-          <div class="review-author">
-            <span class="review-avatar" style="--c:#8b5cf6">MV</span>
-            <div><strong>Marcos Vinícius</strong><small>★ Google</small></div>
-          </div>
-        </article>
-
-        <article class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"Fiz o alinhamento e balanceamento e senti a diferença na hora. Carro estável, direção leve. Preço justo e ainda lavaram o carro. Top demais!"</p>
-          <div class="review-author">
-            <span class="review-avatar" style="--c:#ef4444">PA</span>
-            <div><strong>Patrícia Andrade</strong><small>★ Local Guide · Google</small></div>
-          </div>
-        </article>
-
-        <article class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"Meu câmbio automático estava patinando e me encaixaram no mesmo dia. Resolveram com preço honesto e transparente. Salvaram minha viagem de trabalho!"</p>
-          <div class="review-author">
-            <span class="review-avatar" style="--c:#f59e0b">AS</span>
-            <div><strong>Anderson Souza</strong><small>★ Google</small></div>
-          </div>
-        </article>
-
-        <article class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"Atendimento nota mil. A mulherada também é bem tratada e respeitada, sem aquela de querer enrolar. Expliquei o problema e fui ouvida. Recomendo!"</p>
-          <div class="review-author">
-            <span class="review-avatar" style="--c:#ec4899">CR</span>
-            <div><strong>Camila Ribeiro</strong><small>★ Local Guide · Google</small></div>
-          </div>
-        </article>
-
-        <article class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"Levo meus dois carros aqui sempre. Pontualidade no prazo, garantia no serviço e equipe que entende do assunto. Confiança que dinheiro nenhum compra."</p>
-          <div class="review-author">
-            <span class="review-avatar" style="--c:#14b8a6">RG</span>
-            <div><strong>Rodrigo Gonçalves</strong><small>★ Google</small></div>
-          </div>
-        </article>
-
-        <article class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <p class="review-text">"Troquei o kit de embreagem e a diferença foi absurda. Orçamento fechado sem surpresas no final. Oficina séria e organizada, parabéns à equipe!"</p>
-          <div class="review-author">
-            <span class="review-avatar" style="--c:#3b82f6">LF</span>
-            <div><strong>Luciana Ferreira</strong><small>★ Google</small></div>
-          </div>
-        </article>
-
-      </div>
-      </div>
-      <button class="rev-arrow rev-next" id="revNext" aria-label="Ver próximos depoimentos">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-    </div>
-
-    <!-- Controles -->
-    <div class="reviews-controls">
-      <div class="reviews-dots" id="reviewsDots"></div>
-      <span class="reviews-count" id="reviewsCount" aria-live="polite">1 de 10</span>
     </div>
   </section>
 
@@ -884,7 +905,7 @@
       <div class="section-head reveal">
         <span class="section-tag">ANTES DE VOCÊ PERGUNTAR</span>
         <h2 class="section-title">Perguntas <span class="text-red">Frequentes</span></h2>
-        <p class="section-desc">O que os motoristas de Taubaté mais perguntam antes de trazer o carro. Não achou a sua dúvida? <a class="faq-desc-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20tenho%20uma%20d%C3%BAvida." target="_blank" rel="noopener">Chama a gente no WhatsApp</a>.</p>
+        <p class="section-desc">O que os motoristas de Taubaté mais perguntam antes de trazer o carro. Não achou a sua dúvida? <a class="faq-desc-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20tenho%20uma%20d%C3%BAvida.%20(site%2Fduvida)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=duvida" target="_blank" rel="noopener">Chama a gente no WhatsApp</a>.</p>
       </div>
 
       <div class="faq-list">
@@ -898,7 +919,7 @@
           </h3>
           <div class="faq-a" id="faq-a-1" role="region" aria-labelledby="faq-q-1">
             <div class="faq-a-inner">
-              <p>O ideal é agendar pelo <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20agendar%20um%20hor%C3%A1rio." target="_blank" rel="noopener">WhatsApp (12) 99683-0272</a> para garantir o seu horário — a resposta é rápida em horário comercial. Atendemos de segunda a sábado, das 8h às 17h30.</p>
+              <p>O ideal é agendar pelo <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%20um%20hor%C3%A1rio.%20(site%2Fagendar)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=agendar" target="_blank" rel="noopener">WhatsApp (12) 99683-0272</a> para garantir o seu horário — a resposta é rápida em horário comercial. Atendemos de segunda a sábado, das 8h às 17h30.</p>
             </div>
           </div>
         </div>
@@ -913,7 +934,7 @@
           </h3>
           <div class="faq-a" id="faq-a-2" role="region" aria-labelledby="faq-q-2">
             <div class="faq-a-inner">
-              <p>Não. O diagnóstico digital é <strong>gratuito e sem compromisso</strong>, com scanner + foto, em cerca de 30 minutos. Usamos o scanner para identificar falhas com precisão. Você acompanha tudo, entende o defeito e só aprova o que for necessário.</p>
+              <p>Não. O diagnóstico digital é <strong>gratuito e sem compromisso</strong>, com scanner + foto, em cerca de 30 minutos. Usamos o scanner para identificar falhas com precisão. Você acompanha tudo, entende o defeito e só aprova o que for necessário. <a href="#diagnostico">Veja o passo a passo</a>.</p>
             </div>
           </div>
         </div>
@@ -943,7 +964,7 @@
           </h3>
           <div class="faq-a" id="faq-a-4" role="region" aria-labelledby="faq-q-4">
             <div class="faq-a-inner">
-              <p>Fazemos a troca total do fluido <strong>100% na máquina (diálise)</strong>, renovando todo o óleo e protegendo o conversor de torque. Poucos fazem como a gente. Quer saber se serve para o seu carro? <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quero%20saber%20sobre%20a%20troca%20de%20%C3%B3leo%20do%20c%C3%A2mbio%20via%20di%C3%A1lise." target="_blank" rel="noopener">É só chamar no WhatsApp</a>.</p>
+              <p>Fazemos a troca total do fluido <strong>100% na máquina (diálise)</strong>, renovando todo o óleo e protegendo o conversor de torque. Quer saber se serve para o seu carro? <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20saber%20se%20a%20troca%20de%20%C3%B3leo%20do%20c%C3%A2mbio%20por%20di%C3%A1lise%20serve%20para%20o%20meu%20carro.%20(site%2Fcambio-dialise)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=cambio-dialise" target="_blank" rel="noopener">É só chamar no WhatsApp</a>.</p>
             </div>
           </div>
         </div>
@@ -958,7 +979,7 @@
           </h3>
           <div class="faq-a" id="faq-a-5" role="region" aria-labelledby="faq-q-5">
             <div class="faq-a-inner">
-              <p>Sim! Nosso <strong>Leva e Traz em Taubaté (consulte condições)</strong>: consulte disponibilidade e condições para buscar e devolver o seu carro, para você não precisar parar o seu dia.</p>
+              <p>Temos o <strong>Leva e Traz em Taubaté</strong>, conforme disponibilidade e condições. Pergunte no WhatsApp antes de agendar que a gente confirma para o seu caso.</p>
             </div>
           </div>
         </div>
@@ -973,7 +994,7 @@
           </h3>
           <div class="faq-a" id="faq-a-6" role="region" aria-labelledby="faq-q-6">
             <div class="faq-a-inner">
-              <p>Consulte as condições de pagamento e parcelamento. Para outras condições e formas de pagamento, <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Quais%20s%C3%A3o%20as%20formas%20de%20pagamento%3F" target="_blank" rel="noopener">é só perguntar no WhatsApp</a> que a gente orienta na hora.</p>
+              <p>Consulte as condições de pagamento e parcelamento. Para outras condições e formas de pagamento, <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20saber%20as%20formas%20de%20pagamento.%20(site%2Fpagamento)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=pagamento" target="_blank" rel="noopener">é só perguntar no WhatsApp</a> que a gente orienta na hora.</p>
             </div>
           </div>
         </div>
@@ -1018,7 +1039,7 @@
           </h3>
           <div class="faq-a" id="faq-a-9" role="region" aria-labelledby="faq-q-9">
             <div class="faq-a-inner">
-              <p>Na <strong>Av. Bandeirantes, 875 – Parque Paduan, Taubaté-SP</strong> (CEP 12070-100) — o mapa está logo abaixo, na <a href="#contato">seção de contato</a>. E se ficar melhor para você, o Leva e Traz em Taubaté (consulte) busca e devolve o seu carro em Taubaté.</p>
+              <p>Na <strong>Av. Bandeirantes, 875 – Parque Paduan, Taubaté-SP</strong> (CEP 12070-100). O mapa e o botão de rota estão na <a href="#contato">seção de contato</a>. Se ficar melhor para você, pergunte sobre o Leva e Traz em Taubaté (consulte condições).</p>
             </div>
           </div>
         </div>
@@ -1033,7 +1054,21 @@
           </h3>
           <div class="faq-a" id="faq-a-10" role="region" aria-labelledby="faq-q-10">
             <div class="faq-a-inner">
-              <p>Aqui a transparência é absoluta: você acompanha o diagnóstico, entende o defeito e aprova apenas o necessário — sem surpresas na hora de pagar. Qualquer dúvida durante o serviço, é só falar com a gente no <a href="https://wa.me/5512996830272" target="_blank" rel="noopener">WhatsApp (12) 99683-0272</a> ou no fixo <a href="tel:+551236245957">(12) 3624-5957</a>.</p>
+              <p>Aqui a transparência é absoluta: você acompanha o diagnóstico, entende o defeito e aprova apenas o necessário — sem surpresas na hora de pagar. Qualquer dúvida durante o serviço, é só falar com a gente no <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20tenho%20uma%20d%C3%BAvida%20sobre%20o%20servi%C3%A7o%20do%20meu%20carro.%20(site%2Facompanhar)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=acompanhar" target="_blank" rel="noopener">WhatsApp (12) 99683-0272</a> ou no fixo <a href="tel:+551236245957">(12) 3624-5957</a>.</p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-item reveal">
+          <h3 class="faq-h">
+            <button type="button" class="faq-q" id="faq-q-11" aria-expanded="false" aria-controls="faq-a-11">
+              <span class="faq-num" aria-hidden="true">11</span>
+              <span class="faq-txt">Tem algum serviço que vocês não fazem?</span>
+              <span class="faq-ico" aria-hidden="true"></span>
+            </button>
+          </h3>
+          <div class="faq-a" id="faq-a-11" role="region" aria-labelledby="faq-q-11">
+            <div class="faq-a-inner">
+              <p>Sim. Não fazemos funilaria e pintura, carga de gás ou conserto do ar-condicionado (a higienização a gente faz), parte elétrica como alternador e motor de arranque, reparo interno de câmbio automático, retífica de motor, GNV nem guincho. Também não atendemos carros 100% elétricos, rebaixados, modificados ou caminhões. Na dúvida, <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20saber%20se%20voc%C3%AAs%20fazem%20um%20servi%C3%A7o.%20(site%2Fnao-fazemos)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=nao-fazemos" target="_blank" rel="noopener">pergunte no WhatsApp</a>.</p>
             </div>
           </div>
         </div>
@@ -1053,11 +1088,17 @@
 
       <div class="contact-grid">
         <!-- Mapa -->
-        <div class="contact-map reveal">
-          <iframe
-            title="Mapa IndyCar Centro Automotivo"
-            src="https://maps.google.com/maps?q=Av.%20Bandeirantes%2C%20875%20-%20Parque%20Paduan%2C%20Taubat%C3%A9%20-%20SP%2C%2012070-100&t=&z=15&ie=UTF8&iwloc=&output=embed"
-            loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        <div class="contact-map reveal" id="mapBox" data-map-src="https://maps.google.com/maps?q=Av.%20Bandeirantes%2C%20875%20-%20Parque%20Paduan%2C%20Taubat%C3%A9%20-%20SP%2C%2012070-100&amp;t=&amp;z=15&amp;ie=UTF8&amp;iwloc=&amp;output=embed">
+          <div class="map-ph">
+            <svg class="map-pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.3 7-12a7 7 0 10-14 0c0 5.7 7 12 7 12z" fill="#e50914"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>
+            <strong>Av. Bandeirantes, 875</strong>
+            <span>Parque Paduan · Taubaté-SP · 12070-100</span>
+            <div class="map-ph-actions">
+              <button type="button" class="btn btn-light sm" id="mapLoad">Ver mapa aqui</button>
+              <a class="btn btn-outline sm" href="https://www.google.com/maps/dir/?api=1&amp;destination=Av.+Bandeirantes%2C+875+-+Parque+Paduan%2C+Taubat%C3%A9+-+SP" target="_blank" rel="noopener">Traçar rota</a>
+            </div>
+            <small>O mapa do Google só carrega quando você pedir.</small>
+          </div>
         </div>
 
         <!-- Infos -->
@@ -1078,7 +1119,7 @@
               </span>
               <div>
                 <strong>Telefone / WhatsApp</strong>
-                <p><a href="https://wa.me/5512996830272" target="_blank" rel="noopener">(12) 99683-0272</a> · WhatsApp<br><a href="tel:+551236245957">(12) 3624-5957</a> · Fixo</p>
+                <p><a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site.%20(site%2Fcontato)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=contato" target="_blank" rel="noopener">(12) 99683-0272</a> · WhatsApp<br><a href="tel:+551236245957">(12) 3624-5957</a> · Fixo</p>
               </div>
             </li>
             <li>
@@ -1101,7 +1142,7 @@
             </li>
           </ul>
 
-          <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20gostaria%20de%20um%20or%C3%A7amento." target="_blank" rel="noopener" class="btn btn-whatsapp glow" data-magnetic>
+          <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%20o%20diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fcontato-botao)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=contato-botao" target="_blank" rel="noopener" class="btn btn-whatsapp glow" data-magnetic>
             <svg viewBox="0 0 32 32" class="btn-ico wa"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3zm0 22c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-4.9.9.9-4.8-.2-.4C5.5 18.5 5 16.8 5 15 5 9 9.9 4 16 4s11 5 11 11-4.9 10-11 10zm6-7.5c-.3-.2-1.9-1-2.2-1.1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.1-.2.2-.3.2-.6.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.3-.2-.3 0-.5.1-.7.1-.1.3-.3.4-.5.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.2-.7-1.7-1-2.3-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.9-.8 2.1-1.5.3-.7.3-1.4.2-1.5-.1-.1-.3-.2-.6-.4z"/></svg>
             Chamar no WhatsApp
           </a>
@@ -1120,7 +1161,7 @@
   <!-- 8. CTA FINAL (urgência)                                -->
   <!-- ===================================================== -->
   <section class="final-cta">
-    <img loading="lazy" decoding="async" class="final-cta-photo" src="oficina-fachada.png" alt="" aria-hidden="true" />
+    <picture><source type="image/webp" srcset="oficina-fachada.webp" /><img loading="lazy" decoding="async" class="final-cta-photo" src="oficina-fachada.jpg" width="1080" height="1080" alt="" aria-hidden="true" /></picture>
     <div class="final-cta-bg" aria-hidden="true"></div>
     <!-- Faíscas de pit lane subindo (canvas 2D, pausa fora do viewport) -->
     <canvas class="cta-embers" id="ctaEmbers" aria-hidden="true"></canvas>
@@ -1129,11 +1170,13 @@
     <span class="speed-streak s2" aria-hidden="true"></span>
     <div class="container final-cta-inner reveal">
       <span class="final-cta-kicker"><span class="shiny-text">★ DIAGNÓSTICO GRATUITO · LEVA E TRAZ EM TAUBATÉ (CONSULTE)</span></span>
-      <h2>Seu carro merece a oficina que <u>Taubaté mais confia</u>.<br>Agende agora — a gente busca o seu carro.</h2>
+      <h2>Seu carro merece a oficina que <u>Taubaté mais confia</u>.<br>Comece pelo diagnóstico gratuito.</h2>
       <p>Diagnóstico digital gratuito: scanner + foto, cerca de 30 minutos, sem compromisso. Garantia de 12 meses em peças e mão de obra, pagamento sob consulta e o cuidado de quem tem <strong>+18 anos de estrada</strong>. Agende pelo WhatsApp.</p>
       <button class="btn btn-light glow lg" data-open-modal data-magnetic>Quero Meu Orçamento Gratuito →</button>
     </div>
   </section>
+
+  </main>
 
   <!-- ===================================================== -->
   <!-- 9. FOOTER                                             -->
@@ -1157,13 +1200,15 @@
         <p>Quem conhece, Indyca! 🏎 Garantia de 12 meses em peças e mão de obra.</p>
         <div class="footer-rating">★★★★★ <span>4,8 · +1.200 avaliações no Google</span></div>
         <figure class="footer-photo" aria-hidden="true">
-          <img src="fachada-recorte-thumb.png" alt="Fachada da IndyCar em Taubaté" loading="lazy" onerror="this.closest('.footer-photo').remove();" />
+          <picture><source type="image/webp" srcset="fachada-recorte-thumb.webp" /><img src="fachada-recorte-thumb.png" width="480" height="178" alt="Fachada da IndyCar em Taubaté" loading="lazy" decoding="async" onerror="this.closest('.footer-photo').remove();" /></picture>
         </figure>
       </div>
 
       <div class="footer-col">
-        <h5>Navegação</h5>
+        <p class="footer-h">Navegação</p>
         <a href="#servicos">Serviços</a>
+        <a href="#diagnostico">Como funciona o diagnóstico</a>
+        <a href="#garantia">Garantia</a>
         <a href="#diferenciais">Diferenciais</a>
         <a href="#avaliacoes">Avaliações</a>
         <a href="#faq">Dúvidas</a>
@@ -1171,28 +1216,29 @@
       </div>
 
       <div class="footer-col">
-        <h5>Contato</h5>
+        <p class="footer-h">Contato</p>
         <a href="tel:+5512996830272">(12) 99683-0272</a>
-        <a href="https://wa.me/5512996830272" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site.%20(site%2Frodape)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=rodape" target="_blank" rel="noopener">WhatsApp</a>
         <span>Av. Bandeirantes, 875<br>Parque Paduan, Taubaté - SP</span>
       </div>
 
       <div class="footer-col">
-        <h5>Horário</h5>
+        <p class="footer-h">Horário</p>
         <span>Seg–Sáb: 8h – 17h30</span>
         <span>Domingo: fechado</span>
       </div>
     </div>
     <div class="footer-bottom container">
       <span>© <span id="year"></span> IndyCar Centro Automotivo Taubaté. Todos os direitos reservados.</span>
-      <span>Feito com 🏁 para quem ama dirigir.</span>
+      <span><a href="privacidade.html">Privacidade</a> · Feito com 🏁 para quem ama dirigir.</span>
     </div>
   </footer>
 
+  <aside aria-label="Atalhos de contato">
   <!-- ===================================================== -->
   <!-- BOTÃO FLUTUANTE WHATSAPP                               -->
   <!-- ===================================================== -->
-  <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%20o%20diagn%C3%B3stico%20digital%20gratuito%20com%20scanner%20%2B%20foto." target="_blank" rel="noopener" class="wa-float" id="waFloat" aria-label="Falar no WhatsApp">
+  <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%20o%20diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fflutuante)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=flutuante" target="_blank" rel="noopener" class="wa-float" id="waFloat" aria-label="Falar no WhatsApp">
     <svg viewBox="0 0 32 32"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3zm0 22c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-4.9.9.9-4.8-.2-.4C5.5 18.5 5 16.8 5 15 5 9 9.9 4 16 4s11 5 11 11-4.9 10-11 10zm6-7.5c-.3-.2-1.9-1-2.2-1.1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.1-.2.2-.3.2-.6.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.3-.2-.3 0-.5.1-.7.1-.1.3-.3.4-.5.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.2-.7-1.7-1-2.3-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.9-.8 2.1-1.5.3-.7.3-1.4.2-1.5-.1-.1-.3-.2-.6-.4z"/></svg>
     <span class="wa-float-pop">Fale conosco! 👋</span>
   </a>
@@ -1208,6 +1254,7 @@
     <div class="sp-text"><strong id="spName">—</strong><span id="spAction">—</span></div>
     <button class="sp-close" id="spClose" aria-label="Fechar">×</button>
   </div>
+  </aside>
 
   <!-- ===================================================== -->
   <!-- MODAL DE PROMOÇÃO (abre ao carregar)                   -->
@@ -1215,7 +1262,7 @@
   <div class="modal-backdrop" id="promoBackdrop">
     <div class="promo-modal" role="dialog" aria-modal="true" aria-labelledby="promoTitle">
       <button class="modal-close" data-close-promo aria-label="Fechar">×</button>
-      <div class="promo-flag">🏁 OFERTA DA SEMANA</div>
+      <div class="promo-flag">🏁 PARA COMEÇAR</div>
       <h3 id="promoTitle">Diagnóstico <span class="text-red">100% Gratuito</span></h3>
       <p>Agende seu diagnóstico digital <strong>gratuito</strong>: scanner + foto, cerca de 30 minutos, sem compromisso.</p>
       <button class="btn btn-primary glow" data-open-modal data-close-promo>Quero Meu Diagnóstico Grátis</button>
@@ -1227,12 +1274,12 @@
   <!-- MODAL DE AGENDAMENTO / ORÇAMENTO                       -->
   <!-- ===================================================== -->
   <div class="modal-backdrop" id="formBackdrop">
-    <div class="form-modal" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+    <div class="form-modal" role="dialog" aria-modal="true" aria-labelledby="formTitle" aria-describedby="formDesc">
       <button class="modal-close" data-close-form aria-label="Fechar">×</button>
       <div class="form-modal-head">
         <span class="section-tag">AGENDAMENTO RÁPIDO</span>
-        <h3 id="formTitle">Solicite seu <span class="text-red">Orçamento Grátis</span></h3>
-        <p>Preencha e enviamos seu pedido direto para nosso WhatsApp. Sem compromisso!</p>
+        <h3 id="formTitle">Agende seu <span class="text-red">Diagnóstico Grátis</span></h3>
+        <p id="formDesc">Preencha e o pedido abre pronto no WhatsApp da oficina. Sem compromisso.</p>
       </div>
 
       <form id="leadForm" novalidate>
@@ -1242,20 +1289,24 @@
         </div>
         <div class="field">
           <label for="fPhone">WhatsApp / Telefone</label>
-          <input type="tel" id="fPhone" name="phone" autocomplete="tel-national" inputmode="tel" maxlength="16" placeholder="(12) 9 9999-9999" required />
+          <input type="tel" id="fPhone" name="phone" autocomplete="tel-national" inputmode="tel" maxlength="16" placeholder="(12) 9 9999-9999" required aria-describedby="fPhoneErr" />
+          <small class="field-err" id="fPhoneErr" hidden>Confira o número com DDD (10 ou 11 dígitos).</small>
         </div>
         <div class="field">
           <label for="fService">Serviço desejado</label>
           <select id="fService" name="service" required>
             <option value="" disabled selected>Selecione um serviço</option>
             <option>Diagnóstico digital gratuito</option>
-            <option>Revisão Completa</option>
-            <option>Troca de Óleo</option>
-            <option>Freios</option>
-            <option>Suspensão</option>
-            <option>Direção</option>
-            <option>Câmbio Automático</option>
+            <option>Revisão de motor</option>
+            <option>Troca de óleo do motor</option>
+            <option>Troca de óleo do câmbio (diálise)</option>
+            <option>Freios (pastilhas e discos)</option>
+            <option>Suspensão e amortecedores</option>
+            <option>Alinhamento e balanceamento</option>
             <option>Pneus</option>
+            <option>Embreagem</option>
+            <option>Correia dentada</option>
+            <option>Limpeza de bicos</option>
             <option>Outro / Não sei ainda</option>
           </select>
         </div>
@@ -1267,17 +1318,17 @@
           <svg viewBox="0 0 32 32" class="btn-ico wa"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3z"/></svg>
           Enviar pelo WhatsApp
         </button>
-        <small class="form-mini">🔒 Seus dados são usados apenas para o atendimento.</small>
+        <small class="form-mini">🔒 Seus dados vão só para o WhatsApp da oficina, para o atendimento. <a href="privacidade.html">Privacidade</a></small>
       </form>
     </div>
   </div>
 
   <!-- ===================================================== -->
   <!-- POPOVER DE AVALIAÇÕES POR SERVIÇO                      -->
-  <!-- Depoimentos REAIS do site mapeados por serviço;        -->
-  <!-- sem depoimento específico: nota agregada real 4,8.     -->
+  <!-- Sem depoimento inventado: mostra a nota do Google e   -->
+  <!-- leva o cliente às avaliações reais.                    -->
   <!-- ===================================================== -->
-  <div class="rev-pop" id="revPop" role="dialog" aria-labelledby="revPopTitle" hidden>
+  <div class="rev-pop" id="revPop" role="dialog" aria-modal="true" aria-labelledby="revPopTitle" hidden>
     <div class="rev-pop-card">
       <button class="rev-pop-close" id="revPopClose" aria-label="Fechar avaliações">×</button>
       <div class="rev-pop-head">
@@ -1287,7 +1338,7 @@
       </div>
       <div class="rev-pop-body" id="revPopBody"></div>
       <div class="rev-pop-actions">
-        <a class="rev-pop-link" id="revPopGoogle" href="https://www.google.com/maps/search/?api=1&query=IndyCar+Centro+Automotivo+Av.+Bandeirantes+875+Taubat%C3%A9" target="_blank" rel="noopener">Ver avaliações no Google</a>
+        <a class="rev-pop-link" id="revPopGoogle" href="https://www.google.com/maps/search/?api=1&amp;query=IndyCar+Centro+Automotivo+Av.+Bandeirantes+875+Taubat%C3%A9" target="_blank" rel="noopener">Ver avaliações no Google</a>
         <a class="rev-pop-link rev-pop-link--wa" id="revPopWa" href="#" target="_blank" rel="noopener">Já fez este serviço? Conta pra gente</a>
       </div>
     </div>

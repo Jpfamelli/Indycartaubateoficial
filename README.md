@@ -7,7 +7,10 @@ HTML, CSS e JavaScript puros — site estático, sem build.
 - `index.html` — página
 - `styles.css` — estilos
 - `script.js` — interações (partículas, contadores, carrossel, modais, prova social)
-- `logo.png`, `oficina-fachada.png`, `oficina-2.png` — imagens
+- `privacidade.html` — política de privacidade (LGPD)
+- `404.html` — página de erro
+- `logo.png`, `oficina-fachada.*` (jpg/webp/png), `fachada-recorte*` (png/webp), `og-indycar.jpg` (1200x630) — imagens
+- `scripts/qa.mjs` — teste automático (não vai para o ar)
 
 ## Rodar localmente
 Basta abrir o `index.html` no navegador. (Ou: `npx serve .`)
@@ -34,3 +37,12 @@ Registre `indycartaubateoficial.com.br` no registro.br e aponte o DNS para o hos
 https://indycar-taubate.netlify.app/
 
 Publicar de dentro desta pasta: `npx netlify-cli link --name indycar-taubate` e `npx netlify-cli deploy --prod --dir .`. Sem build. Conteúdo aprovado e lista da rodada em MELHORIAS.md.
+
+## Testar
+`npm install` uma vez e `npm test`: abre o site no Chrome instalado (puppeteer-core) em 375 e 1440 px e confere rolagem horizontal, erros de console, links de WhatsApp (mensagem pronta + código "(site/<serviço>)" + UTM), JSON-LD, FAQ, imagens, mapa sob demanda, formulário, vocabulário e CLS. Capturas em `qa-out/` (fora do git e do deploy).
+
+## WhatsApp e origem do contato
+O wa.me não repassa UTM para o CRM, então cada mensagem pronta termina com um código curto, ex.: "(site/cambio)", "(site/formulario)". O atendente/IA reconhece por ele que o contato veio do site e de qual botão.
+
+## Regras de conteúdo
+Nada de depoimento ou nota inventada (avaliações só no Google), nada de preço/prazo, leva e traz sempre "consulte condições". O que a oficina faz ou não faz vem do `catalogo_servicos` do Supabase.
