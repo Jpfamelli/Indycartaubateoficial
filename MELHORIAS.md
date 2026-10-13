@@ -79,3 +79,31 @@
 74. Carrossel e mira do cursor protegidos (sem erro sem depoimentos; mira só some sobre o mapa carregado).
 75. Publicação por `npm run publicar` (pasta dist/ só com o site): o deploy por `--dir .` expunha scripts/, package.json, .md e qa-out (o netlify-cli não respeita o .netlifyignore); conferido 404 em produção.
 76. Teste roda também contra produção (`QA_URL=https://indycar-taubate.netlify.app npm test`): tudo certo no ar.
+
+## Rodada 3 (13/10/2026)
+
+Segurança, qualidade e conectividade, sem backend novo e sem páginas novas.
+
+### Segurança
+77. CSP completa no `netlify.toml`: script só do próprio site, estilos + Google Fonts, fontes do gstatic, mapa do Google só em iframe (`frame-src`), `form-action` para o wa.me, `frame-ancestors 'self'`, `base-uri`, `object-src 'none'` e `upgrade-insecure-requests` — mapa, fontes e WhatsApp conferidos funcionando com ela (local e em produção).
+78. HSTS explícito de 1 ano com preload.
+79. Permissions-Policy ampliada: também USB, sensores (magnetômetro, giroscópio, acelerômetro) e `browsing-topics` desligados.
+80. Cross-Origin-Opener-Policy `same-origin-allow-popups` (o wa.me continua abrindo em janela própria).
+81. HTML sem nenhum `onload`/`onerror` embutido: as fontes do Google (media print → all) e a imagem de reserva da fachada/rodapé passaram para o `script.js` (`data-fontes`, `data-reserva`, `data-reserva-remover`), condição para a CSP sem `unsafe-inline` em script.
+82. SRI: nenhum script de CDN na página (verificado no teste); a folha do Google Fonts muda por navegador e não aceita SRI — documentado no README.
+
+### Formulário (anti-spam sem backend)
+83. Campo-isca invisível (fora da tela, fora do Tab e do leitor de tela): robô que preenche recebe "Pedido enviado!" e nada abre.
+84. Tempo mínimo de 2,5 s entre começar a preencher e enviar; rápido demais mostra "Confere os dados?" no próprio formulário (role=status) e não abre o WhatsApp.
+
+### Conectividade
+85. Formulário manda o código do serviço escolhido: `(site/formulario-freios)`, `(site/formulario-cambio)`… (antes era sempre `formulario`), no formato que o gatilho `at_origem_pelo_site` do Atendimento reconhece; UTM igual.
+86. Todas as 12 opções do formulário com código único (`data-codigo`) e todo card de serviço com WhatsApp de código próprio (conferido no teste).
+87. README com a tabela de todos os códigos `(site/…)` e onde cada um está, e a regra do gatilho (a-z 0-9 _ -, até 40).
+
+### Testes e qualidade
+88. `npm test` aplica no servidor local os MESMOS cabeçalhos do `netlify.toml` e falha se houver qualquer violação de CSP (evento `securitypolicyviolation`) em 375 e 1440 px.
+89. Checagem de links quebrados: todo link/arquivo interno responde 200, toda âncora `#…` existe e todo link externo em nova aba tem `rel=noopener`.
+90. Checagem de cabeçalhos de segurança (CSP, HSTS, Permissions-Policy, nosniff, Referrer-Policy) e de HTML sem script embutido — roda também contra produção com `QA_URL`.
+91. Acessibilidade conferida no teste: um h1, `lang=pt-BR`, atalho "Pular para o conteúdo", todo botão/link com nome acessível e todo campo com rótulo.
+92. Testes novos do formulário: isca, envio rápido, código por serviço e formato dos 27 códigos de WhatsApp; CLS segue 0,004 no desktop com as fontes ligadas pelo script.

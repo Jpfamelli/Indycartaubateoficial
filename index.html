@@ -191,9 +191,10 @@
   <!-- ===== Google Fonts: Archivo (display expandido 800/900 + subtítulo 400/500/600) + Inter (corpo) + Barlow Condensed (micro-labels racing) ===== -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!-- fontes fora do caminho crítico: a página pinta já com as reservas calibradas (styles.css) e troca sem pulo -->
+  <!-- fontes fora do caminho crítico: a página pinta já com as reservas calibradas (styles.css) e troca sem pulo.
+       Quem liga (media=all) é o script.js: a CSP do site não aceita onload embutido. -->
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,100,600;0,125,800;0,125,900&amp;family=Inter:wght@400;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,100,600;0,125,800;0,125,900&amp;family=Inter:wght@400;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,100,600;0,125,800;0,125,900&amp;family=Inter:wght@400;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" media="print" data-fontes />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,100,600;0,125,800;0,125,900&amp;family=Inter:wght@400;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" /></noscript>
 
   <link rel="stylesheet" href="styles.css" />
@@ -439,7 +440,7 @@
           <picture>
             <source srcset="fachada-recorte.webp" type="image/webp" />
             <img class="cutout-img" src="fachada-recorte.png" width="960" height="356" alt="Fachada da IndyCar Centro Automotivo em Taubaté" loading="lazy" decoding="async" data-parallax="0.06"
-               onerror="this.onerror=null;this.src='oficina-fachada.jpg';this.closest('.cutout-stage').classList.add('no-alpha');" />
+               data-reserva="oficina-fachada.jpg" data-reserva-classe=".cutout-stage|no-alpha" />
           </picture>
           <div class="circular-seal seal-about" aria-hidden="true" data-parallax="-0.05">
             <div class="seal-rotor" data-circular-text="OFICINA PREMIUM • TAUBATÉ • +18 ANOS • "></div>
@@ -1200,7 +1201,7 @@
         <p>Quem conhece, Indyca! 🏎 Garantia de 12 meses em peças e mão de obra.</p>
         <div class="footer-rating">★★★★★ <span>4,8 · +1.200 avaliações no Google</span></div>
         <figure class="footer-photo" aria-hidden="true">
-          <picture><source type="image/webp" srcset="fachada-recorte-thumb.webp" /><img src="fachada-recorte-thumb.png" width="480" height="178" alt="Fachada da IndyCar em Taubaté" loading="lazy" decoding="async" onerror="this.closest('.footer-photo').remove();" /></picture>
+          <picture><source type="image/webp" srcset="fachada-recorte-thumb.webp" /><img src="fachada-recorte-thumb.png" width="480" height="178" alt="Fachada da IndyCar em Taubaté" loading="lazy" decoding="async" data-reserva-remover=".footer-photo" /></picture>
         </figure>
       </div>
 
@@ -1296,28 +1297,34 @@
           <label for="fService">Serviço desejado</label>
           <select id="fService" name="service" required>
             <option value="" disabled selected>Selecione um serviço</option>
-            <option>Diagnóstico digital gratuito</option>
-            <option>Revisão de motor</option>
-            <option>Troca de óleo do motor</option>
-            <option>Troca de óleo do câmbio (diálise)</option>
-            <option>Freios (pastilhas e discos)</option>
-            <option>Suspensão e amortecedores</option>
-            <option>Alinhamento e balanceamento</option>
-            <option>Pneus</option>
-            <option>Embreagem</option>
-            <option>Correia dentada</option>
-            <option>Limpeza de bicos</option>
-            <option>Outro / Não sei ainda</option>
+            <option data-codigo="diagnostico">Diagnóstico digital gratuito</option>
+            <option data-codigo="motor">Revisão de motor</option>
+            <option data-codigo="oleo-motor">Troca de óleo do motor</option>
+            <option data-codigo="cambio">Troca de óleo do câmbio (diálise)</option>
+            <option data-codigo="freios">Freios (pastilhas e discos)</option>
+            <option data-codigo="suspensao">Suspensão e amortecedores</option>
+            <option data-codigo="alinhamento">Alinhamento e balanceamento</option>
+            <option data-codigo="pneus">Pneus</option>
+            <option data-codigo="embreagem">Embreagem</option>
+            <option data-codigo="correia">Correia dentada</option>
+            <option data-codigo="bicos">Limpeza de bicos</option>
+            <option data-codigo="outro-servico">Outro / Não sei ainda</option>
           </select>
         </div>
         <div class="field">
           <label for="fCar">Carro (modelo/ano) <small>opcional</small></label>
           <input type="text" id="fCar" name="car" maxlength="100" placeholder="Ex: Honda Civic 2018" />
         </div>
+        <!-- armadilha para robô: invisível para gente, robô preenche e o pedido é ignorado -->
+        <div class="campo-isca" aria-hidden="true">
+          <label for="fEmpresa">Empresa</label>
+          <input type="text" id="fEmpresa" name="empresa" tabindex="-1" autocomplete="off" />
+        </div>
         <button type="submit" class="btn btn-whatsapp glow full">
           <svg viewBox="0 0 32 32" class="btn-ico wa"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3z"/></svg>
           Enviar pelo WhatsApp
         </button>
+        <p class="field-err form-aviso" id="fEnvioMsg" role="status" hidden></p>
         <small class="form-mini">🔒 Seus dados vão só para o WhatsApp da oficina, para o atendimento. <a href="privacidade.html">Privacidade</a></small>
       </form>
     </div>

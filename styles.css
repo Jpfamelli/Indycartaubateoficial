@@ -1586,3 +1586,6 @@ main:focus { outline: none; }
 
 /* faixa "Limpeza de Bicos": no celular as ações quebram linha em vez de cortar */
 @media (max-width: 760px) { .service-actions--strip { margin-left: 0; flex: 1 1 100%; min-width: 0; } }
+
+/* Campo-isca do formulário (anti-spam): fora da tela, sem sumir do DOM (robô ainda enxerga). */
+.campo-isca { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; overflow: hidden; }

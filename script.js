@@ -12,6 +12,32 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ================================================================
+     0. CSP sem script embutido: o que antes era onload/onerror no HTML
+     ================================================================ */
+  // Fontes do Google: entram como "print" (não travam a pintura) e viram "all" aqui.
+  $$('link[data-fontes]').forEach(l => {
+    const ligar = () => { l.media = 'all'; };
+    if (l.sheet) ligar(); else { l.addEventListener('load', ligar); setTimeout(ligar, 3000); }
+  });
+  // Imagem que não carregou: troca pela reserva (data-reserva) ou some com o bloco (data-reserva-remover).
+  function reservaDaImagem(img) {
+    if (img.dataset.reserva && !img.dataset.reservaUsada) {
+      img.dataset.reservaUsada = '1';
+      const pic = img.closest('picture');
+      if (pic) pic.querySelectorAll('source').forEach(s => s.remove());
+      img.src = img.dataset.reserva;
+      const [alvo, classe] = String(img.dataset.reservaClasse || '').split('|');
+      if (alvo && classe) img.closest(alvo)?.classList.add(classe);
+    } else if (img.dataset.reservaRemover) {
+      img.closest(img.dataset.reservaRemover)?.remove();
+    }
+  }
+  $$('img[data-reserva], img[data-reserva-remover]').forEach(img => {
+    if (img.complete && img.naturalWidth === 0 && img.currentSrc) reservaDaImagem(img);
+    else img.addEventListener('error', () => reservaDaImagem(img));
+  });
+
+  /* ================================================================
      1. NAVBAR — muda de estilo ao rolar + barra de progresso
      ================================================================ */
   const navbar = $('#navbar');
@@ -749,9 +775,22 @@
   const form = $('#leadForm');
   const WPHONE = '5512996830272';
 
+  // Anti-spam sem backend: campo-isca invisível + tempo mínimo entre começar a preencher e enviar.
+  const TEMPO_MINIMO_MS = 2500;
+  let comecouEm = 0;
+  form.addEventListener('focusin', () => { if (!comecouEm) comecouEm = Date.now(); });
+  form.addEventListener('input', () => { if (!comecouEm) comecouEm = Date.now(); });
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const name = $('#fName'), phone = $('#fPhone'), service = $('#fService');
+
+    // Robô preencheu o campo-isca: finge que deu certo e não abre nada.
+    if ($('#fEmpresa') && $('#fEmpresa').value.trim()) {
+      closeEl(formBackdrop); form.reset(); comecouEm = 0;
+      showToast('✅', 'Pedido enviado!', 'Continue a conversa pelo WhatsApp.');
+      return;
+    }
 
     // validação simples com feedback visual
     let ok = true;
@@ -766,19 +805,32 @@
     $('#fPhoneErr').hidden = foneOk || !phone.value.trim();
     if (!ok) { [name, phone, service].find(f => f.classList.contains('invalid')).focus(); return; }
 
+    // Rápido demais para uma pessoa (preenchimento automático de robô): pede para conferir.
+    if (!comecouEm || Date.now() - comecouEm < TEMPO_MINIMO_MS) {
+      comecouEm = comecouEm || Date.now();
+      const aviso = $('#fEnvioMsg');
+      if (aviso) { aviso.textContent = 'Confere os dados? Se estiver tudo certo, toque em enviar de novo.'; aviso.hidden = false; }
+      return;
+    }
+
+    if ($('#fEnvioMsg')) $('#fEnvioMsg').hidden = true;
     const car = $('#fCar').value.trim();
+    // Código de origem por serviço: o Atendimento lê "(site/formulario-freios)" e marca a UTM do lead.
+    const codigoServico = (service.selectedOptions[0] && service.selectedOptions[0].dataset.codigo) || 'servico';
+    const codigo = 'formulario-' + codigoServico;
     const msg =
       `*Novo pedido de orçamento — Site IndyCar* 🏁%0A%0A` +
       `*Nome:* ${encodeURIComponent(name.value.trim())}%0A` +
       `*Telefone:* ${encodeURIComponent(phone.value.trim())}%0A` +
       `*Serviço:* ${encodeURIComponent(service.value)}%0A` +
       (car ? `*Carro:* ${encodeURIComponent(car)}%0A` : '') +
-      `%0AGostaria de agendar um diagnóstico gratuito. (site/formulario)`;
+      `%0AGostaria de agendar um diagnóstico gratuito. (site/${codigo})`;
 
     launchConfetti();                 // 🎉 bandeira quadriculada
-    window.open(`https://wa.me/${WPHONE}?text=${msg}&utm_source=site&utm_medium=whatsapp&utm_campaign=formulario`, '_blank', 'noopener');
+    window.open(`https://wa.me/${WPHONE}?text=${msg}&utm_source=site&utm_medium=whatsapp&utm_campaign=${codigo}`, '_blank', 'noopener');
     closeEl(formBackdrop);
     form.reset();
+    comecouEm = 0;
     showToast('✅', 'Pedido enviado!', 'Continue a conversa pelo WhatsApp.');
   });
 
