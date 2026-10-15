@@ -79,9 +79,10 @@ O wa.me não repassa UTM para o CRM, então cada mensagem pronta termina com um 
 | `formulario-<serviço>` | formulário, com o serviço escolhido: `formulario-diagnostico`, `-motor`, `-oleo-motor`, `-cambio`, `-freios`, `-suspensao`, `-alinhamento`, `-pneus`, `-embreagem`, `-correia`, `-bicos`, `-outro-servico` |
 
 ## Segurança
-- Cabeçalhos no `netlify.toml` (o `npm test` aplica os mesmos no servidor local, então uma CSP que quebre algo falha o teste): CSP completa (script só do próprio site; estilos + Google Fonts; mapa do Google só em iframe; `frame-ancestors 'self'`), HSTS de 1 ano com preload, Permissions-Policy fechando câmera, microfone, localização, pagamento, sensores e rastreio, COOP `same-origin-allow-popups` (o wa.me abre em janela própria), nosniff e Referrer-Policy.
-- Nenhum script embutido nem `onload`/`onerror` no HTML: as fontes do Google e a imagem de reserva são ligadas pelo `script.js`.
-- SRI: o site não carrega script de CDN. A folha do Google Fonts muda conforme o navegador, então não aceita SRI; ela só traz CSS e fontes (limitadas pela CSP).
+- Cabeçalhos no `netlify.toml` (o `npm test` aplica os mesmos no servidor local, então uma CSP que quebre algo falha o teste): CSP completa (script, estilos e fontes só do próprio site; mapa do Google só em iframe; `frame-ancestors 'self'`), HSTS de 1 ano com preload, Permissions-Policy fechando câmera, microfone, localização, pagamento, sensores e rastreio, COOP `same-origin-allow-popups` (o wa.me abre em janela própria), nosniff e Referrer-Policy.
+- Nenhum script embutido nem `onload`/`onerror` no HTML: a imagem de reserva é ligada pelo `script.js`.
+- SRI: o site não carrega nada de CDN. Desde a rodada 4 as fontes ficam em `fontes/` (o `npm run publicar` copia a pasta).
+- Desempenho (rodada 4): efeitos de canvas começam depois do `load` (`aposCarregar` no script.js), seções abaixo da dobra com `content-visibility: auto` (âncoras ligam `html.cv-off` antes do pulo). Medição antes/depois em MELHORIAS.md.
 - Formulário sem backend, com anti-spam simples: campo-isca invisível (robô preenche, nada abre) e tempo mínimo de 2,5 s entre começar a preencher e enviar (rápido demais = aviso "Confere os dados?").
 
 ## Regras de conteúdo
