@@ -189,13 +189,9 @@
 }</script>
 
   <!-- ===== Google Fonts: Archivo (display expandido 800/900 + subtítulo 400/500/600) + Inter (corpo) + Barlow Condensed (micro-labels racing) ===== -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!-- fontes fora do caminho crítico: a página pinta já com as reservas calibradas (styles.css) e troca sem pulo.
-       Quem liga (media=all) é o script.js: a CSP do site não aceita onload embutido. -->
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,100,600;0,125,800;0,125,900&amp;family=Inter:wght@400;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,100,600;0,125,800;0,125,900&amp;family=Inter:wght@400;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" media="print" data-fontes />
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100,400;0,100,500;0,100,600;0,125,800;0,125,900&amp;family=Inter:wght@400;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" /></noscript>
+  <!-- Fontes do próprio site (rodada 4): as duas da primeira dobra já começam a baixar junto com a página. -->
+  <link rel="preload" href="fontes/archivo-variavel.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="fontes/inter-variavel.woff2" as="font" type="font/woff2" crossorigin />
 
   <link rel="stylesheet" href="styles.css" />
   <!-- favicon: versão mínima da logomarca vetorial (paralelogramo vermelho + banda de pneu) -->
@@ -438,7 +434,7 @@
         <div class="cutout-stage reveal">
           <span class="cutout-frame" aria-hidden="true"></span>
           <picture>
-            <source srcset="fachada-recorte.webp" type="image/webp" />
+            <source srcset="fachada-recorte-thumb.webp 480w, fachada-recorte.webp 960w" sizes="(max-width: 600px) 92vw, 560px" type="image/webp" />
             <img class="cutout-img" src="fachada-recorte.png" width="960" height="356" alt="Fachada da IndyCar Centro Automotivo em Taubaté" loading="lazy" decoding="async" data-parallax="0.06"
                data-reserva="oficina-fachada.jpg" data-reserva-classe=".cutout-stage|no-alpha" />
           </picture>
@@ -518,6 +514,11 @@
         <span class="section-tag">O QUE FAZEMOS</span>
         <h2 class="section-title">Centro Automotivo Completo <span class="text-red">em Taubaté</span></h2>
         <p class="section-desc">Do óleo do motor ao óleo do câmbio automático: o que o seu carro precisa em um só lugar, com garantia de 12 meses em peças e mão de obra.</p>
+          <ol class="svc-passos" aria-label="Como funciona qualquer serviço">
+            <li><span aria-hidden="true">1</span> Diagnóstico digital gratuito, com foto</li>
+            <li><span aria-hidden="true">2</span> Você aprova o orçamento antes</li>
+            <li><span aria-hidden="true">3</span> Só então a gente mexe no carro</li>
+          </ol>
       </div>
 
       <div class="services-grid">
@@ -530,7 +531,7 @@
           <h3>Troca de Óleo de Câmbio</h3>
           <p>Troca de óleo do câmbio automático <strong>100% na máquina (diálise)</strong>: renova todo o fluido, não só uma parte, e ajuda a proteger o conversor de torque.</p>
           <div class="service-actions">
-            <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20%C3%93leo%20de%20C%C3%A2mbio.%20(site%2Fcambio)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=cambio" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+            <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20%C3%93leo%20de%20C%C3%A2mbio.%20(site%2Fcambio)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=cambio" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Troca de Óleo de Câmbio (abre o WhatsApp)</span></a>
             <button class="svc-rev" data-reviews="cambio" data-service-name="Troca de Óleo de Câmbio" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Óleo de Câmbio"><span aria-hidden="true">★</span> Avaliações no Google</button>
           </div>
         </article>
@@ -544,7 +545,7 @@
             <h3>Diagnóstico com Scanner</h3>
             <p>Luz acesa no painel? O scanner lê as falhas da central eletrônica e a gente mostra, com foto, o que encontrou.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Diagn%C3%B3stico%20com%20Scanner.%20(site%2Fscanner)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=scanner" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Diagn%C3%B3stico%20com%20Scanner.%20(site%2Fscanner)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=scanner" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Diagnóstico com Scanner (abre o WhatsApp)</span></a>
               <button class="svc-rev" data-reviews="scanner" data-service-name="Diagnóstico com Scanner" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Diagnóstico com Scanner"><span aria-hidden="true">★</span> Avaliações no Google</button>
             </div>
           </div>
@@ -559,7 +560,7 @@
             <h3>Revisão de Motor</h3>
             <p>Vazamento de óleo, barulho estranho ou esquentando? A gente revisa e explica antes de trocar qualquer peça.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Revis%C3%A3o%20de%20Motor.%20(site%2Fmotor)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=motor" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Revis%C3%A3o%20de%20Motor.%20(site%2Fmotor)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=motor" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Revisão de Motor (abre o WhatsApp)</span></a>
               <button class="svc-rev" data-reviews="motor" data-service-name="Revisão de Motor" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Revisão de Motor"><span aria-hidden="true">★</span> Avaliações no Google</button>
             </div>
           </div>
@@ -574,7 +575,7 @@
             <h3>Troca de Óleo de Motor</h3>
             <p class="svc-mini-desc">Óleo e filtro novos, no padrão do manual do seu carro.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20%C3%93leo%20de%20Motor.%20(site%2Foleo-motor)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=oleo-motor" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20%C3%93leo%20de%20Motor.%20(site%2Foleo-motor)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=oleo-motor" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Troca de Óleo de Motor (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="oleo" data-service-name="Troca de Óleo de Motor" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Óleo de Motor"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
@@ -588,7 +589,7 @@
             <h3>Pastilhas e Discos</h3>
             <p class="svc-mini-desc">Chiado ou freio fraco? Pastilhas, discos e fluido de freio.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Pastilhas%20e%20Discos.%20(site%2Ffreios)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=freios" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Pastilhas%20e%20Discos.%20(site%2Ffreios)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=freios" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Pastilhas e Discos (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="freios" data-service-name="Pastilhas e Discos" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Pastilhas e Discos"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
@@ -602,7 +603,7 @@
             <h3>Troca de Amortecedores</h3>
             <p class="svc-mini-desc">Carro batendo ou balançando? Dianteiros e traseiros.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20Amortecedores.%20(site%2Famortecedores)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=amortecedores" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20Amortecedores.%20(site%2Famortecedores)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=amortecedores" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Troca de Amortecedores (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="amortecedores" data-service-name="Troca de Amortecedores" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Amortecedores"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
@@ -614,9 +615,9 @@
           </div>
           <div class="service-body">
             <h3>Correia Dentada</h3>
-            <p class="svc-mini-desc">Troca preventiva com tensor, no prazo do manual.</p>
+            <p class="svc-mini-desc">Troca preventiva com tensor, no intervalo que o manual do carro indica.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Correia%20Dentada.%20(site%2Fcorreia)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=correia" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Correia%20Dentada.%20(site%2Fcorreia)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=correia" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Correia Dentada (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="correia" data-service-name="Correia Dentada" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Correia Dentada"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
@@ -628,9 +629,9 @@
           </div>
           <div class="service-body">
             <h3>Venda de Pneus</h3>
-            <p class="svc-mini-desc">Pneu novo com montagem e troca inclusas.</p>
+            <p class="svc-mini-desc">Pneu novo, com a montagem feita aqui na oficina.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Pneus.%20(site%2Fpneus)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=pneus" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Pneus.%20(site%2Fpneus)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=pneus" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Venda de Pneus (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="pneus" data-service-name="Venda de Pneus" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Venda de Pneus"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
@@ -644,7 +645,7 @@
             <h3>Alinhamento 3D</h3>
             <p class="svc-mini-desc">Alinhamento, balanceamento, cambagem e caster.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Alinhamento%203D.%20(site%2Falinhamento)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=alinhamento" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Alinhamento%203D.%20(site%2Falinhamento)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=alinhamento" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Alinhamento 3D (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="alinhamento" data-service-name="Alinhamento 3D" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Alinhamento 3D"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
@@ -658,7 +659,7 @@
             <h3>Troca de Embreagem</h3>
             <p class="svc-mini-desc">Kit completo e cabo, para o pedal voltar macio.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20Embreagem.%20(site%2Fembreagem)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=embreagem" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20Embreagem.%20(site%2Fembreagem)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=embreagem" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Troca de Embreagem (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="embreagem" data-service-name="Troca de Embreagem" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Embreagem"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
@@ -672,7 +673,7 @@
             <h3>Revisão de Suspensão</h3>
             <p class="svc-mini-desc">Pivôs, buchas, terminais, coifas e rolamentos.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Revis%C3%A3o%20de%20Suspens%C3%A3o.%20(site%2Fsuspensao)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=suspensao" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Revis%C3%A3o%20de%20Suspens%C3%A3o.%20(site%2Fsuspensao)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=suspensao" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Revisão de Suspensão (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="suspensao" data-service-name="Revisão de Suspensão" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Revisão de Suspensão"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
@@ -689,7 +690,7 @@
           </div>
           <div class="service-actions service-actions--strip">
             <button class="svc-rev" data-reviews="bicos" data-service-name="Limpeza de Bicos" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Limpeza de Bicos"><span aria-hidden="true">★</span> Avaliações no Google</button>
-            <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Limpeza%20de%20Bicos.%20(site%2Fbicos)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=bicos" target="_blank" rel="noopener">Agende pelo WhatsApp →</a>
+            <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Limpeza%20de%20Bicos.%20(site%2Fbicos)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=bicos" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Limpeza de Bicos (abre o WhatsApp)</span></a>
           </div>
         </article>
       </div>
@@ -1351,6 +1352,6 @@
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="script.js" defer></script>
 </body>
 </html>

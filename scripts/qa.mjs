@@ -10,13 +10,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
+import { createRequire } from 'node:module';
+const AXE = fs.readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'qa-out');
 const CHROME = process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PHONE = '5512996830272';
 const PROIBIDAS = [/\bprezad[oa]s?\b/i, /\befetu(ar|e|ou)\b/i, /\bcomparec(er|a)\b/i, /\bve[ií]culos?\b/i, /\b10x\b/i, /leva e traz gr[aá]tis/i];
-const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.xml': 'application/xml', '.txt': 'text/plain', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml' };
+const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.xml': 'application/xml', '.txt': 'text/plain', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 
 /* Os mesmos cabeçalhos do netlify.toml (bloco "/*") no servidor local: CSP que quebre algo falha aqui. */
 function cabecalhosDoNetlify() {
@@ -127,6 +129,9 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     ok(webp, 'navegador moderno recebe WebP');
 
     ok(await page.$('#mapBox iframe') === null, 'mapa do Google não carrega antes do clique');
+    // Rodada 4: as seções abaixo da dobra usam content-visibility; rola até o mapa e espera ele assentar antes do clique.
+    await page.evaluate(() => document.getElementById('mapLoad').scrollIntoView({ block: 'center' }));
+    await new Promise(r => setTimeout(r, 1500));
     await page.click('#mapLoad');
     await page.waitForSelector('#mapBox iframe', { timeout: 5000 }).catch(() => {});
     ok(await page.$('#mapBox iframe') !== null, 'mapa carrega ao clicar em "Ver mapa aqui"');
@@ -211,12 +216,75 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     await page.keyboard.press('Escape');
   }
 
+  // ---- Rodada 4 (14/10/2026) ----
+  // Acessibilidade com axe-core (WCAG 2.1 A/AA): nenhuma violação séria ou crítica, com a página toda já rolada.
+  // Como a pessoa vê depois de rolar: tudo revelado e as transições (preenchimento dos títulos) terminadas.
+  await page.evaluate(() => {
+    document.documentElement.classList.add('cv-off');
+    document.querySelectorAll('.reveal, .section-head').forEach(e => e.classList.add('in'));
+  });
+  await new Promise(r => setTimeout(r, 1500));
+  await page.evaluate(AXE);
+  const axe = await page.evaluate(async () => {
+    const r = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa'] }, resultTypes: ['violations'] });
+    return r.violations.filter(v => v.impact === 'serious' || v.impact === 'critical').map(v => v.id + ' (' + v.nodes.length + '): ' + v.nodes.slice(0, 2).map(n => n.target.join(' ')).join(' | '));
+  });
+  ok(axe.length === 0, 'axe-core: nenhuma violação séria/crítica de WCAG 2.1 AA' + (axe.length ? ': ' + axe.join(' ;; ') : ''));
+  // Cada "Agende pelo WhatsApp" diz o serviço para o leitor de tela; passos do serviço sem preço nem prazo.
+  const servicos = await page.evaluate(() => {
+    const links = [...document.querySelectorAll('.service-card .service-link')];
+    const secao = document.getElementById('servicos').innerText;
+    return {
+      links: links.length,
+      comServico: links.filter(a => /— .+ \(abre o WhatsApp\)/.test(a.textContent)).length,
+      passos: document.querySelectorAll('.svc-passos li').length,
+      precoOuPrazo: /R\$|\bprazo\b|\bem \d+ (min|minutos|horas|dias)\b/i.test(secao),
+    };
+  });
+  ok(servicos.links >= 12 && servicos.comServico === servicos.links, `link de cada serviço diz qual é e que abre o WhatsApp (${servicos.comServico}/${servicos.links})`);
+  ok(servicos.passos === 3 && !servicos.precoOuPrazo, 'serviços: "como funciona" em 3 passos e nenhum preço ou prazo na seção');
+  await page.evaluate(() => document.documentElement.classList.remove('cv-off'));
+
   const csp = await page.evaluate(() => window.__csp);
   ok(csp.length === 0, 'nenhuma violação da CSP (mapa, fontes e WhatsApp funcionam com ela)' + (csp.length ? ': ' + [...new Set(csp)].slice(0, 4).join(' | ') : ''));
-  const fontes = await page.evaluate(() => [...document.querySelectorAll('link[data-fontes]')].every(l => l.media === 'all'));
-  ok(fontes, 'fontes do Google ligadas sem onload embutido');
+  // Rodada 4: fontes no próprio site (nada do Google), carregadas e usadas no título.
+  const fontes = await page.evaluate(async () => {
+    await document.fonts.ready;
+    const externas = performance.getEntriesByType('resource').filter(r => /fonts\.(googleapis|gstatic)\.com/.test(r.name)).length;
+    return { externas, archivo: document.fonts.check('800 40px Archivo'), inter: document.fonts.check('400 16px Inter') };
+  });
+  ok(fontes.externas === 0 && fontes.archivo && fontes.inter, 'fontes do próprio site carregadas (Archivo e Inter), nada do Google' + (fontes.externas ? ': ' + fontes.externas + ' pedidos externos' : ''));
   await page.screenshot({ path: path.join(OUT, `qa-${w}.png`), fullPage: false });
   ok(erros.length === 0, 'sem erro de console' + (erros.length ? ': ' + erros.slice(0, 3).join(' | ') : ''));
+  await page.close();
+}
+
+console.log('\n== âncoras e primeira dobra (rodada 4) ==');
+for (const [w, h] of [[375, 812], [1440, 900]]) {
+  for (const alvo of ['contato', 'faq', 'garantia']) {
+    const { page } = await abrir(w, h);
+    await new Promise(r => setTimeout(r, 500));
+    await page.evaluate(a => document.querySelector(`a[href="#${a}"]`).click(), alvo);
+    await new Promise(r => setTimeout(r, 1800));
+    const topo = await page.evaluate(a => Math.round(document.getElementById(a).getBoundingClientRect().top), alvo);
+    ok(topo >= 0 && topo < 160, `[${w}] menu leva até #${alvo} no lugar certo (topo ${topo}px)`);
+    await page.close();
+  }
+  const { page } = await abrir(w, h, BASE + '/#contato');
+  await new Promise(r => setTimeout(r, 1800));
+  const topo = await page.evaluate(() => Math.round(document.getElementById('contato').getBoundingClientRect().top));
+  ok(topo >= 0 && topo < 160, `[${w}] endereço com #contato abre no contato (topo ${topo}px)`);
+  await page.close();
+}
+{
+  // Sem JavaScript, o título do hero (o LCP no celular) aparece: não depende do script para ficar visível.
+  const page = await browser.newPage();
+  await page.setJavaScriptEnabled(false);
+  await page.setViewport({ width: 375, height: 812, isMobile: true, hasTouch: true });
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await new Promise(r => setTimeout(r, 900));
+  const op = await page.evaluate(() => getComputedStyle(document.querySelector('.hero-title')).opacity);
+  ok(Number(op) === 1, 'celular: título do hero visível antes do JavaScript (opacity ' + op + ')');
   await page.close();
 }
 

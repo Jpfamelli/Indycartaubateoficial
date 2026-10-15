@@ -4,6 +4,14 @@
    Paleta: #0a0a0a (preto) · #e50914 (vermelho-corrida) · #d4a853 (dourado)
    ==================================================================== */
 
+/* ===== FONTES NO PRÓPRIO SITE (rodada 4, 14/10/2026) =====
+   Archivo e Inter variáveis + Barlow Condensed, só o subconjunto latino (cobre o português).
+   Sem ir ao Google: a página não espera outro servidor e nada do visitante sai para terceiros. */
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; src: url('fontes/archivo-variavel.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('fontes/inter-variavel.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 600; font-display: swap; src: url('fontes/barlow-condensed-600.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 700; font-display: swap; src: url('fontes/barlow-condensed-700.woff2') format('woff2'); }
+
 /* ===== FONTE DE RESERVA COM A MESMA LARGURA DA ARCHIVO EXPANDIDA =====
    Enquanto a Archivo (Google Fonts, display=swap) não chega, o título usa
    Arial Black/Arial ajustadas para ocupar a mesma largura: as linhas quebram
@@ -14,6 +22,15 @@
 @font-face { font-family: 'Archivo Text Fallback'; src: local('Arial'), local('ArialMT'); size-adjust: 99%; }
 @font-face { font-family: 'Barlow Fallback'; src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Narrow'); size-adjust: 91%; }
 @font-face { font-family: 'Barlow Fallback 2'; src: local('Arial Bold'), local('Arial-BoldMT'); size-adjust: 74%; }
+
+/* Texto só para leitor de tela (rodada 4) */
+.so-leitor { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Rodada 4 (Core Web Vitals): as seções abaixo da primeira dobra só fazem layout e pintura quando chegam perto da
+   tela; o navegador guarda o tamanho real depois da primeira vez (auto), então a rolagem não pula. */
+main > section.section, main > section.final-cta { content-visibility: auto; contain-intrinsic-size: auto 900px; }
+/* Pulo para uma âncora (#contato, #faq...): tudo volta a ter o tamanho real antes, para o pulo cair no lugar certo. */
+html.cv-off main > section { content-visibility: visible; }
 
 /* ===== DESIGN TOKENS ===== */
 :root {
@@ -844,6 +861,12 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* ---- SplitText: título do hero revelado letra a letra ---- */
 .hero-title.st-split { opacity: 1; transform: none; } /* o reveal passa a ser por letra */
+/* Rodada 4 (Core Web Vitals): no celular o título do hero já nasce visível (é o LCP da página) e entra só com um
+   deslize, sem esperar o JavaScript nem a animação por letra; o brilho e o pulso vermelho continuam. */
+@media (max-width: 768px) {
+  .hero-title.reveal { opacity: 1; transform: none; animation: heroSobe .75s var(--ease) both; }
+}
+@keyframes heroSobe { from { transform: translateY(26px); } to { transform: none; } }
 .hero-title .st-word { display: inline-block; }
 .hero-title .st-char { display: inline-block; opacity: 0; transform: translateY(.55em); will-change: transform, opacity; }
 .hero-title.in .st-char { animation: stCharIn .7s var(--ease) both; animation-delay: calc(var(--i) * 12ms); }
@@ -1116,6 +1139,10 @@ body.perf-lite .cta-embers { display: none; }
 /* tipografia sobre claro */
 .sec-light .section-title { color: var(--lt-ink); }
 .sec-light .section-desc { color: var(--lt-ink-2); }
+/* Rodada 4: "como funciona qualquer serviço" em 3 passos, sem preço nem prazo. */
+.svc-passos { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 14px; margin: 22px 0 0; padding: 0; }
+.svc-passos li { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-cond); font-weight: 600; letter-spacing: .04em; font-size: .98rem; color: var(--lt-ink); background: var(--lt-card); border: 1px solid var(--lt-line); border-radius: 40px; padding: 7px 14px 7px 8px; }
+.svc-passos li span { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--red); color: #fff; font-size: .82rem; font-weight: 700; }
 .sec-light .stroke-title .stroke-layer { -webkit-text-stroke-color: rgba(23,24,28,.38); }
 .sec-light .stroke-title .stroke-layer .text-red { -webkit-text-stroke-color: rgba(229,9,20,.75); }
 
@@ -1197,7 +1224,7 @@ body.perf-lite .cta-embers { display: none; }
   box-shadow: 26px 30px 0 rgba(23,24,28,.07);
 }
 .cutout-img {
-  position: relative; z-index: 2; width: 100%;
+  position: relative; z-index: 2; width: 100%; height: auto; /* rodada 4: sem height:auto a foto ficava esticada no celular */
   filter: drop-shadow(22px 26px 22px rgba(23,24,28,.38));
   transition: transform .3s var(--ease);
 }

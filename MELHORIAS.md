@@ -107,3 +107,39 @@ Segurança, qualidade e conectividade, sem backend novo e sem páginas novas.
 90. Checagem de cabeçalhos de segurança (CSP, HSTS, Permissions-Policy, nosniff, Referrer-Policy) e de HTML sem script embutido — roda também contra produção com `QA_URL`.
 91. Acessibilidade conferida no teste: um h1, `lang=pt-BR`, atalho "Pular para o conteúdo", todo botão/link com nome acessível e todo campo com rótulo.
 92. Testes novos do formulário: isca, envio rápido, código por serviço e formato dos 27 códigos de WhatsApp; CLS segue 0,004 no desktop com as fontes ligadas pelo script.
+
+## Rodada 4 (14/10/2026)
+
+Core Web Vitals medidos em produção (Lighthouse 12.8 no Chrome headless desta máquina, https://indycar-taubate.netlify.app, várias rodadas; mediana), acessibilidade e serviços mais claros, sem preço nem prazo. `npm test` (local e com `QA_URL` em produção) sem falha.
+
+| Produção | Antes (deb57de) | Depois |
+|---|---|---|
+| Celular · desempenho | 67 (47–80) | 69 (62–80) |
+| Celular · FCP | 3,6 s | 1,5 s |
+| Celular · LCP | 3,9 s | 3,2 s |
+| Celular · TBT | ~0,6 s | 0,6–1,6 s (oscila: animações do fundo; ver pendência) |
+| Computador · desempenho | 89 | 95 (91–97) |
+| Computador · LCP | 1,1 s | 0,7 s |
+| Acessibilidade | 96 | 100 |
+| Boas práticas | 96 | 100 |
+| CLS | 0,001 | 0,001 |
+
+93. Fontes no próprio site (Archivo e Inter variáveis, Barlow Condensed; só o subconjunto latino) com preload das duas da primeira dobra: some a ida ao Google na abertura (FCP no celular 3,6 s → 1,5 s).
+94. CSP mais fechada: sem fonts.googleapis/gstatic em style-src e font-src (só o próprio site); cache de 1 ano para /fontes/.
+95. Privacidade atualizada: o site não chama mais o Google Fonts ("abrir a página não chama nenhum servidor de fora").
+96. `script.js` com `defer`.
+97. No celular o título do hero (o LCP da página) nasce visível e entra só com um deslize em CSS, sem esperar o JavaScript nem a animação por letra; no computador a animação por letra continua.
+98. Os 16 efeitos de canvas e de animação contínua (mar de metal, borda elétrica, mira, grade técnica, faíscas, marquee, selos, odômetro...) começam depois do "load", com o navegador ocioso: a primeira pintura e o primeiro toque não disputam o processador.
+99. Rolagem: um cálculo por quadro (antes, a cada evento) e a primeira medida só depois da primeira pintura (era um layout forçado de ~1 s na abertura).
+100. Faixa de confiança (marquee) sem layout forçado a cada quadro: a largura é medida só quando muda (ResizeObserver).
+101. Seções abaixo da dobra com `content-visibility: auto`: o navegador só faz layout e pintura quando elas chegam perto da tela (layout+estilo na abertura 3,9 s → 2,3 s no teste com CPU 4x).
+102. Menu e links internos (#contato, #faq, #garantia...) e endereço aberto já com âncora caem no lugar certo com as seções otimizadas (conferido em 375 e 1440 px).
+103. Mar de metal fundido começa um degrau mais leve no celular e sobe sozinho para o desenho completo se o aparelho aguentar.
+104. Foto da fachada (seção Sobre) sem distorção no celular (estava esticada para 364×356) e com versão de 480 px para telas pequenas.
+105. Acessibilidade 100: o parágrafo animado da seção Sobre não usa mais `aria-label` em `<p>` (proibido); o texto inteiro vai num trecho só para leitor de tela.
+106. Os 12 botões "Agende pelo WhatsApp →" dos serviços dizem ao leitor de tela qual é o serviço e que abrem o WhatsApp.
+107. Serviços mais claros: "como funciona qualquer serviço" em 3 passos (diagnóstico gratuito com foto → você aprova o orçamento → só então a gente mexe no carro), sem preço nem prazo.
+108. Textos sem promessa: pneus "com a montagem feita aqui na oficina" (antes "inclusas") e correia "no intervalo que o manual do carro indica" (antes "prazo").
+109. Teste (`npm test`) ampliado: axe-core WCAG 2.1 AA sem violação séria/crítica, link de cada serviço com o nome, 3 passos e nenhum preço/prazo na seção, âncoras no lugar certo (375 e 1440), título do hero visível sem JavaScript, fontes do próprio site e nada do Google; mapa testado depois de rolar até ele.
+
+**Pendências (João):** confirmar "4,8 / +1.200 avaliações" e "+18 anos". TBT no celular oscila porque o fundo animado (mar de metal, listras e brilho do título) roda o tempo todo; dá para deixar o fundo parado no celular se o João preferir velocidade a efeito. No Lighthouse, a acessibilidade às vezes marca 96 por um falso positivo de contraste em seção ainda não desenhada (content-visibility); com a página rolada o axe dá 0 violações.

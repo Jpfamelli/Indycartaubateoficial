@@ -10,11 +10,29 @@
   const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Rodada 4 (Core Web Vitals): efeitos de canvas que rodam sem parar começam depois do "load", com o navegador
+  // ocioso; a primeira pintura e o primeiro toque não disputam o processador com eles.
+  const aposCarregar = (fn) => {
+    const ir = () => (window.requestIdleCallback ? window.requestIdleCallback(fn, { timeout: 2500 }) : setTimeout(fn, 300));
+    if (document.readyState === 'complete') ir(); else window.addEventListener('load', ir, { once: true });
+  };
+  // No celular o título do hero não é dividido em letras (ele é o LCP e entra só com o deslize do CSS).
+  const heroLeve = window.matchMedia('(max-width: 768px)').matches;
+  // As seções abaixo da dobra usam content-visibility (styles.css). Antes de pular para uma âncora, todas ganham o
+  // tamanho real (html.cv-off), senão o pulo cairia no lugar errado. Com âncora já no endereço, vale desde o início.
+  const semAtalhoDeLayout = () => document.documentElement.classList.add('cv-off');
+  if (location.hash.length > 1) semAtalhoDeLayout();
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (a && a.getAttribute('href').length > 1) semAtalhoDeLayout();
+  }, true);
+  window.addEventListener('hashchange', semAtalhoDeLayout);
 
   /* ================================================================
      0. CSP sem script embutido: o que antes era onload/onerror no HTML
      ================================================================ */
-  // Fontes do Google: entram como "print" (não travam a pintura) e viram "all" aqui.
+  // Desde a rodada 4 as fontes ficam no próprio site (styles.css). Se alguma página ainda tiver um link
+  // data-fontes (media=print), ele vira "all" aqui.
   $$('link[data-fontes]').forEach(l => {
     const ligar = () => { l.media = 'all'; };
     if (l.sheet) ligar(); else { l.addEventListener('load', ligar); setTimeout(ligar, 3000); }
@@ -58,8 +76,10 @@
     // parallax sutil do grid de fundo (módulo do passo: a grade nunca sai da tela)
     if (bgGrid && !reduceMotion) bgGrid.style.transform = `translateY(${(y * GRID_PAR) % GRID_STEP}px)`;
   }
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+  // Um quadro por rolagem (antes cada evento media a página inteira) e a primeira medida depois da primeira pintura.
+  let scrollRaf = 0;
+  window.addEventListener('scroll', () => { if (!scrollRaf) scrollRaf = requestAnimationFrame(() => { scrollRaf = 0; onScroll(); }); }, { passive: true });
+  requestAnimationFrame(onScroll);
 
   toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }));
 
@@ -201,7 +221,7 @@
         a aba oculta; reduced-motion = 1 frame estático; pointer:coarse
         fica autônomo (sem efeitos de mouse).
      ================================================================ */
-  (function metalFundido() {
+  aposCarregar(function metalFundido() {
     var canvas = document.getElementById('bgLive');
     if (!canvas || !canvas.getContext) return;
     var ctx = canvas.getContext('2d');
@@ -240,6 +260,9 @@
     var marS0 = marS;
     var docH = 1, rolagem = window.scrollY || 0;
     var fator = 1, passoX = PASSO0, nivel = 0, emaDt = 16.7, lastDrop = 0, bomDesde = 0;
+    /* Rodada 4: no celular começa um degrau abaixo (menos filamentos); se o aparelho
+       aguentar (3s de quadros bons), o governor sobe sozinho para o desenho completo. */
+    if (COARSE) { nivel = 1; fator = 0.66; }
     var lastT = 0, raf = 0, rodando = false, t0 = performance.now();
     var spanAtual = 0;
 
@@ -601,7 +624,7 @@
 
     document.addEventListener('visibilitychange', liga);
     liga();
-  })();
+  });
 
   /* ================================================================
      7. CARROSSEL DE DEPOIMENTOS
@@ -1037,7 +1060,7 @@
      ================================================================ */
   (function splitHeroTitle() {
     const h1 = $('.hero-title');
-    if (!h1 || reduceMotion) return;
+    if (!h1 || reduceMotion || heroLeve) return;
     const originalText = h1.textContent.replace(/\s+/g, ' ').trim();
     let charIndex = 0;
 
@@ -1078,7 +1101,7 @@
          especialidade (câmbio automático). Ruído com oitavas desloca
          o traçado do retângulo arredondado a cada frame.
      ================================================================ */
-  (function electricBorder() {
+  aposCarregar(function electricBorder() {
     const card = $('.service-card--star');
     if (!card || reduceMotion) return;
 
@@ -1204,7 +1227,7 @@
     new ResizeObserver(updateSize).observe(wrap);
     // só anima quando o card está visível (economia de bateria)
     new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()), { threshold: 0 }).observe(wrap);
-  })();
+  });
 
   /* ================================================================
      19. FUNDO — pausa aurora/blobs/grão quando a aba fica oculta
@@ -1222,7 +1245,7 @@
          velocidade do scroll, com skew limitado a ±6°. O marquee em
          CSS fica como fallback e como comportamento em reduced-motion.
      ================================================================ */
-  (function trustVelocity() {
+  aposCarregar(function trustVelocity() {
     const bar = $('.trust-bar');
     const trackEl = $('.trust-track');
     if (!bar || !trackEl || reduceMotion) return;
@@ -1230,6 +1253,9 @@
 
     trackEl.classList.add('js-marquee');
     let offset = 0, vel = 0, skew = 0, lastY = window.scrollY, raf = null;
+    // Rodada 4: a largura do grupo é medida só quando muda (antes, a cada quadro forçava o layout da página).
+    let larguraGrupo = group.offsetWidth;
+    if ('ResizeObserver' in window) new ResizeObserver(() => { larguraGrupo = group.offsetWidth; }).observe(group);
 
     function frame() {
       const y = window.scrollY;
@@ -1237,7 +1263,7 @@
       lastY = y;
 
       offset -= 0.6 + Math.abs(vel) * 0.15;
-      const w = group.offsetWidth;
+      const w = larguraGrupo;
       if (w > 0) offset = ((offset % w) + w) % w - w;   // wrap pelo módulo de um grupo
 
       const targetSkew = Math.max(-6, Math.min(6, vel * 0.35));
@@ -1249,14 +1275,14 @@
     function start() { if (!raf) { lastY = window.scrollY; raf = requestAnimationFrame(frame); } }
     function stop() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
     new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()), { threshold: 0 }).observe(bar);
-  })();
+  });
 
   /* ================================================================
      21. TARGETCURSOR — port do React Bits (reactbits.dev) sem GSAP
          Mira de precisão que segue o ponteiro (lerp) girando devagar
          e trava os 4 cantos ao redor de CTAs, links e cards.
      ================================================================ */
-  (function targetCursor() {
+  aposCarregar(function targetCursor() {
     if (!hasFinePointer || reduceMotion) return;
 
     const SEL = '.btn, .nav-link, .service-card, [data-open-modal], .faq-q';
@@ -1348,7 +1374,7 @@
       if (locked) setCorners(locked.getBoundingClientRect());
       tcRaf = tcOn ? requestAnimationFrame(loop) : null;
     }
-  })();
+  });
 
   /* ================================================================
      22. STROKETEXT — port do React Bits (reactbits.dev) sem GSAP
@@ -1371,7 +1397,7 @@
          perto do cursor, segmentos e nós acendem em vermelho.
          Só anima enquanto o ponteiro se move; depois decai e para.
      ================================================================ */
-  (function techGrid() {
+  aposCarregar(function techGrid() {
     if (!bgGrid || !bgGrid.getContext) return;
     const gtx = bgGrid.getContext('2d');
     const PAD = 60, RADIUS = 230;
@@ -1445,13 +1471,13 @@
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && raf) { cancelAnimationFrame(raf); raf = null; drawBase(); }
     });
-  })();
+  });
 
   /* ================================================================
      24. MARCHA DE RPM — o ponteiro da barra de progresso estica e
          brilha conforme a velocidade do scroll, e assenta sozinho.
      ================================================================ */
-  (function rpmNeedle() {
+  aposCarregar(function rpmNeedle() {
     if (reduceMotion) return;
     let rev = 0, revTarget = 0, raf = null, lastY = window.scrollY;
 
@@ -1468,7 +1494,7 @@
       lastY = y;
       if (!raf) raf = requestAnimationFrame(frame);
     }, { passive: true });
-  })();
+  });
 
   /* ================================================================
      25. GLAREHOVER — port do React Bits (reactbits.dev)
@@ -1490,7 +1516,7 @@
          Glint metálico que varre o H1 letra a letra (reaproveita o
          split do item 17): 1x após a entrada e no hover do CTA.
      ================================================================ */
-  (function heroShine() {
+  aposCarregar(function heroShine() {
     if (reduceMotion) return;
     const h1 = $('.hero-title');
     if (!h1 || !h1.classList.contains('st-split')) return;
@@ -1510,7 +1536,7 @@
     setTimeout(glint, 2600);
     const cta = $('.hero-cta .btn-primary');
     if (cta && hasFinePointer) cta.addEventListener('pointerenter', glint);
-  })();
+  });
 
   /* ================================================================
      27. CIRCULARTEXT — port do React Bits (reactbits.dev)
@@ -1518,7 +1544,7 @@
          ao redor do círculo via rotate(); o giro é uma única animação
          CSS (pausa com a aba oculta via body.fx-paused).
      ================================================================ */
-  (function circularSeal() {
+  aposCarregar(function circularSeal() {
     const rotor = $('#sealRotor');
     if (!rotor) return;
     const TEXT = 'ESPECIALISTA EM MECÂNICA EM GERAL • +18 ANOS • ';
@@ -1533,7 +1559,7 @@
       frag.appendChild(s);
     });
     rotor.appendChild(frag);
-  })();
+  });
 
   /* ================================================================
      27b. GOVERNADOR DE FPS — qualidade adaptativa
@@ -1542,7 +1568,7 @@
          puramente decorativas (aurora, grão, listras, blobs).
          Máquinas boas ficam com tudo.
      ================================================================ */
-  (function perfGovernor() {
+  aposCarregar(function perfGovernor() {
     if (reduceMotion) return;
     setTimeout(() => {
       let frames = 0;
@@ -1557,7 +1583,7 @@
       }
       requestAnimationFrame(probe);
     }, 1500); // deixa o jank de load passar antes de medir
-  })();
+  });
 
   /* ================================================================
      28. DECRYPTEDTEXT — port do React Bits (reactbits.dev)
@@ -1566,7 +1592,7 @@
          no texto final da esquerda para a direita. Roda 1x por tag,
          via rAF, quando o rótulo entra na tela.
      ================================================================ */
-  (function decryptTags() {
+  aposCarregar(function decryptTags() {
     if (reduceMotion) return;
     const GLYPHS = '#<>/\\_-=+*0123456789ABCDEFXYZ';
     const tags = $$('.section-tag');
@@ -1601,14 +1627,14 @@
       });
     }, { threshold: 0.6 });
     tags.forEach(t => tagIO.observe(t));
-  })();
+  });
 
   /* ================================================================
      29. ODÔMETRO DO SELO "18+" — o badge de anos na foto de
          #diferenciais conta de 0 a 18 (mesmo easing dos contadores)
          quando entra na tela.
      ================================================================ */
-  (function yearsOdometer() {
+  aposCarregar(function yearsOdometer() {
     const badge = $('#yearsBadge');
     if (!badge || reduceMotion) return;
     const TARGET = 18, DUR = 1400;
@@ -1623,7 +1649,7 @@
         if (p < 1) requestAnimationFrame(tick);
       })(t0);
     }, { threshold: 0.5 }).observe(badge);
-  })();
+  });
 
   /* ================================================================
      30. VARIABLEPROXIMITY — port do React Bits (reactbits.dev)
@@ -1631,7 +1657,7 @@
          quanto mais perto, mais brancas, maiores e com glow vermelho.
          Um só rAF que decai e para sozinho quando o ponteiro sai.
      ================================================================ */
-  (function brandProximity() {
+  aposCarregar(function brandProximity() {
     if (!hasFinePointer || reduceMotion) return;
     const wrap = $('.brands');
     if (!wrap) return;
@@ -1662,7 +1688,7 @@
       if (!raf) raf = requestAnimationFrame(frame);
     });
     wrap.addEventListener('pointerleave', () => { lastMove = 0; });
-  })();
+  });
 
   /* ================================================================
      31. SCROLLREVEAL — port do React Bits (reactbits.dev) sem GSAP
@@ -1670,7 +1696,7 @@
          palavra desborra e sobe com stagger quando o texto aparece.
          Roda 1x; leitores de tela leem o texto inteiro via aria-label.
      ================================================================ */
-  (function scrollRevealLead() {
+  aposCarregar(function scrollRevealLead() {
     if (reduceMotion) return;
     const els = $$('.about-lead');
     if (!els.length) return;
@@ -1695,7 +1721,11 @@
         });
       })(el);
       $$('.sr-word', el).forEach((w, i) => w.style.setProperty('--wi', i));
-      el.setAttribute('aria-label', label);
+      // <p> não aceita aria-label (axe: aria-prohibited-attr): o texto inteiro vai num span só para leitor de tela.
+      const leitor = document.createElement('span');
+      leitor.className = 'so-leitor';
+      leitor.textContent = label;
+      el.appendChild(leitor);
       el.classList.add('sr-split');
     });
 
@@ -1717,7 +1747,7 @@
       });
     }, { threshold: 0.3 });
     els.forEach(el => srIO.observe(el));
-  })();
+  });
 
   /* ================================================================
      32. COUNTUP no badge de avaliação do hero — o "4,8" acelera de
@@ -1738,7 +1768,7 @@
          vermelhas e prata subindo devagar com flicker. Pausa fora do
          viewport, off em reduced-motion, metade em perf-lite.
      ================================================================ */
-  (function ctaEmbers() {
+  aposCarregar(function ctaEmbers() {
     const cv = $('#ctaEmbers');
     const sec = $('.final-cta');
     if (!cv || !sec || reduceMotion) return;
@@ -1799,14 +1829,14 @@
       emberResizeTimer = setTimeout(() => { size(); make(); }, 150);
     });
     new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()), { threshold: 0 }).observe(sec);
-  })();
+  });
 
   /* ================================================================
      34. RITMO CLARO/ESCURO — hairline vermelha que se desenha na
          fronteira das seções + variante escura do cursor de mira
          sobre fundo claro (cantos grafite).
      ================================================================ */
-  (function lightRhythm() {
+  aposCarregar(function lightRhythm() {
     const secs = $$('.sec-light, .why, .contact');
     if (secs.length) {
       const eio = new IntersectionObserver((entries) => {
@@ -1824,7 +1854,7 @@
         document.body.classList.toggle('tc-light', light);
       });
     }
-  })();
+  });
 
   /* ================================================================
      35. CIRCULARTEXT genérico — monta qualquer rotor com o texto
@@ -1849,7 +1879,7 @@
          (não transformado) para não realimentar o próprio deslocamento.
          Um rAF por evento de scroll; nada roda com a página parada.
      ================================================================ */
-  (function photoParallax() {
+  aposCarregar(function photoParallax() {
     if (reduceMotion) return;
     const els = $$('[data-parallax]');
     if (!els.length) return;
@@ -1867,7 +1897,7 @@
     }
     window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(frame); }, { passive: true });
     frame();
-  })();
+  });
 
   /* ================================================================
      37. AVALIAÇÕES POR SERVIÇO — popover acessível.

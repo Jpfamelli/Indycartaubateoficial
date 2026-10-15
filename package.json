@@ -9,6 +9,7 @@
     "publicar": "node scripts/publicar.mjs && npx netlify-cli deploy --prod --dir dist"
   },
   "devDependencies": {
+    "axe-core": "^4.10.3",
     "puppeteer-core": "^24.0.0"
   }
 }
