@@ -46,6 +46,8 @@ function telefone(v: unknown): string | null {
   if (d.length !== 10 && d.length !== 11) return null;
   if (/^(\d)\1+$/.test(d)) return null; // 99999999999 não é um telefone
   if (d[2] === '0') return null;
+  if (d[0] === '0' || d[1] === '0') return null; // DDD vai de 11 a 99
+  if (d.length === 11 && d[2] !== '9') return null; // celular com 11 dígitos começa com 9
   return d;
 }
 
@@ -53,8 +55,12 @@ async function sha256(s: string): Promise<string> {
   const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
   return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('').slice(0, 32);
 }
+/** O primeiro valor de x-forwarded-for é forjável; vale o cf-connecting-ip e, sem ele, o ÚLTIMO valor (posto pelo proxy). */
 function ipDe(req: Request): string {
-  return (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || req.headers.get('cf-connecting-ip') || 'sem-ip';
+  const cf = (req.headers.get('cf-connecting-ip') ?? '').trim();
+  if (cf) return cf;
+  const lista = (req.headers.get('x-forwarded-for') ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+  return lista[lista.length - 1] || 'sem-ip';
 }
 
 // Freio em memória por instância (barra rajadas antes de ir ao banco).
@@ -164,7 +170,7 @@ async function tratar(req: Request): Promise<Response> {
     const leadId = doTelefone![0].lead_id as string | null;
     if (leadId) {
       const { data: l } = await sb.from('leads').select('observacoes').eq('id', leadId).maybeSingle();
-      const extra = `[${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC] Novo envio pelo site: ${pedido.servico}` +
+      const extra = `[${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })}] Novo envio pelo site: ${pedido.servico}` +
         (pedido.preferencia ? ` · ${pedido.preferencia}` : '') + (pedido.mensagem ? `\n${pedido.mensagem}` : '');
       await sb.from('leads').update({ observacoes: [l?.observacoes, extra].filter(Boolean).join('\n\n').slice(0, 4000) }).eq('id', leadId);
     }

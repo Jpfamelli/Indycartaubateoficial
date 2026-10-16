@@ -894,7 +894,7 @@
     // validação simples com feedback visual
     let ok = true;
     const digitos = phone.value.replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
-    const foneOk = (digitos.length === 10 || digitos.length === 11) && !/^(\d)\1+$/.test(digitos);
+    const foneOk = (digitos.length === 10 || digitos.length === 11) && !/^(\d)\1+$/.test(digitos) && /^[1-9][1-9]/.test(digitos) && digitos[2] !== '0' && (digitos.length === 10 || digitos[2] === '9'); // mesma regra da Edge Function
     [name, phone, service].forEach(f => {
       const bad = !f.value.trim() || (f === phone && !foneOk);
       f.classList.toggle('invalid', bad);
