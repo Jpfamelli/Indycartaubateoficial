@@ -248,3 +248,12 @@ Conversão ligada ao ecossistema (pedido do site vira lead + tarefa no banco), �
 - Lighthouse no celular: o que sobra é a primeira pintura/layout da página (HTML de 98 KB com 30 ícones SVG e CSS de 77 KB); para chegar a 95 no celular com folga, o próximo passo é dividir o CSS dos efeitos em arquivo adiado e enxugar os SVGs — não fiz nesta rodada.
 - A IA do Atendimento (onda B1) deve ler "quero orçar: <serviço>" das mensagens do site; o contrato está no README.
 - Tema claro/escuro: o site é escuro por marca, com seções claras intencionais ("showroom"); um botão de tema quebraria a composição — não adicionado, de propósito.
+
+### Produção (16/10/2026, depois de publicar — Lighthouse 13.5 nesta máquina compartilhada, sem GPU; números variam entre rodadas)
+| | Antes (d06df83, medido no mesmo momento) | Depois (e58f20f) |
+|---|---|---|
+| Celular · desempenho | 64–71 | **73** (TBT 1,2 s → 0,8 s · SI 4,3 → 3,2 s · FCP 1,8 → 1,7 s · CLS 0) |
+| Computador · desempenho | 73–83 | **93–99** (TBT 370 → 80–110 ms · SI 4,9 → 1,2–2,0 s) |
+| Acessibilidade · Boas práticas · SEO | 100 · 100 · 100 | 100 · 100 · 100 (sem o aviso `label-content-name-mismatch`) |
+
+O computador bateu a meta (≥ 95 nas quatro notas, 99 na melhor rodada). No celular a meta de 95 **não** foi atingida: o que sobra é o custo de estilo+layout da página inteira (~0,5 s a cada relayout com CPU 4× mais lenta; as fontes Archivo/Inter chegando depois da primeira pintura refazem esse layout). Caminhos para a próxima rodada, em ordem: instâncias estáticas das fontes (Archivo 900 expandida e 400; hoje a variável tem 90 KB), CSS dos efeitos em arquivo adiado, HTML mais enxuto (30 ícones SVG embutidos). 182. `performance.measure('efeito:<nome>')` em cada efeito da fila: o Lighthouse/DevTools mostra quanto cada um custou (no celular, nenhum passa de 20 ms).

@@ -21,7 +21,10 @@
     const inicio = performance.now();
     while (filaOciosa.length) {
       const fn = filaOciosa.shift();
+      const t1 = performance.now();
       try { fn(); } catch (e) { console.error(e); }
+      // cada efeito deixa uma medida (performance.measure) para o teste/Lighthouse apontar quem pesou
+      try { performance.measure('efeito:' + (fn.name || 'anonimo'), { start: t1, end: performance.now() }); } catch (_) {}
       if (performance.now() - inicio > 8 || (deadline && deadline.timeRemaining && deadline.timeRemaining() < 4)) break;
     }
     if (filaOciosa.length) agendarFila();
