@@ -22,6 +22,12 @@
     Cross-Origin-Opener-Policy = "same-origin-allow-popups"
     Cache-Control = "public, max-age=0, must-revalidate"
 
+# Manifesto com o tipo certo (a Netlify servia como octet-stream).
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json; charset=utf-8"
+
 # Fontes do próprio site (rodada 4): o nome muda se a fonte mudar.
 [[headers]]
   for = "/fontes/*"

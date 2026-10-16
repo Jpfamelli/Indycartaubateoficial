@@ -388,7 +388,8 @@
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       off.width = Math.ceil(W * marS); off.height = Math.ceil(H * marS);
       octx.setTransform(marS, 0, 0, marS, 0, 0);
-      docH = Math.max(1, (document.documentElement.scrollHeight || H) - H);
+      /* altura do documento só quando o mar anima (a leitura força o layout; no quadro parado não precisa) */
+      if (rodando) docH = Math.max(1, (document.documentElement.scrollHeight || H) - H);
       pintarAmb();
     }
 
@@ -466,6 +467,7 @@
       var t = (now - t0) / 1000 + 11.3;
       prepararVagas(t);
 
+      if (docH === 1 && !estatico) docH = Math.max(1, (document.documentElement.scrollHeight || H) - H);
       var fracScroll = rolagem / docH; if (fracScroll > 1) fracScroll = 1;
       var mare = MARE_AMP * Math.sin(t * TAU / MARE_T) + MARE_SCROLL * fracScroll;
       var bandTop = H * (BAND_BASE - mare) - rolagem * PARALAXE;

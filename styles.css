@@ -9,8 +9,10 @@
    Sem ir ao Google: a página não espera outro servidor e nada do visitante sai para terceiros. */
 @font-face { font-family: 'Archivo'; font-style: normal; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; src: url('fontes/archivo-variavel.woff2') format('woff2'); }
 @font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('fontes/inter-variavel.woff2') format('woff2'); }
-@font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 600; font-display: swap; src: url('fontes/barlow-condensed-600.woff2') format('woff2'); }
-@font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 700; font-display: swap; src: url('fontes/barlow-condensed-700.woff2') format('woff2'); }
+/* Barlow (rótulos e botões): font-display optional — se não chegar a tempo na 1ª visita, fica a reserva calibrada e a página
+   NÃO refaz o layout inteiro quando a fonte chega (no celular cada relayout custava ~0,5 s); da 2ª visita em diante vem do cache. */
+@font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 600; font-display: optional; src: url('fontes/barlow-condensed-600.woff2') format('woff2'); }
+@font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 700; font-display: optional; src: url('fontes/barlow-condensed-700.woff2') format('woff2'); }
 
 /* ===== FONTE DE RESERVA COM A MESMA LARGURA DA ARCHIVO EXPANDIDA =====
    Enquanto a Archivo (Google Fonts, display=swap) não chega, o título usa
@@ -302,7 +304,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   font-family: var(--font-cond); font-weight: 600; letter-spacing: .22em; font-size: .85rem;
   color: var(--gold); padding: 8px 16px; border: 1px solid rgba(255,255,255,.3);
   border-radius: 40px; background: rgba(255,255,255,.06); margin-bottom: 26px;
+  max-width: 100%; flex-wrap: wrap; /* rodada 5: com a fonte de reserva a frase quebra linha em vez de vazar em 375 px */
 }
+@media (max-width: 480px) { .hero-eyebrow { letter-spacing: .14em; font-size: .78rem; } }
 .pulse-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 0 var(--red-glow); animation: pulseScale 1.8s infinite; }
 
 .hero-title {
