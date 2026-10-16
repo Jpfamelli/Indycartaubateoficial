@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0a0a0a" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
 
   <!-- ===== SEO ===== -->
   <title>IndyCar Centro Automotivo Taubaté | Oficina Mecânica Premium</title>
@@ -174,7 +176,7 @@
       "name": "Como acompanho o serviço do meu carro?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Aqui a transparência é absoluta: você acompanha o diagnóstico, entende o defeito e aprova apenas o necessário — sem surpresas na hora de pagar. Qualquer dúvida durante o serviço, é só falar com a gente no WhatsApp (12) 99683-0272 ou no fixo (12) 3624-5957."
+        "text": "Pelo celular, em tempo real: quando o carro entra na oficina, você recebe no WhatsApp o link Acompanhar meu carro, com cada etapa, as fotos e os extras para aprovar ou recusar. Aqui a transparência é absoluta: você entende o defeito e aprova apenas o necessário — sem surpresas na hora de pagar. Qualquer dúvida durante o serviço, é só falar com a gente no WhatsApp (12) 99683-0272 ou no fixo (12) 3624-5957."
       }
     },
     {
@@ -203,10 +205,24 @@
   <meta name="twitter:title" content="IndyCar Centro Automotivo Taubaté" />
   <meta name="twitter:description" content="Diagnóstico digital gratuito com scanner + foto. Quem conhece, Indyca! 🏎" />
   <meta name="twitter:image" content="https://indycar-taubate.netlify.app/og-indycar.jpg" />
+  <meta name="twitter:image:alt" content="IndyCar Taubaté: diagnóstico digital gratuito com scanner + foto" />
   <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icone-192.png" />
+  <!-- O formulário grava o pedido no banco da oficina (Edge Function site-lead); só quando a pessoa envia. -->
+  <link rel="dns-prefetch" href="https://nppfqhavqahapmugnyng.supabase.co" />
+  <!-- Dados estruturados: o site em si (liga a página à oficina pelo @id) -->
+  <script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": "https://indycar-taubate.netlify.app/#site",
+  "url": "https://indycar-taubate.netlify.app/",
+  "name": "IndyCar Centro Automotivo Taubaté",
+  "inLanguage": "pt-BR",
+  "publisher": { "@id": "https://indycar-taubate.netlify.app/#oficina" }
+}</script>
 </head>
 
-<body>
+<body data-nota="4,8" data-avaliacoes="1.200" data-anos="18">
   <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
 
   <!-- MAR DE METAL FUNDIDO: canvas fixed z-negativo atrás de tudo.
@@ -259,7 +275,8 @@
         <a href="#avaliacoes" class="nav-link">Avaliações</a>
         <a href="#faq" class="nav-link">Dúvidas</a>
         <a href="#contato" class="nav-link">Contato</a>
-        <button class="btn btn-cta-nav" data-open-modal data-magnetic>Agendar Agora</button>
+        <a href="#area-cliente" class="nav-link nav-link--cliente">Área do cliente</a>
+        <button class="btn btn-cta-nav" data-open-modal data-servico="diagnostico" data-magnetic>Agendar Agora</button>
       </nav>
 
       <!-- Botão menu mobile -->
@@ -282,7 +299,7 @@
 
     <div class="container hero-content">
       <div class="hero-eyebrow reveal">
-        <span class="pulse-dot"></span> ESPECIALISTAS EM MECÂNICA EM GERAL · +18 ANOS · 4,8★ NO GOOGLE
+        <span class="pulse-dot"></span> ESPECIALISTAS EM MECÂNICA EM GERAL · +<span data-num="anos">18</span> ANOS · <span data-num="nota">4,8</span>★ NO GOOGLE
       </div>
 
       <h1 class="hero-title reveal">
@@ -298,18 +315,19 @@
 
       <!-- Faixa de destaques (prova rápida) -->
       <div class="hero-highlights reveal">
-        <span class="hl"><b>4,8★</b> +1.200 avaliações</span>
+        <span class="hl"><b><span data-num="nota">4,8</span>★</b> +<span data-num="avaliacoes">1.200</span> avaliações</span>
         <span class="hl"><b>Leva e Traz</b> consulte</span>
         <span class="hl"><b>Garantia</b> 12 meses</span>
         <span class="hl"><b>Pagamento</b> consulte condições</span>
+        <span class="hl hl-status" id="statusAberto" hidden><i class="hl-dot" aria-hidden="true"></i> <b>Aberto agora</b> <span>até 17h30</span></span>
       </div>
 
       <div class="hero-cta reveal">
-        <button class="btn btn-primary glow" data-open-modal data-magnetic>
+        <button class="btn btn-primary glow" data-open-modal data-servico="diagnostico" data-magnetic>
           <svg viewBox="0 0 24 24" class="btn-ico" aria-hidden="true" focusable="false"><path d="M9 11.5L11 13.5L15.5 9M21 12a9 9 0 11-18 0 9 9 0 0118 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Agendar Diagnóstico Grátis
         </button>
-        <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%20o%20diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fhero)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=hero" target="_blank" rel="noopener" class="btn btn-outline" data-magnetic>
+        <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fhero)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=hero" target="_blank" rel="noopener" class="btn btn-outline" data-magnetic>
           <svg viewBox="0 0 32 32" class="btn-ico" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3z"/></svg>
           Chamar no WhatsApp
         </a>
@@ -319,8 +337,8 @@
       <div class="rating-badge floaty reveal">
         <div class="rating-badge-stars">★★★★★</div>
         <div class="rating-badge-info">
-          <strong data-target="4.8" data-decimals="1">4,8</strong>
-          <span>+1.200 avaliações<br><b>no Google</b></span>
+          <strong data-num="nota" data-target="4.8" data-decimals="1">4,8</strong>
+          <span>+<span data-num="avaliacoes">1.200</span> avaliações<br><b>no Google</b></span>
         </div>
       </div>
     </div>
@@ -348,14 +366,14 @@
         <span class="trust-item">Leva e Traz</span>
         <span class="trust-item">Garantia de 12 meses</span>
         <span class="trust-item">Óleo do Câmbio</span>
-        <span class="trust-item">+18 Anos</span>
+        <span class="trust-item">+<span data-num="anos">18</span> Anos</span>
       </div>
       <div class="trust-group">
         <span class="trust-item">Diagnóstico Gratuito</span>
         <span class="trust-item">Leva e Traz</span>
         <span class="trust-item">Garantia de 12 meses</span>
         <span class="trust-item">Óleo do Câmbio</span>
-        <span class="trust-item">+18 Anos</span>
+        <span class="trust-item">+<span data-num="anos">18</span> Anos</span>
       </div>
     </div>
     <div class="trust-track">
@@ -367,7 +385,7 @@
         <span class="trust-item"><i class="check">✓</i> Especialista em Mecânica em Geral</span>
         <span class="trust-item"><i class="check">✓</i> Nacionais e Importados</span>
         <span class="trust-item"><i class="check">✓</i> Pagamento: consulte condições</span>
-        <span class="trust-item"><i class="check">✓</i> +18 Anos no Mercado</span>
+        <span class="trust-item"><i class="check">✓</i> +<span data-num="anos">18</span> Anos no Mercado</span>
       </div>
       <div class="trust-group" aria-hidden="true">
         <span class="trust-item"><i class="check">✓</i> Diagnóstico Gratuito</span>
@@ -376,7 +394,7 @@
         <span class="trust-item"><i class="check">✓</i> Especialista em Mecânica em Geral</span>
         <span class="trust-item"><i class="check">✓</i> Nacionais e Importados</span>
         <span class="trust-item"><i class="check">✓</i> Pagamento: consulte condições</span>
-        <span class="trust-item"><i class="check">✓</i> +18 Anos no Mercado</span>
+        <span class="trust-item"><i class="check">✓</i> +<span data-num="anos">18</span> Anos no Mercado</span>
       </div>
     </div>
   </section>
@@ -428,12 +446,13 @@
         <p class="about-lead reveal">A IndyCar se estabeleceu como <strong>referência em Taubaté</strong> ao profissionalizar o cuidado automotivo. Unimos a experiência de <strong>mecânicos veteranos</strong> com a precisão da <strong>tecnologia moderna</strong> — sempre com orçamentos precisos, justos e transparentes.</p>
         <p class="about-text reveal">Nosso maior compromisso é <strong>resgatar a sua confiança</strong>. Sabemos que deixar o carro na oficina gera insegurança. Por isso, aqui a transparência é absoluta e a honestidade é a base de cada aperto de parafuso.</p>
         <div class="about-cta reveal">
-          <button class="btn btn-primary glow" data-open-modal data-magnetic>Fazer Orçamento Grátis</button>
+          <button class="btn btn-primary glow" data-open-modal data-servico="diagnostico" data-magnetic>Fazer Orçamento Grátis</button>
         </div>
         <!-- Fachada real recortada "saindo" do quadro vermelho + selo circular orbitando -->
         <div class="cutout-stage reveal">
           <span class="cutout-frame" aria-hidden="true"></span>
           <picture>
+            <source srcset="fachada-recorte-thumb.avif 480w, fachada-recorte.avif 960w" sizes="(max-width: 600px) 92vw, 560px" type="image/avif" />
             <source srcset="fachada-recorte-thumb.webp 480w, fachada-recorte.webp 960w" sizes="(max-width: 600px) 92vw, 560px" type="image/webp" />
             <img class="cutout-img" src="fachada-recorte.png" width="960" height="356" alt="Fachada da IndyCar Centro Automotivo em Taubaté" loading="lazy" decoding="async" data-parallax="0.06"
                data-reserva="oficina-fachada.jpg" data-reserva-classe=".cutout-stage|no-alpha" />
@@ -523,7 +542,7 @@
 
       <div class="services-grid">
         <!-- Tile hero 2x2: Troca de Óleo de Câmbio (ESPECIALIDADE) -->
-        <article class="service-card service-card--star reveal" data-tilt>
+        <article class="service-card service-card--star reveal" id="svc-cambio" data-tilt>
           <span class="service-flag">★ ESPECIALIDADE</span>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><circle cx="8.5" cy="5" r="2.4" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M8.5 7.4V13q0 2 2 2h4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 19h15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="6" cy="19" r=".9" fill="currentColor"/><circle cx="10.5" cy="19" r=".9" fill="currentColor"/><circle cx="15" cy="19" r=".9" fill="currentColor"/><circle cx="19.5" cy="19" r=".9" fill="currentColor"/></svg>
@@ -531,13 +550,13 @@
           <h3>Troca de Óleo de Câmbio</h3>
           <p>Troca de óleo do câmbio automático <strong>100% na máquina (diálise)</strong>: renova todo o fluido, não só uma parte, e ajuda a proteger o conversor de torque.</p>
           <div class="service-actions">
-            <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20%C3%93leo%20de%20C%C3%A2mbio.%20(site%2Fcambio)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=cambio" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Troca de Óleo de Câmbio (abre o WhatsApp)</span></a>
+            <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Troca%20de%20%C3%B3leo%20do%20c%C3%A2mbio%20autom%C3%A1tico%20(di%C3%A1lise).%20(site%2Fcambio)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=cambio" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Troca de Óleo de Câmbio (abre o WhatsApp)</span></a>
             <button class="svc-rev" data-reviews="cambio" data-service-name="Troca de Óleo de Câmbio" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Óleo de Câmbio"><span aria-hidden="true">★</span> Avaliações no Google</button>
           </div>
         </article>
 
         <!-- Tile 2x1: Diagnóstico com Scanner -->
-        <article class="service-card service-card--wide reveal" data-tilt>
+        <article class="service-card service-card--wide reveal" id="svc-scanner" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M10 2v3M14 2v3M10 19v3M14 19v3M2 10h3M2 14h3M19 10h3M19 14h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
@@ -545,14 +564,14 @@
             <h3>Diagnóstico com Scanner</h3>
             <p>Luz acesa no painel? O scanner lê as falhas da central eletrônica e a gente mostra, com foto, o que encontrou.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Diagn%C3%B3stico%20com%20Scanner.%20(site%2Fscanner)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=scanner" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Diagnóstico com Scanner (abre o WhatsApp)</span></a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Diagn%C3%B3stico%20com%20scanner.%20(site%2Fscanner)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=scanner" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Diagnóstico com Scanner (abre o WhatsApp)</span></a>
               <button class="svc-rev" data-reviews="scanner" data-service-name="Diagnóstico com Scanner" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Diagnóstico com Scanner"><span aria-hidden="true">★</span> Avaliações no Google</button>
             </div>
           </div>
         </article>
 
         <!-- Tile 2x1: Revisão de Motor -->
-        <article class="service-card service-card--wide reveal" data-tilt>
+        <article class="service-card service-card--wide reveal" id="svc-motor" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 003.6 15a1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09A1.65 1.65 0 003.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 008 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
           </div>
@@ -560,14 +579,14 @@
             <h3>Revisão de Motor</h3>
             <p>Vazamento de óleo, barulho estranho ou esquentando? A gente revisa e explica antes de trocar qualquer peça.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Revis%C3%A3o%20de%20Motor.%20(site%2Fmotor)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=motor" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Revisão de Motor (abre o WhatsApp)</span></a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Revis%C3%A3o%20de%20motor.%20(site%2Fmotor)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=motor" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Revisão de Motor (abre o WhatsApp)</span></a>
               <button class="svc-rev" data-reviews="motor" data-service-name="Revisão de Motor" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Revisão de Motor"><span aria-hidden="true">★</span> Avaliações no Google</button>
             </div>
           </div>
         </article>
 
         <!-- Tiles compactos 1x1 -->
-        <article class="service-card service-card--mini reveal" data-tilt>
+        <article class="service-card service-card--mini reveal" id="svc-oleo-motor" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><path d="M12 2s5 6 5 9.5A5 5 0 1112 7" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M7 13h10v5a2 2 0 01-2 2H9a2 2 0 01-2-2v-5z" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
           </div>
@@ -575,13 +594,13 @@
             <h3>Troca de Óleo de Motor</h3>
             <p class="svc-mini-desc">Óleo e filtro novos, no padrão do manual do seu carro.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20%C3%93leo%20de%20Motor.%20(site%2Foleo-motor)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=oleo-motor" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Troca de Óleo de Motor (abre o WhatsApp)</span></a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Troca%20de%20%C3%B3leo%20do%20motor.%20(site%2Foleo-motor)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=oleo-motor" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Troca de Óleo de Motor (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="oleo" data-service-name="Troca de Óleo de Motor" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Óleo de Motor"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt>
+        <article class="service-card service-card--mini reveal" id="svc-freios" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="6.6" r=".9" fill="currentColor"/><circle cx="12" cy="17.4" r=".9" fill="currentColor"/><circle cx="6.6" cy="12" r=".9" fill="currentColor"/><circle cx="17.4" cy="12" r=".9" fill="currentColor"/></svg>
           </div>
@@ -589,13 +608,13 @@
             <h3>Pastilhas e Discos</h3>
             <p class="svc-mini-desc">Chiado ou freio fraco? Pastilhas, discos e fluido de freio.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Pastilhas%20e%20Discos.%20(site%2Ffreios)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=freios" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Pastilhas e Discos (abre o WhatsApp)</span></a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Pastilhas%20e%20discos%20de%20freio.%20(site%2Ffreios)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=freios" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Pastilhas e Discos (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="freios" data-service-name="Pastilhas e Discos" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Pastilhas e Discos"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt>
+        <article class="service-card service-card--mini reveal" id="svc-amortecedores" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10 3v2.2l4 2-4 2 4 2-4 2 4 2v2.6" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>
           </div>
@@ -603,13 +622,13 @@
             <h3>Troca de Amortecedores</h3>
             <p class="svc-mini-desc">Carro batendo ou balançando? Dianteiros e traseiros.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20Amortecedores.%20(site%2Famortecedores)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=amortecedores" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Troca de Amortecedores (abre o WhatsApp)</span></a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Troca%20de%20amortecedores.%20(site%2Famortecedores)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=amortecedores" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Troca de Amortecedores (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="amortecedores" data-service-name="Troca de Amortecedores" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Amortecedores"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt>
+        <article class="service-card service-card--mini reveal" id="svc-correia" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="11" rx="5.5" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="8" cy="11.5" r="2.3" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="16" cy="11.5" r="2.3" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
           </div>
@@ -617,13 +636,13 @@
             <h3>Correia Dentada</h3>
             <p class="svc-mini-desc">Troca preventiva com tensor, no intervalo que o manual do carro indica.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Correia%20Dentada.%20(site%2Fcorreia)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=correia" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Correia Dentada (abre o WhatsApp)</span></a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Correia%20dentada.%20(site%2Fcorreia)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=correia" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Correia Dentada (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="correia" data-service-name="Correia Dentada" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Correia Dentada"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt>
+        <article class="service-card service-card--mini reveal" id="svc-pneus" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="3.4" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M12 3v3.6M12 17.4V21M3 12h3.6M17.4 12H21M5.6 5.6l2.6 2.6M15.8 15.8l2.6 2.6M18.4 5.6l-2.6 2.6M8.2 15.8l-2.6 2.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
           </div>
@@ -631,13 +650,13 @@
             <h3>Venda de Pneus</h3>
             <p class="svc-mini-desc">Pneu novo, com a montagem feita aqui na oficina.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Pneus.%20(site%2Fpneus)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=pneus" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Venda de Pneus (abre o WhatsApp)</span></a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Pneus%20(venda%20e%20montagem).%20(site%2Fpneus)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=pneus" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Venda de Pneus (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="pneus" data-service-name="Venda de Pneus" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Venda de Pneus"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt>
+        <article class="service-card service-card--mini reveal" id="svc-alinhamento" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
@@ -645,13 +664,13 @@
             <h3>Alinhamento 3D</h3>
             <p class="svc-mini-desc">Alinhamento, balanceamento, cambagem e caster.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Alinhamento%203D.%20(site%2Falinhamento)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=alinhamento" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Alinhamento 3D (abre o WhatsApp)</span></a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Alinhamento%20e%20balanceamento.%20(site%2Falinhamento)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=alinhamento" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Alinhamento 3D (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="alinhamento" data-service-name="Alinhamento 3D" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Alinhamento 3D"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt>
+        <article class="service-card service-card--mini reveal" id="svc-embreagem" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M12 4.5l1.8 5M19.5 12l-5 1.8M12 19.5l-1.8-5M4.5 12l5-1.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </div>
@@ -659,13 +678,13 @@
             <h3>Troca de Embreagem</h3>
             <p class="svc-mini-desc">Kit completo e cabo, para o pedal voltar macio.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Troca%20de%20Embreagem.%20(site%2Fembreagem)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=embreagem" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Troca de Embreagem (abre o WhatsApp)</span></a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Troca%20de%20embreagem.%20(site%2Fembreagem)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=embreagem" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Troca de Embreagem (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="embreagem" data-service-name="Troca de Embreagem" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Troca de Embreagem"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
-        <article class="service-card service-card--mini reveal" data-tilt>
+        <article class="service-card service-card--mini reveal" id="svc-suspensao" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M15.5 15.5L21 21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 10.5l1.8 2 3-3.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
@@ -673,14 +692,14 @@
             <h3>Revisão de Suspensão</h3>
             <p class="svc-mini-desc">Pivôs, buchas, terminais, coifas e rolamentos.</p>
             <div class="service-actions">
-              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Revis%C3%A3o%20de%20Suspens%C3%A3o.%20(site%2Fsuspensao)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=suspensao" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Revisão de Suspensão (abre o WhatsApp)</span></a>
+              <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Revis%C3%A3o%20de%20suspens%C3%A3o.%20(site%2Fsuspensao)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=suspensao" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Revisão de Suspensão (abre o WhatsApp)</span></a>
               <button class="svc-rev svc-rev--sm" data-reviews="suspensao" data-service-name="Revisão de Suspensão" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Revisão de Suspensão"><span aria-hidden="true">★</span> Avaliações</button>
             </div>
           </div>
         </article>
 
         <!-- Faixa 4x1: Limpeza de Bicos -->
-        <article class="service-card service-card--strip reveal" data-tilt>
+        <article class="service-card service-card--strip reveal" id="svc-bicos" data-tilt>
           <div class="service-ico">
             <svg viewBox="0 0 24 24"><path d="M9 3h6v5l-1.5 3h-3L9 8z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M12 11v3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10 17q2 1.8 4 0M9.5 20q2.5 1.8 5 0" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
           </div>
@@ -690,7 +709,7 @@
           </div>
           <div class="service-actions service-actions--strip">
             <button class="svc-rev" data-reviews="bicos" data-service-name="Limpeza de Bicos" aria-haspopup="dialog" aria-expanded="false" aria-label="Ver avaliações de Limpeza de Bicos"><span aria-hidden="true">★</span> Avaliações no Google</button>
-            <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%3A%20Limpeza%20de%20Bicos.%20(site%2Fbicos)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=bicos" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Limpeza de Bicos (abre o WhatsApp)</span></a>
+            <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Limpeza%20de%20bicos%20injetores.%20(site%2Fbicos)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=bicos" target="_blank" rel="noopener">Agende pelo WhatsApp →<span class="so-leitor"> — Limpeza de Bicos (abre o WhatsApp)</span></a>
           </div>
         </article>
       </div>
@@ -707,7 +726,7 @@
           <li>Homocinética e rolamentos</li>
           <li>Troca de óleo do câmbio manual</li>
         </ul>
-        <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20saber%20se%20voc%C3%AAs%20fazem%20um%20servi%C3%A7o.%20(site%2Foutro-servico)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=outro-servico" target="_blank" rel="noopener">Não achou o seu? Pergunte no WhatsApp →</a>
+        <a class="service-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20outro%20servi%C3%A7o.%20Voc%C3%AAs%20fazem%3F%20(site%2Foutro-servico)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=outro-servico" target="_blank" rel="noopener">Não achou o seu? Pergunte no WhatsApp →</a>
       </div>
     </div>
   </section>
@@ -750,7 +769,7 @@
         </li>
       </ol>
       <div class="diag-cta reveal">
-        <a class="btn btn-primary glow" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%20o%20diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fdiagnostico)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=diagnostico" target="_blank" rel="noopener" data-magnetic>Agendar meu diagnóstico</a>
+        <a class="btn btn-primary glow" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fdiagnostico)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=diagnostico" target="_blank" rel="noopener" data-magnetic>Agendar meu diagnóstico</a>
         <span class="diag-note">Gratuito · sem compromisso · garantia de 12 meses no que você aprovar</span>
       </div>
     </div>
@@ -772,7 +791,7 @@
           <li><strong>Nacionais e importados.</strong> Mesma garantia, seja qual for a marca do seu carro.</li>
           <li><strong>Combinado antes.</strong> A cobertura do seu serviço é confirmada junto com o orçamento, antes de você aprovar.</li>
         </ul>
-        <a class="warranty-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20tenho%20uma%20d%C3%BAvida%20sobre%20a%20garantia.%20(site%2Fgarantia)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=garantia" target="_blank" rel="noopener">Tirar dúvida sobre a garantia →</a>
+        <a class="warranty-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20tenho%20uma%20d%C3%BAvida%20sobre%20a%20garantia.%20(site%2Fgarantia)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=garantia" target="_blank" rel="noopener">Tirar dúvida sobre a garantia →</a>
       </div>
     </div>
   </section>
@@ -786,6 +805,7 @@
       <div class="why-visual reveal">
         <div class="why-image img-sweep">
           <picture>
+            <source type="image/avif" srcset="oficina-fachada-720.avif 720w, oficina-fachada.avif 1080w" sizes="(max-width: 900px) 92vw, 560px" />
             <source type="image/webp" srcset="oficina-fachada-720.webp 720w, oficina-fachada.webp 1080w" sizes="(max-width: 900px) 92vw, 560px" />
             <img class="why-photo" src="oficina-fachada.jpg" width="1080" height="1080" alt="Fachada da IndyCar Centro Automotivo em Taubaté" loading="lazy" decoding="async" />
           </picture>
@@ -794,7 +814,7 @@
           <span class="speed-streak s2" aria-hidden="true"></span>
           <span class="speed-streak s3" aria-hidden="true"></span>
           <div class="why-badge-float">
-            <span class="why-badge-num" id="yearsBadge">18+</span>
+            <span class="why-badge-num" id="yearsBadge"><span data-num="anos">18</span>+</span>
             <span class="why-badge-txt">ANOS DE<br>ESTRADA</span>
           </div>
         </div>
@@ -884,13 +904,13 @@
       <div class="rv-card reveal">
         <div class="rv-score">
           <span class="rv-stars" aria-hidden="true">★★★★★</span>
-          <strong class="rv-num">4,8</strong>
-          <span class="rv-of">de 5 no Google<br><b>+1.200 avaliações</b></span>
+          <strong class="rv-num" data-num="nota">4,8</strong>
+          <span class="rv-of">de 5 no Google<br><b>+<span data-num="avaliacoes">1.200</span> avaliações</b></span>
         </div>
         <div class="rv-actions">
           <a class="btn btn-primary" href="https://www.google.com/maps/search/?api=1&amp;query=IndyCar+Centro+Automotivo+Av.+Bandeirantes+875+Taubat%C3%A9" target="_blank" rel="noopener">Ler as avaliações no Google</a>
           <a class="btn btn-ink" href="https://www.google.com/maps/search/?api=1&amp;query=IndyCar+Centro+Automotivo+Av.+Bandeirantes+875+Taubat%C3%A9" target="_blank" rel="noopener">Já é cliente? Deixe a sua</a>
-          <a class="rv-wa" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20contar%20como%20foi%20o%20servi%C3%A7o%20no%20meu%20carro.%20(site%2Favaliacao)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=avaliacao" target="_blank" rel="noopener">Prefere contar pra gente? Fale no WhatsApp →</a>
+          <a class="rv-wa" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20contar%20como%20foi%20o%20servi%C3%A7o%20no%20meu%20carro.%20(site%2Favaliacao)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=avaliacao" target="_blank" rel="noopener">Prefere contar pra gente? Fale no WhatsApp →</a>
         </div>
       </div>
     </div>
@@ -907,7 +927,7 @@
       <div class="section-head reveal">
         <span class="section-tag">ANTES DE VOCÊ PERGUNTAR</span>
         <h2 class="section-title">Perguntas <span class="text-red">Frequentes</span></h2>
-        <p class="section-desc">O que os motoristas de Taubaté mais perguntam antes de trazer o carro. Não achou a sua dúvida? <a class="faq-desc-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20tenho%20uma%20d%C3%BAvida.%20(site%2Fduvida)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=duvida" target="_blank" rel="noopener">Chama a gente no WhatsApp</a>.</p>
+        <p class="section-desc">O que os motoristas de Taubaté mais perguntam antes de trazer o carro. Não achou a sua dúvida? <a class="faq-desc-link" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20tenho%20uma%20d%C3%BAvida.%20(site%2Fduvida)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=duvida" target="_blank" rel="noopener">Chama a gente no WhatsApp</a>.</p>
       </div>
 
       <div class="faq-list">
@@ -921,7 +941,7 @@
           </h3>
           <div class="faq-a" id="faq-a-1" role="region" aria-labelledby="faq-q-1">
             <div class="faq-a-inner">
-              <p>O ideal é agendar pelo <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%20um%20hor%C3%A1rio.%20(site%2Fagendar)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=agendar" target="_blank" rel="noopener">WhatsApp (12) 99683-0272</a> para garantir o seu horário — a resposta é rápida em horário comercial. Atendemos de segunda a sábado, das 8h às 17h30.</p>
+              <p>O ideal é agendar pelo <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20agendar%20um%20hor%C3%A1rio.%20(site%2Fagendar)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=agendar" target="_blank" rel="noopener">WhatsApp (12) 99683-0272</a> para garantir o seu horário — a resposta é rápida em horário comercial. Atendemos de segunda a sábado, das 8h às 17h30.</p>
             </div>
           </div>
         </div>
@@ -966,7 +986,7 @@
           </h3>
           <div class="faq-a" id="faq-a-4" role="region" aria-labelledby="faq-q-4">
             <div class="faq-a-inner">
-              <p>Fazemos a troca total do fluido <strong>100% na máquina (diálise)</strong>, renovando todo o óleo e protegendo o conversor de torque. Quer saber se serve para o seu carro? <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20saber%20se%20a%20troca%20de%20%C3%B3leo%20do%20c%C3%A2mbio%20por%20di%C3%A1lise%20serve%20para%20o%20meu%20carro.%20(site%2Fcambio-dialise)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=cambio-dialise" target="_blank" rel="noopener">É só chamar no WhatsApp</a>.</p>
+              <p>Fazemos a troca total do fluido <strong>100% na máquina (diálise)</strong>, renovando todo o óleo e protegendo o conversor de torque. Quer saber se serve para o seu carro? <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Troca%20de%20%C3%B3leo%20do%20c%C3%A2mbio%20autom%C3%A1tico%20(di%C3%A1lise).%20Serve%20para%20o%20meu%20carro%3F%20(site%2Fcambio-dialise)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=cambio-dialise" target="_blank" rel="noopener">É só chamar no WhatsApp</a>.</p>
             </div>
           </div>
         </div>
@@ -996,7 +1016,7 @@
           </h3>
           <div class="faq-a" id="faq-a-6" role="region" aria-labelledby="faq-q-6">
             <div class="faq-a-inner">
-              <p>Consulte as condições de pagamento e parcelamento. Para outras condições e formas de pagamento, <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20saber%20as%20formas%20de%20pagamento.%20(site%2Fpagamento)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=pagamento" target="_blank" rel="noopener">é só perguntar no WhatsApp</a> que a gente orienta na hora.</p>
+              <p>Consulte as condições de pagamento e parcelamento. Para outras condições e formas de pagamento, <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20saber%20as%20formas%20de%20pagamento.%20(site%2Fpagamento)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=pagamento" target="_blank" rel="noopener">é só perguntar no WhatsApp</a> que a gente orienta na hora.</p>
             </div>
           </div>
         </div>
@@ -1056,7 +1076,7 @@
           </h3>
           <div class="faq-a" id="faq-a-10" role="region" aria-labelledby="faq-q-10">
             <div class="faq-a-inner">
-              <p>Aqui a transparência é absoluta: você acompanha o diagnóstico, entende o defeito e aprova apenas o necessário — sem surpresas na hora de pagar. Qualquer dúvida durante o serviço, é só falar com a gente no <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20tenho%20uma%20d%C3%BAvida%20sobre%20o%20servi%C3%A7o%20do%20meu%20carro.%20(site%2Facompanhar)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=acompanhar" target="_blank" rel="noopener">WhatsApp (12) 99683-0272</a> ou no fixo <a href="tel:+551236245957">(12) 3624-5957</a>.</p>
+              <p>Pelo celular, em tempo real: quando o carro entra na oficina, você recebe no WhatsApp o link <a href="https://indycar-patio.netlify.app/acompanhar/" target="_blank" rel="noopener">Acompanhar meu carro</a>, com cada etapa, as fotos e os extras para aprovar ou recusar. Aqui a transparência é absoluta: você entende o defeito e aprova apenas o necessário — sem surpresas na hora de pagar. Qualquer dúvida durante o serviço, é só falar com a gente no <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20tenho%20uma%20d%C3%BAvida%20sobre%20o%20servi%C3%A7o%20do%20meu%20carro.%20(site%2Facompanhar)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=acompanhar" target="_blank" rel="noopener">WhatsApp (12) 99683-0272</a> ou no fixo <a href="tel:+551236245957">(12) 3624-5957</a>.</p>
             </div>
           </div>
         </div>
@@ -1070,7 +1090,7 @@
           </h3>
           <div class="faq-a" id="faq-a-11" role="region" aria-labelledby="faq-q-11">
             <div class="faq-a-inner">
-              <p>Sim. Não fazemos funilaria e pintura, carga de gás ou conserto do ar-condicionado (a higienização a gente faz), parte elétrica como alternador e motor de arranque, reparo interno de câmbio automático, retífica de motor, GNV nem guincho. Também não atendemos carros 100% elétricos, rebaixados, modificados ou caminhões. Na dúvida, <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20saber%20se%20voc%C3%AAs%20fazem%20um%20servi%C3%A7o.%20(site%2Fnao-fazemos)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=nao-fazemos" target="_blank" rel="noopener">pergunte no WhatsApp</a>.</p>
+              <p>Sim. Não fazemos funilaria e pintura, carga de gás ou conserto do ar-condicionado (a higienização a gente faz), parte elétrica como alternador e motor de arranque, reparo interno de câmbio automático, retífica de motor, GNV nem guincho. Também não atendemos carros 100% elétricos, rebaixados, modificados ou caminhões. Na dúvida, <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20saber%20se%20voc%C3%AAs%20fazem%20um%20servi%C3%A7o.%20(site%2Fnao-fazemos)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=nao-fazemos" target="_blank" rel="noopener">pergunte no WhatsApp</a>.</p>
             </div>
           </div>
         </div>
@@ -1144,7 +1164,7 @@
             </li>
           </ul>
 
-          <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%20o%20diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fcontato-botao)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=contato-botao" target="_blank" rel="noopener" class="btn btn-whatsapp glow" data-magnetic>
+          <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fcontato-botao)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=contato-botao" target="_blank" rel="noopener" class="btn btn-whatsapp glow" data-magnetic>
             <svg viewBox="0 0 32 32" class="btn-ico wa"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3zm0 22c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-4.9.9.9-4.8-.2-.4C5.5 18.5 5 16.8 5 15 5 9 9.9 4 16 4s11 5 11 11-4.9 10-11 10zm6-7.5c-.3-.2-1.9-1-2.2-1.1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.1-.2.2-.3.2-.6.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.3-.2-.3 0-.5.1-.7.1-.1.3-.3.4-.5.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.2-.7-1.7-1-2.3-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.9-.8 2.1-1.5.3-.7.3-1.4.2-1.5-.1-.1-.3-.2-.6-.4z"/></svg>
             Chamar no WhatsApp
           </a>
@@ -1163,7 +1183,7 @@
   <!-- 8. CTA FINAL (urgência)                                -->
   <!-- ===================================================== -->
   <section class="final-cta">
-    <picture><source type="image/webp" srcset="oficina-fachada.webp" /><img loading="lazy" decoding="async" class="final-cta-photo" src="oficina-fachada.jpg" width="1080" height="1080" alt="" aria-hidden="true" /></picture>
+    <picture><source type="image/avif" srcset="oficina-fachada-720.avif 720w, oficina-fachada.avif 1080w" sizes="100vw" /><source type="image/webp" srcset="oficina-fachada-720.webp 720w, oficina-fachada.webp 1080w" sizes="100vw" /><img loading="lazy" decoding="async" class="final-cta-photo" src="oficina-fachada.jpg" width="1080" height="1080" alt="" aria-hidden="true" /></picture>
     <div class="final-cta-bg" aria-hidden="true"></div>
     <!-- Faíscas de pit lane subindo (canvas 2D, pausa fora do viewport) -->
     <canvas class="cta-embers" id="ctaEmbers" aria-hidden="true"></canvas>
@@ -1173,8 +1193,40 @@
     <div class="container final-cta-inner reveal">
       <span class="final-cta-kicker"><span class="shiny-text">★ DIAGNÓSTICO GRATUITO · LEVA E TRAZ EM TAUBATÉ (CONSULTE)</span></span>
       <h2>Seu carro merece a oficina que <u>Taubaté mais confia</u>.<br>Comece pelo diagnóstico gratuito.</h2>
-      <p>Diagnóstico digital gratuito: scanner + foto, cerca de 30 minutos, sem compromisso. Garantia de 12 meses em peças e mão de obra, pagamento sob consulta e o cuidado de quem tem <strong>+18 anos de estrada</strong>. Agende pelo WhatsApp.</p>
-      <button class="btn btn-light glow lg" data-open-modal data-magnetic>Quero Meu Orçamento Gratuito →</button>
+      <p>Diagnóstico digital gratuito: scanner + foto, cerca de 30 minutos, sem compromisso. Garantia de 12 meses em peças e mão de obra, pagamento sob consulta e o cuidado de quem tem <strong>+<span data-num="anos">18</span> anos de estrada</strong>. Agende pelo WhatsApp.</p>
+      <button class="btn btn-light glow lg" data-open-modal data-servico="diagnostico" data-magnetic>Quero Meu Orçamento Gratuito →</button>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+  <!-- 8.5 ÁREA DO CLIENTE (rodada 5: sistema Pátio)          -->
+  <!-- ===================================================== -->
+  <section class="section area-cliente" id="area-cliente" aria-labelledby="areaTitle">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="section-tag">JÁ É CLIENTE?</span>
+        <h2 class="section-title" id="areaTitle">Seu carro na oficina, <span class="text-red">na palma da mão</span></h2>
+        <p class="section-desc">Sem senha e sem cadastro: o link chega no seu WhatsApp quando o carro entra na IndyCar.</p>
+      </div>
+      <div class="area-grid">
+        <a class="area-card reveal" href="https://indycar-patio.netlify.app/acompanhar/" target="_blank" rel="noopener">
+          <span class="area-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 13l2-5a2 2 0 011.9-1.3h10.2A2 2 0 0119 8l2 5v5a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-5z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><circle cx="7.5" cy="14.5" r="1.3" fill="currentColor"/><circle cx="16.5" cy="14.5" r="1.3" fill="currentColor"/><path d="M12 2v3M9 3.5l1 1.5M15 3.5l-1 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+          <span class="area-txt">
+            <strong>Acompanhar meu carro</strong>
+            <span>Veja em que etapa o serviço está, as fotos do que encontramos e aprove ou recuse cada extra pelo celular, em tempo real.</span>
+          </span>
+          <span class="area-go" aria-hidden="true">Abrir →</span>
+        </a>
+        <a class="area-card reveal" href="https://indycar-patio.netlify.app/minha/" target="_blank" rel="noopener">
+          <span class="area-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V6l8-3z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/><path d="M8.5 12.5l2.3 2.3 4.7-5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="area-txt">
+            <strong>Minha IndyCar</strong>
+            <span>O histórico do seu carro, a próxima revisão, pedir horário com um toque e indicar um amigo que também merece uma oficina de confiança.</span>
+          </span>
+          <span class="area-go" aria-hidden="true">Abrir →</span>
+        </a>
+      </div>
+      <p class="area-nota reveal">Não recebeu o seu link? <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20j%C3%A1%20sou%20cliente%20e%20quero%20o%20link%20da%20minha%20%C3%A1rea%20(Minha%20IndyCar).%20(site%2Farea-cliente)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=area-cliente" target="_blank" rel="noopener">Peça pelo WhatsApp</a> que a equipe manda na hora.</p>
     </div>
   </section>
 
@@ -1200,9 +1252,9 @@
           </svg>
         </a>
         <p>Quem conhece, Indyca! 🏎 Garantia de 12 meses em peças e mão de obra.</p>
-        <div class="footer-rating">★★★★★ <span>4,8 · +1.200 avaliações no Google</span></div>
+        <div class="footer-rating">★★★★★ <span><span data-num="nota">4,8</span> · +<span data-num="avaliacoes">1.200</span> avaliações no Google</span></div>
         <figure class="footer-photo" aria-hidden="true">
-          <picture><source type="image/webp" srcset="fachada-recorte-thumb.webp" /><img src="fachada-recorte-thumb.png" width="480" height="178" alt="Fachada da IndyCar em Taubaté" loading="lazy" decoding="async" data-reserva-remover=".footer-photo" /></picture>
+          <picture><source type="image/avif" srcset="fachada-recorte-thumb.avif" /><source type="image/webp" srcset="fachada-recorte-thumb.webp" /><img src="fachada-recorte-thumb.png" width="480" height="178" alt="Fachada da IndyCar em Taubaté" loading="lazy" decoding="async" data-reserva-remover=".footer-photo" /></picture>
         </figure>
       </div>
 
@@ -1228,6 +1280,9 @@
         <p class="footer-h">Horário</p>
         <span>Seg–Sáb: 8h – 17h30</span>
         <span>Domingo: fechado</span>
+        <p class="footer-h footer-h--2">Área do cliente</p>
+        <a href="https://indycar-patio.netlify.app/acompanhar/" target="_blank" rel="noopener">Acompanhar meu carro</a>
+        <a href="https://indycar-patio.netlify.app/minha/" target="_blank" rel="noopener">Minha IndyCar</a>
       </div>
     </div>
     <div class="footer-bottom container">
@@ -1240,7 +1295,7 @@
   <!-- ===================================================== -->
   <!-- BOTÃO FLUTUANTE WHATSAPP                               -->
   <!-- ===================================================== -->
-  <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20quero%20agendar%20o%20diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fflutuante)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=flutuante" target="_blank" rel="noopener" class="wa-float" id="waFloat" aria-label="Falar no WhatsApp">
+  <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fflutuante)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=flutuante" target="_blank" rel="noopener" class="wa-float" id="waFloat" aria-label="Falar no WhatsApp">
     <svg viewBox="0 0 32 32"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3zm0 22c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-4.9.9.9-4.8-.2-.4C5.5 18.5 5 16.8 5 15 5 9 9.9 4 16 4s11 5 11 11-4.9 10-11 10zm6-7.5c-.3-.2-1.9-1-2.2-1.1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.1-.2.2-.3.2-.6.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.3-.2-.3 0-.5.1-.7.1-.1.3-.3.4-.5.2-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.2-.7-1.7-1-2.3-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.9-.8 2.1-1.5.3-.7.3-1.4.2-1.5-.1-.1-.3-.2-.6-.4z"/></svg>
     <span class="wa-float-pop">Fale conosco! 👋</span>
   </a>
@@ -1267,7 +1322,7 @@
       <div class="promo-flag">🏁 PARA COMEÇAR</div>
       <h3 id="promoTitle">Diagnóstico <span class="text-red">100% Gratuito</span></h3>
       <p>Agende seu diagnóstico digital <strong>gratuito</strong>: scanner + foto, cerca de 30 minutos, sem compromisso.</p>
-      <button class="btn btn-primary glow" data-open-modal data-close-promo>Quero Meu Diagnóstico Grátis</button>
+      <button class="btn btn-primary glow" data-open-modal data-servico="diagnostico" data-close-promo>Quero Meu Diagnóstico Grátis</button>
       <small class="promo-mini">Resposta rápida pelo WhatsApp em horário comercial.</small>
     </div>
   </div>
@@ -1281,7 +1336,7 @@
       <div class="form-modal-head">
         <span class="section-tag">AGENDAMENTO RÁPIDO</span>
         <h3 id="formTitle">Agende seu <span class="text-red">Diagnóstico Grátis</span></h3>
-        <p id="formDesc">Preencha e o pedido abre pronto no WhatsApp da oficina. Sem compromisso.</p>
+        <p id="formDesc">Preencha e a equipe recebe o pedido na hora; a confirmação vem pelo WhatsApp. Sem compromisso.</p>
       </div>
 
       <form id="leadForm" novalidate>
@@ -1312,22 +1367,48 @@
             <option data-codigo="outro-servico">Outro / Não sei ainda</option>
           </select>
         </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="fCar">Carro (modelo/ano) <small>opcional</small></label>
+            <input type="text" id="fCar" name="car" maxlength="100" placeholder="Ex: Honda Civic 2018" autocomplete="off" enterkeyhint="next" />
+          </div>
+          <div class="field">
+            <label for="fQuando">Quando prefere? <small>opcional</small></label>
+            <select id="fQuando" name="quando">
+              <option value="">Qualquer horário</option>
+              <option>Hoje</option>
+              <option>Amanhã</option>
+              <option>Esta semana, de manhã</option>
+              <option>Esta semana, à tarde</option>
+              <option>Sábado</option>
+            </select>
+          </div>
+        </div>
         <div class="field">
-          <label for="fCar">Carro (modelo/ano) <small>opcional</small></label>
-          <input type="text" id="fCar" name="car" maxlength="100" placeholder="Ex: Honda Civic 2018" />
+          <label for="fMsg">O que o carro está fazendo? <small>opcional</small></label>
+          <textarea id="fMsg" name="mensagem" maxlength="500" rows="2" placeholder="Ex: luz do motor acesa e barulho ao frear"></textarea>
         </div>
         <!-- armadilha para robô: invisível para gente, robô preenche e o pedido é ignorado -->
         <div class="campo-isca" aria-hidden="true">
           <label for="fEmpresa">Empresa</label>
           <input type="text" id="fEmpresa" name="empresa" tabindex="-1" autocomplete="off" />
         </div>
-        <button type="submit" class="btn btn-whatsapp glow full">
+        <button type="submit" class="btn btn-whatsapp glow full" id="fEnviar">
           <svg viewBox="0 0 32 32" class="btn-ico wa"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3z"/></svg>
-          Enviar pelo WhatsApp
+          Pedir meu horário
         </button>
         <p class="field-err form-aviso" id="fEnvioMsg" role="status" hidden></p>
-        <small class="form-mini">🔒 Seus dados vão só para o WhatsApp da oficina, para o atendimento. <a href="privacidade.html">Privacidade</a></small>
+        <small class="form-mini">🔒 O pedido vai direto para a equipe da oficina, que confirma pelo WhatsApp. <a href="privacidade.html">Privacidade</a></small>
       </form>
+      <!-- Depois de enviar: confirmação com protocolo e o caminho do WhatsApp (rodada 5) -->
+      <div class="form-ok" id="formOk" role="status" aria-live="polite" hidden>
+        <span class="form-ok-ico" aria-hidden="true">🏁</span>
+        <h4 id="formOkTitulo">Pedido enviado!</h4>
+        <p id="formOkTexto">A equipe confirma o horário com você pelo WhatsApp, de segunda a sábado, das 8h às 17h30.</p>
+        <p class="form-ok-proto" id="formOkProto" hidden>Protocolo <b></b></p>
+        <a class="btn btn-whatsapp full" id="formOkWa" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fformulario)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=formulario" target="_blank" rel="noopener">Quer adiantar? Abrir no WhatsApp</a>
+        <button type="button" class="form-ok-fechar" data-close-form>Fechar</button>
+      </div>
     </div>
   </div>
 
@@ -1342,7 +1423,7 @@
       <div class="rev-pop-head">
         <span class="rev-pop-stars" aria-hidden="true">★★★★★</span>
         <strong id="revPopTitle">Avaliações</strong>
-        <span class="rev-pop-note"><b>4,8</b> no Google · +1.200 avaliações</span>
+        <span class="rev-pop-note"><b data-num="nota">4,8</b> no Google · +<span data-num="avaliacoes">1.200</span> avaliações</span>
       </div>
       <div class="rev-pop-body" id="revPopBody"></div>
       <div class="rev-pop-actions">

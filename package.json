@@ -6,10 +6,15 @@
   "scripts": {
     "test": "node scripts/qa.mjs",
     "serve": "npx serve .",
-    "publicar": "node scripts/publicar.mjs && npx netlify-cli deploy --prod --dir dist"
+    "publicar": "node scripts/publicar.mjs && npx netlify-cli deploy --prod --dir dist",
+    "vitais": "node scripts/vitais.mjs",
+    "whatsapp": "node scripts/gerar-whatsapp.mjs",
+    "numeros": "node scripts/gerar-numeros.mjs"
   },
   "devDependencies": {
     "axe-core": "^4.10.3",
-    "puppeteer-core": "^24.0.0"
+    "esbuild": "^0.28.2",
+    "puppeteer-core": "^24.0.0",
+    "sharp": "^0.35.5"
   }
 }

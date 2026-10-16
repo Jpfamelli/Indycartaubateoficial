@@ -1616,3 +1616,112 @@ main:focus { outline: none; }
 
 /* Campo-isca do formulário (anti-spam): fora da tela, sem sumir do DOM (robô ainda enxerga). */
 .campo-isca { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; overflow: hidden; }
+
+/* ====================================================================
+   RODADA 5 (16/10/2026) — Área do Cliente, pedido no banco, status da
+   oficina, menu com seção atual, impressão e menos movimento no celular
+   ==================================================================== */
+
+/* chip "Aberto agora / Fechado agora" no hero */
+.hl-status { display: inline-flex; align-items: center; gap: 8px; }
+.hl-status .hl-dot { width: 9px; height: 9px; border-radius: 50%; background: #2ee06f; box-shadow: 0 0 0 0 rgba(46,224,111,.6); animation: statusPulse 2s ease-out infinite; }
+.hl-status.fechado .hl-dot { background: #9a9aa0; box-shadow: none; animation: none; }
+.hl-status span { color: #b9bac2; }
+@keyframes statusPulse { 0% { box-shadow: 0 0 0 0 rgba(46,224,111,.55); } 100% { box-shadow: 0 0 0 9px rgba(46,224,111,0); } }
+
+/* menu: seção atual */
+.nav-link.atual { color: var(--red); }
+.nav-link.atual::after { width: 100%; }
+.nav-link--cliente { color: #d8d8dc; }
+.nav-link--cliente::before { content: '\25CF'; color: #2ee06f; font-size: .55rem; margin-right: 7px; vertical-align: middle; }
+
+/* card de serviço destacado por /?servico=... */
+.service-card.svc-destaque { border-color: var(--red) !important; box-shadow: 0 0 0 3px rgba(229,9,20,.25), 0 22px 50px rgba(0,0,0,.25) !important; }
+
+/* ===== ÁREA DO CLIENTE (seção escura) ===== */
+.area-cliente { background: linear-gradient(180deg, rgba(229,9,20,.05), transparent 40%); }
+.area-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; max-width: 980px; margin: 0 auto; }
+.area-card {
+  display: grid; grid-template-columns: 58px 1fr auto; gap: 18px; align-items: center;
+  padding: 26px; border-radius: var(--radius);
+  background: linear-gradient(160deg, var(--card), var(--graphite)); border: 1px solid var(--line);
+  transition: transform .35s var(--ease), border-color .35s, box-shadow .35s;
+}
+.area-card:hover, .area-card:focus-visible { transform: translateY(-6px); border-color: rgba(229,9,20,.6); box-shadow: 0 22px 50px rgba(0,0,0,.5), 0 0 30px rgba(229,9,20,.2); }
+.area-ico { width: 58px; height: 58px; border-radius: 14px; display: grid; place-items: center; background: rgba(229,9,20,.12); color: var(--red); border: 1px solid rgba(229,9,20,.25); transition: background .3s, color .3s; }
+.area-ico svg { width: 30px; height: 30px; }
+.area-card:hover .area-ico { background: var(--red); color: #fff; }
+.area-txt { display: grid; gap: 6px; min-width: 0; }
+.area-txt strong { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; letter-spacing: -.01em; line-height: 1.1; color: #fff; }
+.area-txt span { color: var(--gray); font-size: .95rem; line-height: 1.5; }
+.area-go { font-family: var(--font-cond); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--gold); white-space: nowrap; transition: color .25s, transform .25s; }
+.area-card:hover .area-go { color: var(--red); transform: translateX(4px); }
+.area-nota { text-align: center; color: var(--gray); margin-top: 26px; font-size: .98rem; }
+.area-nota a { color: #fff; font-weight: 600; text-decoration: underline; text-decoration-color: rgba(229,9,20,.6); text-underline-offset: 4px; }
+.area-nota a:hover { color: var(--red); }
+.footer-h--2 { margin-top: 22px; }
+@media (max-width: 860px) {
+  .area-grid { grid-template-columns: 1fr; }
+  .area-card { grid-template-columns: 50px 1fr; padding: 20px; }
+  .area-go { grid-column: 2; justify-self: start; }
+  .area-ico { width: 50px; height: 50px; }
+}
+
+/* ===== FORMULÁRIO: campos novos, envio e confirmação ===== */
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.field textarea {
+  width: 100%; padding: 13px 15px; border-radius: 11px; resize: vertical; min-height: 64px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--line);
+  color: #fff; font-family: var(--font-body); font-size: .98rem; line-height: 1.45; transition: border-color .25s, box-shadow .25s;
+}
+.field textarea::placeholder { color: var(--gray); }
+.field textarea:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rgba(229,9,20,.18); }
+.field select { color-scheme: dark; }
+.btn.enviando { opacity: .75; cursor: progress; }
+.btn.enviando .btn-ico { animation: giraIco 1s linear infinite; }
+@keyframes giraIco { to { transform: rotate(360deg); } }
+.form-ok { position: relative; z-index: 2; text-align: center; display: grid; gap: 12px; justify-items: center; padding: 8px 0 4px; }
+.form-ok-ico { font-size: 2.6rem; line-height: 1; }
+.form-ok h4 { font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; letter-spacing: -.015em; line-height: 1.05; }
+.form-ok p { color: #d8d8dc; font-size: .98rem; line-height: 1.55; max-width: 36ch; }
+.form-ok-proto { font-family: var(--font-cond); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; font-size: .85rem; color: var(--gray) !important; }
+.form-ok-proto b { color: #fff; letter-spacing: .18em; }
+.form-ok .btn { margin-top: 6px; }
+.form-ok-fechar { color: var(--gray); font-family: var(--font-cond); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: .9rem; padding: 8px 14px; border-radius: 8px; }
+.form-ok-fechar:hover { color: #fff; background: rgba(255,255,255,.06); }
+.form-modal { max-width: 520px; }
+@media (max-width: 480px) { .field-row { grid-template-columns: 1fr; } }
+
+/* ===== MENOS MOVIMENTO CONTÍNUO = mais velocidade e bateria =====
+   As camadas que repintam a TELA INTEIRA a cada quadro (aurora desfocada, grão, manchas de luz) ficam paradas:
+   o visual é o mesmo (a cor e a textura continuam), mas o processador fica livre para a página.
+   O movimento fica onde ele se vê: mar de metal, faixas, selos, letras do título, botões. */
+.bg-aurora, .bg-grain, .bg-blob { animation: none; }
+/* No celular também param os efeitos de sombra/brilho que redesenham o título e os botões o tempo todo. */
+@media (max-width: 768px), (pointer: coarse) {
+  .hero-title .text-red, .glow, .btn-whatsapp.glow, .floaty, .why-badge-float, .diagonal-lines, .section-tag::after,
+  .final-cta-bg, .speed-streak, .wa-float, .wa-float::before, .hero-highlights .hl::before, .hero-highlights .hl::after,
+  .footer-brand .logo::after { animation: none; }
+  .hero-title .text-red { text-shadow: 0 0 24px rgba(229,9,20,.45); }
+  .wa-float::before { display: none; }
+}
+
+/* ===== IMPRESSÃO: só o que importa (endereço, horário, serviços, contato) ===== */
+@media print {
+  html, body { background: #fff !important; color: #000 !important; }
+  #bgLive, .bg-fx, .cursor-glow, .scroll-progress, .navbar .btn, .hamburger, .wa-float, .to-top, .social-proof, .modal-backdrop,
+  .rev-pop, .trust-bar, .brands, .final-cta, .circular-seal, .hero-rays, .diagonal-lines, .hero-overlay, .scroll-indicator,
+  .cutout-frame, .speed-streak, .cta-embers, .svc-rev, .target-cursor, .map-ph-actions, .skip-link, .team, .area-go { display: none !important; }
+  main > section { content-visibility: visible !important; padding: 18px 0 !important; break-inside: avoid; }
+  .hero { min-height: 0 !important; padding-top: 20px !important; background: none !important; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+  .sec-light, .section, .service-card, .about-pillar, .area-card { background: #fff !important; color: #000 !important; border-color: #ccc !important; box-shadow: none !important; }
+  .section-title, .hero-title, h3, strong, p, li, span { color: #000 !important; text-shadow: none !important; }
+  .stroke-title .stroke-layer { display: none !important; }
+  .stroke-title .fill-layer { position: static !important; clip-path: none !important; }
+  .hero-title .st-char { opacity: 1 !important; transform: none !important; -webkit-text-fill-color: #000 !important; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .8em; color: #555; }
+  a[href*="wa.me"]::after { content: " (WhatsApp (12) 99683-0272)"; }
+  .services-grid, .area-grid, .diag-steps, .counters { display: block !important; }
+  .service-card, .area-card, .diag-step { margin-bottom: 10px; }
+}

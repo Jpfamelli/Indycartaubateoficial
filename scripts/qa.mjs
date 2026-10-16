@@ -11,14 +11,19 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
+import { texto as textoWa, MENSAGENS, PREFIXO } from './mensagens-whatsapp.mjs';
 const AXE = fs.readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
+const SITE_LEAD = 'https://nppfqhavqahapmugnyng.supabase.co/functions/v1/site-lead';
+// Resposta falsa da Edge Function site-lead: o teste NUNCA grava no banco de verdade.
+const FETCH_FALSO = `window.__envios = []; window.fetch = async (url, opts) => { window.__envios.push({ url: String(url), body: JSON.parse(opts.body) }); if (window.__fetchFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, protocolo: 'QA1234', mensagem: 'Pedido enviado, Teste! (resposta de teste)' }) }; };`;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'qa-out');
 const CHROME = process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PHONE = '5512996830272';
 const PROIBIDAS = [/\bprezad[oa]s?\b/i, /\befetu(ar|e|ou)\b/i, /\bcomparec(er|a)\b/i, /\bve[ií]culos?\b/i, /\b10x\b/i, /leva e traz gr[aá]tis/i];
-const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.xml': 'application/xml', '.txt': 'text/plain', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
+const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.avif': 'image/avif', '.xml': 'application/xml', '.txt': 'text/plain', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 
 /* Os mesmos cabeçalhos do netlify.toml (bloco "/*") no servidor local: CSP que quebre algo falha aqui. */
 function cabecalhosDoNetlify() {
@@ -61,6 +66,7 @@ async function abrir(largura, altura, url = BASE + '/') {
   page.on('requestfailed', r => { if (r.url().startsWith(BASE)) erros.push('falhou: ' + r.url()); });
   await page.evaluateOnNewDocument(() => {
     window.__cls = 0; window.__lcp = 0; window.__csp = [];
+    try { sessionStorage.setItem('indycar_promo', '1'); } catch (_) {} // o convite de 8 s não cobre a página durante o teste
     document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.violatedDirective + ' ' + (e.blockedURI || 'inline')));
     try {
       new PerformanceObserver(l => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cls += e.value; }).observe({ type: 'layout-shift', buffered: true });
@@ -111,11 +117,17 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
         u.searchParams.get('utm_medium') !== 'whatsapp' || !u.searchParams.get('utm_campaign') || !t.endsWith('(site/' + u.searchParams.get('utm_campaign') + ')');
     });
     ok(ruins.length === 0, 'todo link de WhatsApp tem número certo, mensagem pronta, código (site/…) e UTM' + (ruins.length ? ': ' + ruins.slice(0, 3).join(' | ') : ''));
+    // Rodada 5: contrato com a IA do Atendimento — toda mensagem começa com o prefixo estável e bate com a tabela única.
+    const foraDaTabela = wa.map(h => { const u = new URL(h); return [u.searchParams.get('utm_campaign'), u.searchParams.get('text') || '']; })
+      .filter(([c, t]) => !t.startsWith(PREFIXO) || (MENSAGENS[c] && t !== textoWa(c)) || (!MENSAGENS[c] && !/^formulario/.test(c))).map(([c]) => c);
+    ok(foraDaTabela.length === 0, `todas as ${wa.length} mensagens de WhatsApp começam com "${PREFIXO}" e seguem a tabela scripts/mensagens-whatsapp.mjs` + (foraDaTabela.length ? ': ' + foraDaTabela.join(', ') : ''));
+    const orcar = wa.filter(h => /quero or%C3%A7ar%3A/.test(h) || /quero orçar: /.test(decodeURIComponent(h))).length;
+    ok(orcar >= 16, `${orcar} links de serviço dizem "quero orçar: <serviço>" (a IA identifica o serviço por esse trecho)`);
 
     const ld = await page.$$eval('script[type="application/ld+json"]', ss => ss.map(s => s.textContent));
     let parse = true; const objs = [];
     for (const t of ld) { try { objs.push(JSON.parse(t)); } catch { parse = false; } }
-    ok(parse && objs.length === 2, 'JSON-LD válido (AutoRepair + FAQPage)');
+    ok(parse && objs.length === 3 && objs.some(o => o['@type'] === 'WebSite'), 'JSON-LD válido (AutoRepair + FAQPage + WebSite)');
     const oficina = objs.find(o => o['@type'] === 'AutoRepair') || {};
     ok(!oficina.aggregateRating, 'JSON-LD sem nota autoatribuída');
     ok(oficina.openingHoursSpecification?.[0]?.closes === '17:30' && oficina.openingHoursSpecification[0].dayOfWeek.length === 6, 'JSON-LD com horário seg–sáb até 17h30');
@@ -125,8 +137,8 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
 
     const imgs = await page.$$eval('img', is => is.filter(i => !i.getAttribute('width') || !i.getAttribute('height') || !i.hasAttribute('alt')).map(i => i.src));
     ok(imgs.length === 0, 'todas as imagens com width, height e alt' + (imgs.length ? ': ' + imgs.join(', ') : ''));
-    const webp = await page.$$eval('img', is => is.filter(i => i.currentSrc).every(i => /\.webp$/.test(i.currentSrc)));
-    ok(webp, 'navegador moderno recebe WebP');
+    const modernas = await page.$$eval('img', is => is.filter(i => i.currentSrc).map(i => i.currentSrc.split('/').pop()));
+    ok(modernas.length >= 1 && modernas.every(s => /\.avif$/.test(s)), 'navegador moderno recebe AVIF (WebP e PNG/JPG de reserva): ' + modernas.join(', '));
 
     ok(await page.$('#mapBox iframe') === null, 'mapa do Google não carrega antes do clique');
     // Rodada 4: as seções abaixo da dobra usam content-visibility; rola até o mapa e espera ele assentar antes do clique.
@@ -141,10 +153,34 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     ok(achadas.length === 0, 'vocabulário da casa (sem prezado/efetuar/comparecer/veículo/10x/leva e traz grátis)' + (achadas.length ? ': ' + achadas : ''));
     ok(/Quem conhece, Indyca!/.test(corpo) && /8h às 17h30/.test(corpo) && /12 meses/.test(corpo), 'slogan, horário e garantia presentes');
     ok(await page.$('.review-card') === null, 'sem depoimentos inventados');
-    for (const id of ['diagnostico', 'garantia', 'avaliacoes', 'faq', 'contato']) ok(await page.$('#' + id) !== null, `seção #${id} existe`);
+    for (const id of ['diagnostico', 'garantia', 'avaliacoes', 'faq', 'area-cliente', 'contato']) ok(await page.$('#' + id) !== null, `seção #${id} existe`);
 
-    // formulário: telefone curto é barrado com mensagem
-    await page.evaluate(() => { document.querySelector('[data-open-modal]').click(); });
+    // Rodada 5: Área do Cliente (sistema Pátio) — seção, menu, rodapé, FAQ e 404 apontam para o endereço certo.
+    const area = await page.evaluate(() => {
+      const links = [...document.querySelectorAll('a[href^="https://indycar-patio.netlify.app/"]')];
+      return {
+        acompanhar: links.filter(a => a.href === 'https://indycar-patio.netlify.app/acompanhar/').map(a => a.closest('section, footer, nav')?.id || a.closest('footer') ? 'footer' : '?'),
+        minha: links.filter(a => a.href === 'https://indycar-patio.netlify.app/minha/').length,
+        semNoopener: links.filter(a => !/noopener/.test(a.rel)).length,
+        secao: !!document.querySelector('#area-cliente .area-card[href$="/acompanhar/"]') && !!document.querySelector('#area-cliente .area-card[href$="/minha/"]'),
+        menu: !!document.querySelector('.nav-link[href="#area-cliente"]'),
+        faq: /Acompanhar meu carro/.test(document.getElementById('faq').textContent),
+        texto: document.getElementById('area-cliente').textContent,
+      };
+    });
+    ok(area.secao && area.acompanhar.length >= 3 && area.minha >= 2 && area.semNoopener === 0, `Área do Cliente: links para /acompanhar/ (${area.acompanhar.length}) e /minha/ (${area.minha}) na seção, no rodapé e na FAQ, todos com noopener`);
+    ok(area.menu && area.faq && /Sem senha e sem cadastro/.test(area.texto), 'Área do Cliente no menu, explicada em uma frase (sem senha, link pelo WhatsApp) e citada na resposta da FAQ');
+    const status = await page.evaluate(() => { const c = document.getElementById('statusAberto'); return { hidden: c.hidden, txt: c.innerText.replace(/\s+/g, ' ') }; });
+    ok(!status.hidden && /^(Aberto agora|Fechado agora) /.test(status.txt), 'chip "Aberto agora / Fechado agora" calculado no fuso de Taubaté: ' + status.txt);
+    ok(await page.$eval('meta[name="color-scheme"]', m => m.content) === 'dark', 'meta color-scheme=dark (campos nativos no tema do site)');
+    const marcados = await page.evaluate(() => document.querySelectorAll('[data-num]').length);
+    ok(marcados >= 14 && await page.evaluate(() => document.body.dataset.nota === '4,8' && document.body.dataset.avaliacoes === '1.200' && document.body.dataset.anos === '18'), `números da oficina (4,8 · +1.200 · +18) marcados em ${marcados} pontos e no <body>, trocáveis em scripts/dados-oficina.mjs`);
+    ok(await page.$$eval('.service-card[id^="svc-"]', cs => cs.length) === 12, 'os 12 cards de serviço têm id estável (#svc-cambio, #svc-freios…) para links de anúncio');
+
+    // formulário: telefone curto é barrado com mensagem (o fetch da Edge Function é falso: nada vai para o banco)
+    await page.evaluate(FETCH_FALSO);
+    await page.evaluate(() => { document.querySelector('.hero-cta [data-open-modal]').click(); });
+    ok(await page.$eval('#fService', s => s.selectedOptions[0]?.dataset.codigo) === 'diagnostico', 'botão do hero abre o formulário já com "Diagnóstico digital gratuito" escolhido (data-servico)');
     await page.type('#fName', 'Teste QA');
     await page.type('#fPhone', '1234');
     await page.select('#fService', 'Pneus');
@@ -159,13 +195,32 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     ok(isca.tab === -1 && isca.oculto && isca.fora, 'campo-isca do formulário fora da tela, do Tab e do leitor de tela');
     await page.evaluate(() => { document.getElementById('fEmpresa').value = 'robo ltda'; document.querySelector('#leadForm button[type=submit]').click(); });
     ok(!(await page.evaluate(() => window.__aberto)), 'robô que preenche o campo-isca não abre o WhatsApp');
-    // reabre o formulário limpo, preenche como gente e espera
+    // reabre o formulário limpo, preenche como gente e espera: o pedido vai para a Edge Function (falsa aqui)
     await page.evaluate(() => { document.querySelector('[data-open-modal]').click(); });
-    await page.type('#fName', 'Teste QA'); await page.type('#fPhone', '(12) 99683-0272'); await page.select('#fService', 'Pneus');
+    await page.type('#fName', 'Teste QA'); await page.type('#fPhone', '12996830272'); await page.select('#fService', 'Pneus');
+    ok(await page.$eval('#fPhone', i => i.value) === '(12) 99683-0272', 'telefone ganha máscara (12) 99683-0272 enquanto digita');
+    await page.select('#fQuando', 'Amanhã'); await page.type('#fMsg', 'luz do motor acesa');
     await new Promise(r => setTimeout(r, 2700));
     await page.evaluate(() => document.querySelector('#leadForm button[type=submit]').click());
-    const aberto = await page.evaluate(() => window.__aberto || '');
-    ok(aberto.startsWith('https://wa.me/' + '5512996830272') && decodeURIComponent(aberto).includes('(site/formulario-pneus)') && aberto.includes('utm_campaign=formulario-pneus'), 'formulário válido abre o WhatsApp com código do serviço (site/formulario-pneus) e UTM');
+    await page.waitForSelector('#formOk:not([hidden])', { timeout: 5000 }).catch(() => {});
+    const envio = await page.evaluate(() => ({ envios: window.__envios, aberto: window.__aberto, ok: !document.getElementById('formOk').hidden, proto: document.getElementById('formOkProto').innerText, wa: document.getElementById('formOkWa').href, formEscondido: document.getElementById('leadForm').hidden }));
+    const corpoEnvio = envio.envios[0]?.body || {};
+    ok(envio.envios.length === 1 && envio.envios[0].url === SITE_LEAD && corpoEnvio.nome === 'Teste QA' && corpoEnvio.telefone === '12996830272' && corpoEnvio.codigo === 'pneus' && corpoEnvio.servico === 'Pneus' && corpoEnvio.preferencia === 'Amanhã' && corpoEnvio.mensagem === 'luz do motor acesa' && corpoEnvio.decorrido >= 2500 && corpoEnvio.empresa === '', 'formulário válido manda o pedido para a Edge Function site-lead (nome, telefone só dígitos, código, serviço, quando, mensagem, tempo de preenchimento)');
+    ok(envio.ok && envio.formEscondido && /QA1234/.test(envio.proto) && !envio.aberto, 'depois de enviar mostra a confirmação com protocolo e NÃO abre o WhatsApp sozinho');
+    ok(envio.wa.startsWith('https://wa.me/5512996830272') && decodeURIComponent(envio.wa).includes('(site/formulario-pneus)') && decodeURIComponent(envio.wa).startsWith('https://wa.me/5512996830272?text=' + PREFIXO + ', quero orçar: Pneus.') && envio.wa.includes('utm_campaign=formulario-pneus'), 'botão "abrir no WhatsApp" da confirmação leva a mesma mensagem (prefixo + quero orçar + código do serviço)');
+    await page.evaluate(() => document.querySelector('#formOk [data-close-form]').click());
+    await new Promise(r => setTimeout(r, 600));
+    ok(await page.evaluate(() => !document.getElementById('leadForm').hidden && document.getElementById('formOk').hidden), 'fechar a confirmação devolve o formulário limpo para o próximo pedido');
+    // sem rede (ou servidor fora): o caminho antigo continua — abre o WhatsApp com a mesma mensagem
+    await page.evaluate(() => { window.__fetchFalha = true; window.__aberto = null; document.querySelector('[data-open-modal]').click(); });
+    await page.type('#fName', 'Teste QA'); await page.type('#fPhone', '12996830272'); await page.select('#fService', 'Pneus');
+    await new Promise(r => setTimeout(r, 2700));
+    await page.evaluate(() => document.querySelector('#leadForm button[type=submit]').click());
+    await page.waitForSelector('#formOk:not([hidden])', { timeout: 5000 }).catch(() => {});
+    const aberto = await page.evaluate(() => { window.__fetchFalha = false; return window.__aberto || ''; });
+    ok(aberto.startsWith('https://wa.me/' + '5512996830272') && decodeURIComponent(aberto).includes('(site/formulario-pneus)') && aberto.includes('utm_campaign=formulario-pneus'), 'sem rede, o formulário abre o WhatsApp com código do serviço (site/formulario-pneus) e UTM (nada se perde)');
+    await page.evaluate(() => document.querySelector('#formOk [data-close-form]').click());
+    await new Promise(r => setTimeout(r, 600));
     // anti-spam 2: enviar rápido demais (robô) só pede para conferir
     await page.evaluate(() => { window.__aberto = null; document.querySelector('[data-open-modal]').click(); });
     await page.evaluate(() => {
@@ -176,6 +231,12 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     ok(!(await page.evaluate(() => window.__aberto)), 'envio instantâneo (abaixo de 2,5 s) não abre o WhatsApp');
     ok(await page.evaluate(() => !document.getElementById('fEnvioMsg').hidden && /Confere os dados/.test(document.getElementById('fEnvioMsg').textContent)), 'envio rápido mostra aviso no próprio formulário (role=status)');
     await page.keyboard.press('Escape');
+    ok((await page.evaluate(() => window.__envios.length)) === 2, 'robô (isca ou rápido demais) não chega à Edge Function: só os 2 envios de gente foram mandados');
+    // menu marca a seção atual enquanto rola
+    await page.evaluate(() => document.getElementById('contato').scrollIntoView());
+    await new Promise(r => setTimeout(r, 900));
+    ok(await page.evaluate(() => document.querySelector('.nav-link[href="#contato"]').getAttribute('aria-current') === 'true'), 'menu marca a seção atual (aria-current) ao rolar até #contato');
+    await page.evaluate(() => scrollTo(0, 0));
 
     // todo serviço tem código: cada card de serviço e cada opção do formulário
     const semCodigo = await page.$$eval('.service-card', cs => cs.filter(c => !/\(site\/[a-z0-9_-]+\)/.test(decodeURIComponent([...c.querySelectorAll('a[href*="wa.me"]')].map(a => a.href).join(' ')))).map(c => (c.querySelector('h3') || {}).textContent));
@@ -247,6 +308,13 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
 
   const csp = await page.evaluate(() => window.__csp);
   ok(csp.length === 0, 'nenhuma violação da CSP (mapa, fontes e WhatsApp funcionam com ela)' + (csp.length ? ': ' + [...new Set(csp)].slice(0, 4).join(' | ') : ''));
+  // Rodada 5: as camadas que repintam a tela inteira ficam paradas (velocidade/bateria); no celular também o título e os botões.
+  const parado = await page.evaluate(() => ({
+    aurora: getComputedStyle(document.querySelector('.bg-aurora')).animationName, grao: getComputedStyle(document.querySelector('.bg-grain')).animationName,
+    titulo: getComputedStyle(document.querySelector('.hero-title .text-red')).animationName, glow: getComputedStyle(document.querySelector('.hero-cta .glow')).animationName,
+  }));
+  ok(parado.aurora === 'none' && parado.grao === 'none', 'aurora e grão de fundo sem animação contínua (menos repintura de tela inteira)');
+  if (w === 375) ok(parado.titulo === 'none' && parado.glow === 'none', 'celular: título e botões sem pulso de sombra contínuo (TBT/bateria)');
   // Rodada 4: fontes no próprio site (nada do Google), carregadas e usadas no título.
   const fontes = await page.evaluate(async () => {
     await document.fonts.ready;
@@ -288,12 +356,78 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
   await page.close();
 }
 
+console.log('\n== entradas por endereço (rodada 5) ==');
+{
+  // /?servico=freios&utm_source=meta&utm_campaign=freios-outubro: escolhe o serviço, destaca o card, guarda a campanha e limpa o endereço
+  const { page, erros } = await abrir(1440, 900, BASE + '/?servico=freios&utm_source=meta&utm_campaign=freios-outubro&fbclid=abc');
+  await new Promise(r => setTimeout(r, 1200));
+  const e1 = await page.evaluate(() => ({
+    sel: document.querySelector('#fService').selectedOptions[0]?.dataset.codigo, destaque: document.getElementById('svc-freios').classList.contains('svc-destaque'),
+    url: location.search, utm: sessionStorage.getItem('indycar_utm'),
+    waHero: new URL(document.querySelector('.hero-cta a[href*="wa.me"]').href).searchParams.get('utm_campaign'),
+    waTexto: decodeURIComponent(new URL(document.querySelector('.hero-cta a[href*="wa.me"]').href).searchParams.get('text')),
+    topoCard: Math.round(document.getElementById('svc-freios').getBoundingClientRect().top),
+  }));
+  ok(e1.sel === 'freios' && e1.destaque && e1.topoCard > 0 && e1.topoCard < 900, `/?servico=freios escolhe Freios no formulário e rola até o card destacado (topo ${e1.topoCard}px)`);
+  ok(e1.url === '' && /"source":"meta"/.test(e1.utm) && /"fbclid":"abc"/.test(e1.utm), 'campanha (utm_source, utm_campaign, fbclid) guardada na sessão e endereço limpo');
+  ok(e1.waHero === 'hero--meta' && e1.waTexto.endsWith('(site/hero--meta)'), 'links de WhatsApp levam a campanha no código: (site/hero--meta)');
+  await page.evaluate(FETCH_FALSO);
+  await page.evaluate(() => { document.querySelector('.hero-cta [data-open-modal]').click(); });
+  await page.type('#fName', 'Teste QA'); await page.type('#fPhone', '12996830272');
+  await new Promise(r => setTimeout(r, 2700));
+  await page.evaluate(() => document.querySelector('#leadForm button[type=submit]').click());
+  await page.waitForSelector('#formOk:not([hidden])', { timeout: 5000 }).catch(() => {});
+  const corpo = await page.evaluate(() => window.__envios[0]?.body || {});
+  ok(corpo.utm?.source === 'meta' && corpo.utm?.campaign === 'freios-outubro' && corpo.codigo === 'freios', 'pedido do formulário leva a campanha paga junto (utm.source=meta, campaign) e o serviço pré-escolhido');
+  ok(erros.length === 0, 'sem erro de console na entrada por endereço' + (erros.length ? ': ' + erros.slice(0, 2).join(' | ') : ''));
+  await page.close();
+  const { page: p2 } = await abrir(375, 812, BASE + '/?abrir=form');
+  await new Promise(r => setTimeout(r, 1400));
+  ok(await p2.evaluate(() => document.getElementById('formBackdrop').classList.contains('open') && document.activeElement?.id === 'fName'), '/?abrir=form abre o formulário direto no celular, com o foco no nome');
+  await p2.close();
+}
+
+console.log('\n== fontes de verdade (tabelas) ==');
+{
+  for (const [script, rotulo] of [['gerar-whatsapp.mjs', 'mensagens de WhatsApp do HTML iguais à tabela scripts/mensagens-whatsapp.mjs'], ['gerar-numeros.mjs', 'números da oficina do HTML iguais a scripts/dados-oficina.mjs']]) {
+    let saida = '', okk = true;
+    try { saida = execFileSync(process.execPath, [path.join(ROOT, 'scripts', script), '--conferir'], { encoding: 'utf8' }).trim(); } catch (e) { okk = false; saida = (e.stdout || e.message).toString().trim(); }
+    ok(okk, rotulo + ' (' + saida.split('\n')[0] + ')');
+  }
+  const toml = fs.readFileSync(path.join(ROOT, 'netlify.toml'), 'utf8');
+  ok(/from = "\/acompanhar"[\s\S]*?to = "https:\/\/indycar-patio\.netlify\.app\/acompanhar\/"/.test(toml) && /from = "\/minha"[\s\S]*?to = "https:\/\/indycar-patio\.netlify\.app\/minha\/"/.test(toml) && /from = "\/whatsapp"/.test(toml) && /from = "\/agendar"[\s\S]*?to = "\/\?abrir=form"/.test(toml), 'netlify.toml: atalhos /acompanhar, /minha, /whatsapp e /agendar');
+  ok(/for = "\/\*\.css"[\s\S]*?immutable/.test(toml) && /for = "\/\*\.js"[\s\S]*?immutable/.test(toml), 'netlify.toml: CSS e JS com cache de um ano (o publicar versiona os links com ?v=)');
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
+  ok(manifest.icons.some(i => i.sizes === '192x192') && manifest.icons.some(i => i.sizes === '512x512' && i.purpose === 'maskable') && manifest.icons.every(i => fs.existsSync(path.join(ROOT, i.src.replace(/^\//, '')))) && manifest.shortcuts?.length >= 2, 'manifesto com ícones 192/512 (maskable) existentes e atalhos');
+  const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
+  const datas = [...sitemap.matchAll(/<lastmod>(\d{4}-\d{2}-\d{2})<\/lastmod>/g)].map(m => m[1]);
+  ok(datas.length === 2 && datas.every(d => !isNaN(Date.parse(d)) && d <= new Date().toISOString().slice(0, 10)), 'sitemap com lastmod válido nas duas páginas');
+  ok(/@media print/.test(fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8')), 'folha de impressão (@media print) presente');
+  for (const f of ['oficina-fachada.avif', 'oficina-fachada-720.avif', 'fachada-recorte.avif', 'fachada-recorte-thumb.avif']) {
+    const webp = f.replace('.avif', '.webp');
+    ok(fs.existsSync(path.join(ROOT, f)) && fs.statSync(path.join(ROOT, f)).size < fs.statSync(path.join(ROOT, webp)).size, `${f} existe e é menor que o WebP`);
+  }
+  // dist/ minificado e versionado (o que vai para o ar)
+  let distOk = true, distSaida = '';
+  try { distSaida = execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'publicar.mjs')], { encoding: 'utf8' }).trim(); } catch (e) { distOk = false; distSaida = e.message; }
+  const distHtml = distOk ? fs.readFileSync(path.join(ROOT, 'dist', 'index.html'), 'utf8') : '';
+  ok(distOk && /styles\.css\?v=[0-9a-f]{10}/.test(distHtml) && /script\.js\?v=[0-9a-f]{10}/.test(distHtml) && fs.statSync(path.join(ROOT, 'dist', 'script.js')).size < fs.statSync(path.join(ROOT, 'script.js')).size * 0.6, 'dist/: CSS e JS minificados e chamados com ?v=<hash> (' + distSaida.split('(')[1]?.split(')')[0] + ')');
+  ok(distOk && !fs.existsSync(path.join(ROOT, 'dist', 'package.json')) && !fs.existsSync(path.join(ROOT, 'dist', 'scripts')) && !fs.existsSync(path.join(ROOT, 'dist', 'supabase')), 'dist/ não leva scripts, package.json nem a Edge Function');
+  // Edge Function no ar (só leitura: /saude)
+  try {
+    const r = await fetch(SITE_LEAD + '/saude', { headers: { origin: 'https://indycar-taubate.netlify.app' } });
+    const j = await r.json();
+    ok(r.ok && j.ok && r.headers.get('access-control-allow-origin') === 'https://indycar-taubate.netlify.app', 'Edge Function site-lead responde /saude com CORS para o site');
+  } catch (e) { console.log('  info Edge Function não conferida (sem rede): ' + e.message); }
+}
+
 console.log('\n== cabeçalhos de segurança ==');
 {
   const r = await fetch(BASE + '/');
   const h = k => r.headers.get(k) || '';
   const csp = h('content-security-policy');
   ok(/script-src 'self'(;|$)/.test(csp) && /frame-ancestors/.test(csp) && csp.includes('frame-src https://maps.google.com'), 'CSP com script só do site, frame-ancestors e mapa liberado');
+  ok(csp.includes("connect-src 'self' https://nppfqhavqahapmugnyng.supabase.co"), 'CSP libera só o Supabase da oficina em connect-src (formulário → site-lead)');
   ok(/max-age=[0-9]{8}/.test(h('strict-transport-security')), 'HSTS de 1 ano');
   ok(h('permissions-policy').includes('camera=()') && h('permissions-policy').includes('browsing-topics=()'), 'Permissions-Policy fecha câmera, microfone, localização, pagamento e rastreio');
   ok(h('x-content-type-options') === 'nosniff' && h('referrer-policy').includes('strict-origin'), 'nosniff e Referrer-Policy');
@@ -310,6 +444,10 @@ for (const [rota, texto] of [['/privacidade.html', 'Privacidade'], ['/nao-existe
   const sw = await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
   const errosReais = erros.filter(e => !(rota === '/nao-existe' && /404/.test(e)));
   ok(t.includes(texto) && sw && errosReais.length === 0, `${rota} abre limpa em 375 px`);
+  if (rota === '/nao-existe') {
+    const l404 = await page.$$eval('a[href]', as => as.map(a => a.getAttribute('href')));
+    ok(l404.includes('https://indycar-patio.netlify.app/acompanhar/') && l404.includes('https://indycar-patio.netlify.app/minha/') && l404.includes('/#servicos') && l404.some(h => /wa\.me.*site%2F404/.test(h)), '404 oferece os caminhos mais procurados (serviços, Área do Cliente, contato, WhatsApp)');
+  }
   await page.close();
 }
 for (const f of ['robots.txt', 'sitemap.xml', 'og-indycar.jpg', 'manifest.webmanifest']) ok(fs.existsSync(path.join(ROOT, f)), `${f} existe`);

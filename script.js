@@ -18,6 +18,46 @@
   };
   // No celular o título do hero não é dividido em letras (ele é o LCP e entra só com o deslize do CSS).
   const heroLeve = window.matchMedia('(max-width: 768px)').matches;
+  const sessao = {
+    get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
+    set(k, v) { try { sessionStorage.setItem(k, v); } catch (_) {} }
+  };
+  // Rodada 5: a campanha que trouxe a pessoa (utm_*, gclid, fbclid) fica guardada na sessão e vai junto no pedido
+  // do formulário e no código dos links de WhatsApp — o CRM enxerga "site" e, se houver, o anúncio de origem.
+  const PARAMS = new URLSearchParams(location.search);
+  const UTM = (() => {
+    const u = {};
+    for (const k of ['source', 'medium', 'campaign', 'content', 'term']) { const v = PARAMS.get('utm_' + k); if (v) u[k] = v.slice(0, 80); }
+    for (const k of ['gclid', 'fbclid']) { const v = PARAMS.get(k); if (v) u[k] = v.slice(0, 80); }
+    if (Object.keys(u).length) { sessao.set('indycar_utm', JSON.stringify(u)); return u; }
+    try { return JSON.parse(sessao.get('indycar_utm') || '{}') || {}; } catch (_) { return {}; }
+  })();
+  const slug = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  // Código de origem com a campanha paga anexada: "(site/cambio--meta)" (o gatilho do banco aceita [a-z0-9_-]{1,40}).
+  function codigoComCampanha(codigo) {
+    if (!UTM.source) return codigo;
+    return (codigo + '--' + slug(UTM.source)).slice(0, 40).replace(/-+$/, '');
+  }
+  if (UTM.source) {
+    $$('a[href*="wa.me"]').forEach(a => {
+      try {
+        const u = new URL(a.href);
+        const c = u.searchParams.get('utm_campaign');
+        const t = u.searchParams.get('text') || '';
+        if (!c || !t.endsWith('(site/' + c + ')')) return;
+        const novo = codigoComCampanha(c);
+        u.searchParams.set('text', t.slice(0, -(c.length + 7)) + '(site/' + novo + ')');
+        u.searchParams.set('utm_campaign', novo);
+        a.href = u.toString();
+      } catch (_) {}
+    });
+  }
+  // Mensagem padrão ao atendimento. O prefixo é o contrato com a IA do Atendimento (identifica o serviço por "quero orçar:").
+  const PREFIXO_WA = 'Olá! Vim pelo site';
+  function linkWhatsApp(texto, codigo) {
+    return 'https://wa.me/5512996830272?text=' + encodeURIComponent(texto + ' (site/' + codigo + ')') +
+      '&utm_source=site&utm_medium=whatsapp&utm_campaign=' + encodeURIComponent(codigo);
+  }
   // As seções abaixo da dobra usam content-visibility (styles.css). Antes de pular para uma âncora, todas ganham o
   // tamanho real (html.cv-off), senão o pulo cairia no lugar errado. Com âncora já no endereço, vale desde o início.
   const semAtalhoDeLayout = () => document.documentElement.classList.add('cv-off');
@@ -102,6 +142,24 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && navLinks.classList.contains('open')) { closeMenu(); hamburger.focus(); } });
   // fecha ao clicar num link
   $$('.nav-link', navLinks).forEach(a => a.addEventListener('click', closeMenu));
+  // Rodada 5: o menu marca a seção em que a pessoa está (aria-current) enquanto rola.
+  (function marcarSecaoAtual() {
+    const links = $$('.nav-link[href^="#"]', navLinks);
+    const alvos = links.map(a => document.getElementById(a.getAttribute('href').slice(1))).filter(Boolean);
+    if (!alvos.length || !('IntersectionObserver' in window)) return;
+    const visiveis = new Map();
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => visiveis.set(e.target.id, e.isIntersecting ? e.intersectionRatio : 0));
+      let melhor = null, maior = 0;
+      visiveis.forEach((v, id) => { if (v > maior) { maior = v; melhor = id; } });
+      links.forEach(a => {
+        const atual = melhor && a.getAttribute('href') === '#' + melhor;
+        a.classList.toggle('atual', !!atual);
+        if (atual) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+      });
+    }, { threshold: [0.1, 0.3, 0.6], rootMargin: '-80px 0px -40% 0px' });
+    alvos.forEach(s => io.observe(s));
+  })();
 
   /* ================================================================
      3. REVEAL ON SCROLL (Intersection Observer + stagger)
@@ -176,7 +234,7 @@
 
     // SPOTLIGHT que segue o cursor dentro de cada card
     // (SpotlightCard do React Bits: também nos pilares de #sobre e itens de #diferenciais)
-    $$('.service-card, .review-card, .about-pillar, .why-item').forEach(card => {
+    $$('.service-card, .about-pillar, .why-item').forEach(card => {
       card.addEventListener('pointermove', (e) => {
         const r = card.getBoundingClientRect();
         card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
@@ -191,19 +249,6 @@
         const x = (e.clientX - r.left) / r.width - 0.5;
         const y = (e.clientY - r.top) / r.height - 0.5;
         card.style.transform = `translateY(-10px) rotateX(${ -y * 8 }deg) rotateY(${ x * 8 }deg)`;
-      });
-      card.addEventListener('pointerleave', () => (card.style.transform = ''));
-    });
-
-    // TILTEDCARD — port do React Bits: tilt 3D leve nos depoimentos.
-    // Ângulo menor que o do bento; só pointer fino (não interfere no swipe).
-    $$('.review-card').forEach(card => {
-      card.addEventListener('pointermove', (e) => {
-        if (e.pointerType && e.pointerType !== 'mouse') return;
-        const r = card.getBoundingClientRect();
-        const x = (e.clientX - r.left) / r.width - 0.5;
-        const y = (e.clientY - r.top) / r.height - 0.5;
-        card.style.transform = `translateY(-4px) rotateX(${ -y * 5 }deg) rotateY(${ x * 5 }deg)`;
       });
       card.addEventListener('pointerleave', () => (card.style.transform = ''));
     });
@@ -555,7 +600,9 @@
 
     medir();
 
-    if (reduceMotion) { /* forja congelada num instante bonito — sem animacao */
+    /* Rodada 5: no celular (ponteiro grosso) o mar fica num quadro só — a forja aparece, mas o processador e a
+       bateria ficam para a página (TBT/Speed Index do Lighthouse). No computador segue animado. */
+    if (reduceMotion || COARSE) { /* forja congelada num instante bonito — sem animacao */
       quadro(t0 + 4000, true);
       window.addEventListener('resize', function () { medir(); quadro(t0 + 4000, true); });
       return;
@@ -626,99 +673,7 @@
     liga();
   });
 
-  /* ================================================================
-     7. CARROSSEL DE DEPOIMENTOS
-        3 cards visíveis no desktop + setas < > + dots + contador
-        "X de 10" + swipe. Autoplay pausa no hover/foco e, após
-        interação manual (seta, dot ou swipe), fica 15s parado.
-     ================================================================ */
-  (function carrossel() {
-  const track = $('#reviewsTrack');
-  if (!track || !$('.review-card', track)) return;
-  const cards = $$('.review-card', track);
-  const dotsWrap = $('#reviewsDots');
-  const revPrev = $('#revPrev');
-  const revNext = $('#revNext');
-  const revCount = $('#reviewsCount');
-  const revShell = $('.reviews-shell');
-  let index = 0, autoTimer, manualHold = null;
-
-  // dots: um por POSIÇÃO alcançável (não por card — com 3 cards visíveis
-  // no desktop só existem maxIndex+1 posições; dots a mais ficariam mortos).
-  // Reconstruídos no resize, quando o nº de posições muda.
-  function buildDots() {
-    const n = maxIndex() + 1;
-    if (dotsWrap.children.length === n) return;
-    dotsWrap.textContent = '';
-    for (let i = 0; i < n; i++) {
-      const b = document.createElement('button');
-      b.setAttribute('aria-label', 'Ir para o depoimento ' + (i + 1));
-      if (i === index) b.classList.add('active');
-      b.addEventListener('click', () => { goTo(i); manualPause(); });
-      dotsWrap.appendChild(b);
-    }
-  }
-
-  function cardStep() {
-    // largura do card + gap
-    const gap = parseFloat(getComputedStyle(track).columnGap || '24');
-    return cards[0].getBoundingClientRect().width + gap;
-  }
-  function maxIndex() {
-    const visible = Math.max(1, Math.round(track.parentElement.offsetWidth / cardStep()));
-    return Math.max(0, cards.length - visible);
-  }
-  function goTo(i) {
-    index = Math.max(0, Math.min(i, maxIndex()));
-    track.style.transform = `translateX(${ -index * cardStep() }px)`;
-    $$('button', dotsWrap).forEach((d, di) => d.classList.toggle('active', di === index));
-    if (revCount) revCount.textContent = (index + 1) + ' de ' + cards.length;
-    if (revPrev) revPrev.disabled = index <= 0;
-    if (revNext) revNext.disabled = index >= maxIndex();
-  }
-  function next() { goTo(index >= maxIndex() ? 0 : index + 1); }
-
-  let reviewsVisible = false;
-  function startAuto() { clearInterval(autoTimer); autoTimer = setInterval(next, 3800); }
-  // interação manual: autoplay para por 15s e depois retoma sozinho
-  function manualPause() {
-    clearInterval(autoTimer);
-    clearTimeout(manualHold);
-    manualHold = setTimeout(() => { manualHold = null; if (reviewsVisible) startAuto(); }, 15000);
-  }
-
-  // setas laterais (o cliente navega no próprio ritmo)
-  if (revPrev) revPrev.addEventListener('click', () => { goTo(index - 1); manualPause(); });
-  if (revNext) revNext.addEventListener('click', () => { goTo(index + 1); manualPause(); });
-
-  // autoplay só com a seção visível (economia fora do viewport)
-  new IntersectionObserver(([e]) => {
-    reviewsVisible = e.isIntersecting;
-    if (e.isIntersecting) { if (!manualHold) startAuto(); }
-    else clearInterval(autoTimer);
-  }, { threshold: 0 }).observe($('#avaliacoes'));
-
-  // pausa no hover e no foco de teclado (setas/dots/cards)
-  if (revShell) {
-    revShell.addEventListener('mouseenter', () => clearInterval(autoTimer));
-    revShell.addEventListener('mouseleave', () => { if (reviewsVisible && !manualHold) startAuto(); });
-    revShell.addEventListener('focusin', () => clearInterval(autoTimer));
-    revShell.addEventListener('focusout', e => {
-      if (!revShell.contains(e.relatedTarget) && reviewsVisible && !manualHold) startAuto();
-    });
-  }
-  window.addEventListener('resize', () => { buildDots(); goTo(index); });
-  buildDots();
-  goTo(0); // estado inicial: contador + setas
-
-  // swipe no mobile
-  let startX = 0;
-  track.addEventListener('touchstart', e => (startX = e.touches[0].clientX), { passive: true });
-  track.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - startX;
-    if (Math.abs(dx) > 50) { dx < 0 ? next() : goTo(index - 1); manualPause(); }
-  }, { passive: true });
-  })();
+  /* 7. (carrossel de depoimentos removido na rodada 2: o site não publica depoimento; código morto saiu na rodada 5) */
 
   /* ================================================================
      8. MODAIS — promoção (ao carregar) e agendamento/orçamento
@@ -755,11 +710,40 @@
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   }));
 
+  // Rodada 5: o botão pode já escolher o serviço no formulário (data-servico="cambio" = option[data-codigo=cambio]).
+  function escolherServico(codigo) {
+    const sel = $('#fService');
+    if (!sel || !codigo) return false;
+    const op = $$('option', sel).find(o => o.dataset.codigo === codigo);
+    if (!op) return false;
+    sel.value = op.value; sel.classList.remove('invalid'); sel.removeAttribute('aria-invalid');
+    return true;
+  }
   // abre modal de orçamento via qualquer [data-open-modal]
   $$('[data-open-modal]').forEach(b => b.addEventListener('click', () => {
     if (b.hasAttribute('data-close-promo')) closeEl(promoBackdrop);
+    if (b.dataset.servico && !$('#fService').value) escolherServico(b.dataset.servico);
     openEl(formBackdrop);
   }));
+  // Endereço vindo de anúncio ou do WhatsApp: /?servico=cambio rola até o card e deixa o serviço escolhido;
+  // /?abrir=form abre o formulário direto (ex.: /?servico=freios&abrir=form).
+  (function entradaPorEndereco() {
+    const servico = (PARAMS.get('servico') || '').toLowerCase();
+    if (servico && /^[a-z0-9-]{1,30}$/.test(servico)) {
+      escolherServico(servico);
+      const card = document.getElementById('svc-' + servico);
+      if (card && !location.hash) {
+        semAtalhoDeLayout();
+        card.classList.add('svc-destaque');
+        setTimeout(() => card.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' }), 350);
+      }
+    }
+    if (PARAMS.get('abrir') === 'form') setTimeout(() => openEl(formBackdrop), 600);
+    if (servico || PARAMS.has('abrir')) {
+      // o endereço fica limpo (sem perder a campanha, que já está na sessão)
+      try { history.replaceState(null, '', location.pathname + (location.hash || '')); } catch (_) {}
+    }
+  })();
 
   // botões de fechar
   $$('[data-close-form]').forEach(b => b.addEventListener('click', () => closeEl(formBackdrop)));
@@ -775,10 +759,6 @@
   });
 
   // promo aparece após 8s (uma vez por sessão)
-  const sessao = {
-    get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
-    set(k, v) { try { sessionStorage.setItem(k, v); } catch (_) {} }
-  };
   // quem já clicou no WhatsApp não precisa do convite
   document.addEventListener('click', e => {
     if (e.target.closest && e.target.closest('a[href*="wa.me"]')) sessao.set('indycar_promo', '1');
@@ -797,15 +777,66 @@
      ================================================================ */
   const form = $('#leadForm');
   const WPHONE = '5512996830272';
+  // Rodada 5: o pedido vai para o banco da oficina pela Edge Function site-lead (lead no CRM + tarefa para a equipe).
+  // Se a rede falhar, o caminho antigo continua valendo: abre o WhatsApp com a mesma mensagem — nada se perde.
+  const SITE_LEAD_URL = 'https://nppfqhavqahapmugnyng.supabase.co/functions/v1/site-lead';
+  const formOk = $('#formOk');
+  const formHead = $('.form-modal-head');
 
-  // Anti-spam sem backend: campo-isca invisível + tempo mínimo entre começar a preencher e enviar.
+  // Anti-spam: campo-isca invisível + tempo mínimo entre começar a preencher e enviar (o servidor confere de novo).
   const TEMPO_MINIMO_MS = 2500;
-  let comecouEm = 0;
+  let comecouEm = 0, enviando = false;
   form.addEventListener('focusin', () => { if (!comecouEm) comecouEm = Date.now(); });
   form.addEventListener('input', () => { if (!comecouEm) comecouEm = Date.now(); });
 
-  form.addEventListener('submit', (e) => {
+  // Máscara leve do telefone: só dígitos, formatados como (12) 99683-0272 enquanto digita.
+  $('#fPhone').addEventListener('input', (e) => {
+    const el = e.target;
+    let d = el.value.replace(/\D/g, '').replace(/^55(?=\d{10,11})/, '').slice(0, 11);
+    let v = d;
+    if (d.length > 2) v = '(' + d.slice(0, 2) + ') ' + d.slice(2);
+    if (d.length > 6) v = '(' + d.slice(0, 2) + ') ' + d.slice(2, d.length > 10 ? 7 : 6) + '-' + d.slice(d.length > 10 ? 7 : 6);
+    if (el.value !== v && /^[\d\s()\-+]*$/.test(el.value)) el.value = v;
+  });
+
+  function mostrarAviso(texto) {
+    const aviso = $('#fEnvioMsg');
+    if (aviso) { aviso.textContent = texto; aviso.hidden = !texto; }
+  }
+  function estadoEnviando(on) {
+    enviando = on;
+    const b = $('#fEnviar');
+    if (!b) return;
+    b.disabled = on; b.setAttribute('aria-busy', String(on));
+    b.classList.toggle('enviando', on);
+    if (on) { b.dataset.rotulo = b.dataset.rotulo || b.textContent.trim(); b.lastChild.textContent = ' Enviando…'; }
+    else if (b.dataset.rotulo) b.lastChild.textContent = ' ' + b.dataset.rotulo;
+  }
+  function mostrarSucesso(resposta, waHref) {
+    if (!formOk) return;
+    form.hidden = true;
+    if (formHead) formHead.hidden = true;
+    $('#formOkTitulo').textContent = resposta.repetido ? 'Já estamos com o seu pedido!' : 'Pedido enviado!';
+    $('#formOkTexto').textContent = resposta.mensagem || 'A equipe confirma o horário com você pelo WhatsApp, de segunda a sábado, das 8h às 17h30.';
+    const proto = $('#formOkProto');
+    if (proto) { proto.hidden = !resposta.protocolo; if (resposta.protocolo) $('b', proto).textContent = resposta.protocolo; }
+    const wa = $('#formOkWa');
+    if (wa) { wa.href = waHref; wa.textContent = resposta.direto ? 'Abrir no WhatsApp' : 'Quer adiantar? Abrir no WhatsApp'; }
+    formOk.hidden = false;
+    formOk.focus?.();
+    $('.form-ok-fechar', formOk)?.focus();
+  }
+  function voltarAoFormulario() {
+    if (!formOk || formOk.hidden) return;
+    formOk.hidden = true;
+    form.hidden = false;
+    if (formHead) formHead.hidden = false;
+  }
+  formBackdrop.addEventListener('transitionend', () => { if (!formBackdrop.classList.contains('open')) voltarAoFormulario(); });
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (enviando) return;
     const name = $('#fName'), phone = $('#fPhone'), service = $('#fService');
 
     // Robô preencheu o campo-isca: finge que deu certo e não abre nada.
@@ -818,7 +849,7 @@
     // validação simples com feedback visual
     let ok = true;
     const digitos = phone.value.replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
-    const foneOk = digitos.length === 10 || digitos.length === 11;
+    const foneOk = (digitos.length === 10 || digitos.length === 11) && !/^(\d)\1+$/.test(digitos);
     [name, phone, service].forEach(f => {
       const bad = !f.value.trim() || (f === phone && !foneOk);
       f.classList.toggle('invalid', bad);
@@ -831,34 +862,58 @@
     // Rápido demais para uma pessoa (preenchimento automático de robô): pede para conferir.
     if (!comecouEm || Date.now() - comecouEm < TEMPO_MINIMO_MS) {
       comecouEm = comecouEm || Date.now();
-      const aviso = $('#fEnvioMsg');
-      if (aviso) { aviso.textContent = 'Confere os dados? Se estiver tudo certo, toque em enviar de novo.'; aviso.hidden = false; }
+      mostrarAviso('Confere os dados? Se estiver tudo certo, toque em enviar de novo.');
       return;
     }
+    mostrarAviso('');
 
-    if ($('#fEnvioMsg')) $('#fEnvioMsg').hidden = true;
     const car = $('#fCar').value.trim();
+    const quando = ($('#fQuando') || {}).value || '';
+    const mensagem = (($('#fMsg') || {}).value || '').trim();
     // Código de origem por serviço: o Atendimento lê "(site/formulario-freios)" e marca a UTM do lead.
     const codigoServico = (service.selectedOptions[0] && service.selectedOptions[0].dataset.codigo) || 'servico';
-    const codigo = 'formulario-' + codigoServico;
-    const msg =
-      `*Novo pedido de orçamento — Site IndyCar* 🏁%0A%0A` +
-      `*Nome:* ${encodeURIComponent(name.value.trim())}%0A` +
-      `*Telefone:* ${encodeURIComponent(phone.value.trim())}%0A` +
-      `*Serviço:* ${encodeURIComponent(service.value)}%0A` +
-      (car ? `*Carro:* ${encodeURIComponent(car)}%0A` : '') +
-      `%0AGostaria de agendar um diagnóstico gratuito. (site/${codigo})`;
+    const codigo = codigoComCampanha('formulario-' + codigoServico);
+    const textoWa = PREFIXO_WA + ', quero orçar: ' + service.value + '.\n' +
+      'Nome: ' + name.value.trim() + ' · Telefone: ' + phone.value.trim() +
+      (car ? ' · Carro: ' + car : '') + (quando ? ' · Quando: ' + quando : '') +
+      (mensagem ? '\nO carro está: ' + mensagem : '');
+    const waHref = linkWhatsApp(textoWa, codigo);
+
+    estadoEnviando(true);
+    let resposta = null;
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 9000);
+      const r = await fetch(SITE_LEAD_URL, {
+        method: 'POST', mode: 'cors', signal: ctrl.signal,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          nome: name.value.trim(), telefone: digitos, servico: service.value, codigo: codigoServico, carro: car || null,
+          preferencia: quando || null, mensagem: mensagem || null, pagina: (location.pathname + location.search).slice(0, 200),
+          utm: UTM, decorrido: Date.now() - comecouEm, empresa: ($('#fEmpresa') || {}).value || '',
+        }),
+      });
+      clearTimeout(t);
+      const corpo = await r.json().catch(() => ({}));
+      if (r.status === 400 && corpo.erro) { estadoEnviando(false); mostrarAviso(corpo.erro); return; } // campo errado: a pessoa corrige
+      if (r.ok && corpo.ok) resposta = corpo;
+    } catch (_) { /* sem rede ou servidor fora: segue pelo WhatsApp */ }
+    estadoEnviando(false);
 
     launchConfetti();                 // 🎉 bandeira quadriculada
-    window.open(`https://wa.me/${WPHONE}?text=${msg}&utm_source=site&utm_medium=whatsapp&utm_campaign=${codigo}`, '_blank', 'noopener');
-    closeEl(formBackdrop);
+    if (!resposta) {
+      // O banco não respondeu: abre o WhatsApp com a mesma mensagem (comportamento das rodadas anteriores).
+      window.open(waHref, '_blank', 'noopener');
+      resposta = { ok: true, direto: true, mensagem: 'Seu pedido abriu no WhatsApp da oficina. Se a janela não apareceu, toque no botão abaixo.' };
+    }
+    sessao.set('indycar_promo', '1');
+    mostrarSucesso(resposta, waHref);
     form.reset();
     comecouEm = 0;
-    showToast('✅', 'Pedido enviado!', 'Continue a conversa pelo WhatsApp.');
   });
 
   // limpa o estado inválido ao digitar
-  $$('#leadForm input, #leadForm select').forEach(f =>
+  $$('#leadForm input, #leadForm select, #leadForm textarea').forEach(f =>
     f.addEventListener('input', () => {
       f.classList.remove('invalid'); f.removeAttribute('aria-invalid');
       if (f.id === 'fPhone') $('#fPhoneErr').hidden = true;
@@ -878,13 +933,35 @@
   ];
   let proofIdx = 0, proofDismissed = false, toastActive = false;
 
-  // Horário comercial: Seg–Sáb 8h–17h30 · Dom fechado
-  function isBusinessHours() {
+  // Horário comercial: Seg–Sáb 8h–17h30 · Dom fechado (sempre no fuso de Taubaté)
+  function agoraSP() {
     const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
     const part = type => parts.find(p => p.type === type).value;
-    const minutes = Number(part('hour')) * 60 + Number(part('minute'));
-    return part('weekday') !== 'Sun' && minutes >= 480 && minutes < 1050;
+    return { dia: part('weekday'), minutos: Number(part('hour')) * 60 + Number(part('minute')) };
   }
+  function isBusinessHours() {
+    const { dia, minutos } = agoraSP();
+    return dia !== 'Sun' && minutos >= 480 && minutos < 1050;
+  }
+  // Rodada 5: chip "Aberto agora / Fechado agora" no hero, recalculado a cada minuto.
+  (function statusDaOficina() {
+    const chip = $('#statusAberto');
+    if (!chip) return;
+    const rotulo = $('b', chip), detalhe = $('span', chip);
+    function pintar() {
+      const { dia, minutos } = agoraSP();
+      const aberto = isBusinessHours();
+      chip.classList.toggle('fechado', !aberto);
+      rotulo.textContent = aberto ? 'Aberto agora' : 'Fechado agora';
+      if (aberto) detalhe.textContent = minutos >= 990 ? 'fecha às 17h30' : 'até 17h30';
+      else if (dia === 'Sat' && minutos >= 1050) detalhe.textContent = 'abre segunda, 8h';
+      else if (dia === 'Sun') detalhe.textContent = 'abre segunda, 8h';
+      else detalhe.textContent = minutos < 480 ? 'abre hoje, 8h' : 'abre amanhã, 8h';
+      chip.hidden = false;
+    }
+    pintar();
+    setInterval(pintar, 60000);
+  })();
 
   function showNextProof() {
     if (proofDismissed || toastActive || document.hidden || reduceMotion) return;
@@ -1547,7 +1624,7 @@
   aposCarregar(function circularSeal() {
     const rotor = $('#sealRotor');
     if (!rotor) return;
-    const TEXT = 'ESPECIALISTA EM MECÂNICA EM GERAL • +18 ANOS • ';
+    const TEXT = 'ESPECIALISTA EM MECÂNICA EM GERAL • +' + (document.body.dataset.anos || '18') + ' ANOS • ';
     const chars = [...TEXT];
     const step = 360 / chars.length;
     const frag = document.createDocumentFragment();
@@ -1637,7 +1714,7 @@
   aposCarregar(function yearsOdometer() {
     const badge = $('#yearsBadge');
     if (!badge || reduceMotion) return;
-    const TARGET = 18, DUR = 1400;
+    const TARGET = Number(document.body.dataset.anos) || 18, DUR = 1400;
     new IntersectionObserver(([e], obs) => {
       if (!e.isIntersecting) return;
       obs.disconnect();
@@ -1928,9 +2005,9 @@
       box.className = 'rev-pop-empty';
       const big = document.createElement('span');
       big.className = 'rp-big';
-      big.innerHTML = '4,8<small> / 5</small>';
+      big.textContent = document.body.dataset.nota || '4,8'; const de5 = document.createElement('small'); de5.textContent = ' / 5'; big.appendChild(de5);
       const p = document.createElement('p');
-      p.textContent = 'Nossa nota no Google é 4,8, com mais de 1.200 avaliações. Não publicamos depoimento por serviço aqui: leia as avaliações reais direto no Google.';
+      p.textContent = 'Nossa nota no Google é ' + (document.body.dataset.nota || '4,8') + ', com mais de ' + (document.body.dataset.avaliacoes || '1.200') + ' avaliações. Não publicamos depoimento por serviço aqui: leia as avaliações reais direto no Google.';
       box.append(big, p);
       body.appendChild(box);
     }
