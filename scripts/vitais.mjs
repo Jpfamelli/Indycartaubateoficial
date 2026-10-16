@@ -3,8 +3,9 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import zlib from 'node:zlib';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'qa-out');
@@ -16,26 +17,35 @@ fs.mkdirSync(OUT, { recursive: true });
 
 let base = 'https://indycar-taubate.netlify.app', server = null;
 if (!PROD) {
-  execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'publicar.mjs')], { stdio: 'ignore' }); // mede o que vai para o ar (minificado)
-  const DIST = path.join(ROOT, 'dist');
+  const DIST = process.env.VITAIS_DIR ? path.resolve(process.env.VITAIS_DIR) : path.join(ROOT, 'dist');
+  if (!process.env.VITAIS_DIR) execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'publicar.mjs')], { stdio: 'ignore' }); // mede o que vai para o ar (minificado)
   server = http.createServer((req, res) => {
     const url = decodeURIComponent(req.url.split('?')[0]);
     let f = path.join(DIST, url === '/' ? 'index.html' : url);
     if (!f.startsWith(DIST) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
-    res.writeHead(200, { 'content-type': TIPOS[path.extname(f)] || 'application/octet-stream', 'cache-control': 'public, max-age=31536000' });
+    const tipo = TIPOS[path.extname(f)] || 'application/octet-stream';
+    // Como a Netlify: texto vai comprimido (o Lighthouse simula a rede pelo tamanho transferido).
+    if (/^(text|application[/](xml|manifest))/.test(tipo) && /gzip/.test(req.headers['accept-encoding'] || '')) {
+      const corpo = zlib.gzipSync(fs.readFileSync(f), { level: 9 });
+      res.writeHead(200, { 'content-type': tipo, 'content-encoding': 'gzip', 'cache-control': 'public, max-age=31536000' });
+      return res.end(corpo);
+    }
+    res.writeHead(200, { 'content-type': tipo, 'cache-control': 'public, max-age=31536000' });
     fs.createReadStream(f).pipe(res);
   });
-  await new Promise(r => server.listen(0, '127.0.0.1', r));
+  await new Promise(r => server.listen(Number(process.env.VITAIS_PORTA || 4790), '127.0.0.1', r));
   base = 'http://127.0.0.1:' + server.address().port;
 }
 
 let falhou = false;
-for (const modo of ['celular', 'computador']) {
+for (const modo of (process.env.VITAIS_MODOS || 'celular,computador').split(',')) {
   const saida = path.join(OUT, `lighthouse-${modo}.json`);
-  const args = ['--yes', 'lighthouse', base + '/', '--output=json', '--output-path=' + saida, '--quiet', '--chrome-flags=--headless --disable-gpu --no-sandbox',
+  const args = [path.join(ROOT, 'node_modules', 'lighthouse', 'cli', 'index.js'), base + '/', '--output=json', '--output-path=' + saida, '--quiet', '--chrome-flags=--headless --disable-gpu --no-sandbox',
     '--only-categories=performance,accessibility,best-practices,seo'];
   if (modo === 'computador') args.push('--preset=desktop');
-  execFileSync(process.platform === 'win32' ? 'npx.cmd' : 'npx', args, { stdio: 'inherit', env: { ...process.env, CHROME_PATH: CHROME }, shell: process.platform === 'win32' });
+  // spawn assíncrono: o servidor local roda neste mesmo processo e precisa responder enquanto o Lighthouse mede.
+  const codigo = await new Promise((res) => spawn(process.execPath, args, { stdio: 'inherit', env: { ...process.env, CHROME_PATH: CHROME } }).on('close', res));
+  if (codigo !== 0 || !fs.existsSync(saida)) { console.log(modo + ': o Lighthouse não terminou (código ' + codigo + ')'); falhou = true; continue; }
   const r = JSON.parse(fs.readFileSync(saida, 'utf8'));
   if (r.runtimeError) { console.log(`${modo}: erro do Lighthouse ${r.runtimeError.code}`); falhou = true; continue; }
   const notas = Object.fromEntries(Object.entries(r.categories).map(([k, v]) => [k, Math.round((v.score || 0) * 100)]));

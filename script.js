@@ -12,10 +12,44 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   // Rodada 4 (Core Web Vitals): efeitos de canvas que rodam sem parar começam depois do "load", com o navegador
   // ocioso; a primeira pintura e o primeiro toque não disputam o processador com eles.
+  // Rodada 5: os efeitos entram numa fila e rodam UM POR VEZ em períodos ociosos (antes, todos de uma vez numa
+  // tarefa longa de ~1 s no celular; tarefas curtas deixam a página responder ao toque — TBT do Lighthouse).
+  const filaOciosa = [];
+  let filaAgendada = false;
+  function rodarFila(deadline) {
+    filaAgendada = false;
+    const inicio = performance.now();
+    while (filaOciosa.length) {
+      const fn = filaOciosa.shift();
+      try { fn(); } catch (e) { console.error(e); }
+      if (performance.now() - inicio > 8 || (deadline && deadline.timeRemaining && deadline.timeRemaining() < 4)) break;
+    }
+    if (filaOciosa.length) agendarFila();
+  }
+  function agendarFila() {
+    if (filaAgendada) return;
+    filaAgendada = true;
+    if (window.requestIdleCallback) window.requestIdleCallback(rodarFila, { timeout: 1500 }); else setTimeout(() => rodarFila(null), 40);
+  }
   const aposCarregar = (fn) => {
-    const ir = () => (window.requestIdleCallback ? window.requestIdleCallback(fn, { timeout: 2500 }) : setTimeout(fn, 300));
-    if (document.readyState === 'complete') ir(); else window.addEventListener('load', ir, { once: true });
+    filaOciosa.push(fn);
+    if (document.readyState === 'complete') agendarFila(); else window.addEventListener('load', agendarFila, { once: true });
   };
+  // Rodada 5: os efeitos que redesenham a tela a cada quadro (mar de metal, borda elétrica, faíscas, brilho das letras)
+  // só começam quando a pessoa interage (mexe o mouse, rola, toca) — ou 7 s depois do load, para quem só olha.
+  // Até lá a primeira dobra fica quieta: a página termina de pintar e responde antes (Speed Index / TBT).
+  const interagiu = new Promise((resolver) => {
+    const eventos = ['pointermove', 'pointerdown', 'touchstart', 'keydown', 'wheel', 'scroll'];
+    const ligar = () => {
+      eventos.forEach(e => window.removeEventListener(e, ligar, true));
+      document.documentElement.classList.add('interagiu');
+      resolver();
+    };
+    eventos.forEach(e => window.addEventListener(e, ligar, { capture: true, passive: true }));
+    const depois = () => setTimeout(ligar, 7000);
+    if (document.readyState === 'complete') depois(); else window.addEventListener('load', depois, { once: true });
+  });
+  const aoInteragir = (fn) => { interagiu.then(() => aposCarregar(fn)); };
   // No celular o título do hero não é dividido em letras (ele é o LCP e entra só com o deslize do CSS).
   const heroLeve = window.matchMedia('(max-width: 768px)').matches;
   const sessao = {
@@ -607,6 +641,12 @@
       window.addEventListener('resize', function () { medir(); quadro(t0 + 4000, true); });
       return;
     }
+    /* No computador, o quadro parado aparece já; a animação começa quando a pessoa interage (ou 7 s depois). */
+    if (!document.documentElement.classList.contains('interagiu')) {
+      quadro(t0 + 4000, true);
+      aoInteragir(metalFundido);
+      return;
+    }
 
     (function vigiarCobertura() {
       var alvos = document.querySelectorAll('#hero, #diferenciais, #contato');
@@ -1178,9 +1218,10 @@
          especialidade (câmbio automático). Ruído com oitavas desloca
          o traçado do retângulo arredondado a cada frame.
      ================================================================ */
-  aposCarregar(function electricBorder() {
+  aoInteragir(function electricBorder() {
     const card = $('.service-card--star');
-    if (!card || reduceMotion) return;
+    // Rodada 5: no celular (ponteiro grosso) a borda elétrica não roda — é um canvas redesenhado a cada quadro.
+    if (!card || reduceMotion || !hasFinePointer) return;
 
     // O wrapper vira o item do grid; o card mantém o estilo original dentro dele.
     const wrap = document.createElement('div');
@@ -1322,7 +1363,7 @@
          velocidade do scroll, com skew limitado a ±6°. O marquee em
          CSS fica como fallback e como comportamento em reduced-motion.
      ================================================================ */
-  aposCarregar(function trustVelocity() {
+  aoInteragir(function trustVelocity() {
     const bar = $('.trust-bar');
     const trackEl = $('.trust-track');
     if (!bar || !trackEl || reduceMotion) return;
@@ -1593,7 +1634,7 @@
          Glint metálico que varre o H1 letra a letra (reaproveita o
          split do item 17): 1x após a entrada e no hover do CTA.
      ================================================================ */
-  aposCarregar(function heroShine() {
+  aoInteragir(function heroShine() {
     if (reduceMotion) return;
     const h1 = $('.hero-title');
     if (!h1 || !h1.classList.contains('st-split')) return;
@@ -1623,7 +1664,7 @@
      ================================================================ */
   aposCarregar(function circularSeal() {
     const rotor = $('#sealRotor');
-    if (!rotor) return;
+    if (!rotor || !rotor.offsetParent) return; // o selo do hero não existe abaixo de 1100 px (CSS): não cria 48 spans à toa
     const TEXT = 'ESPECIALISTA EM MECÂNICA EM GERAL • +' + (document.body.dataset.anos || '18') + ' ANOS • ';
     const chars = [...TEXT];
     const step = 360 / chars.length;
@@ -1845,7 +1886,7 @@
          vermelhas e prata subindo devagar com flicker. Pausa fora do
          viewport, off em reduced-motion, metade em perf-lite.
      ================================================================ */
-  aposCarregar(function ctaEmbers() {
+  aoInteragir(function ctaEmbers() {
     const cv = $('#ctaEmbers');
     const sec = $('.final-cta');
     if (!cv || !sec || reduceMotion) return;
