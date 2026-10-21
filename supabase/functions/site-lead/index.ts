@@ -10,7 +10,7 @@
 // freio por IP/telefone, o campo-isca, o tempo mínimo de preenchimento e a validação de cada campo.
 // Nunca devolve dado interno (nem o id do lead): só um protocolo curto para a pessoa.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.117.2';
-import { agoraSP, dataValida, extrairPlaca, horarioLivre, linksDaEquipe, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, NOME_NO_CATALOGO, venceEm, type Agendamento } from './logica.ts';
+import { agoraSP, dataValida, extrairPlaca, horarioLivre, linksDaEquipe, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, NOME_NO_CATALOGO, venceEm, semControle, type Agendamento } from './logica.ts';
 
 /** Agenda: capacidade (consultores ativos) e agendamentos dos próximos dias. Só leitura. */
 async function lerAgenda(sb: SupabaseClient, dias = 16) {
@@ -31,7 +31,8 @@ const HORARIO = 'segunda a sábado, das 8h às 17h30';
 
 class ErroHttp extends Error {
   status: number;
-  constructor(status: number, mensagem: string) { super(mensagem); this.status = status; }
+  espera?: number;
+  constructor(status: number, mensagem: string, espera?: number) { super(mensagem); this.status = status; this.espera = espera; }
 }
 
 function cors(req: Request): Record<string, string> {
@@ -50,8 +51,8 @@ function cors(req: Request): Record<string, string> {
 const json = (req: Request, corpo: unknown, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { ...cors(req), 'Content-Type': 'application/json; charset=utf-8' } });
 
-const txt = (v: unknown, max: number): string | null => (typeof v === 'string' && v.trim() ? v.trim().replace(/\s+/g, ' ').slice(0, max) : null);
-const linhas = (v: unknown, max: number): string | null => (typeof v === 'string' && v.trim() ? v.trim().replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').slice(0, max) : null);
+const txt = (v: unknown, max: number): string | null => { const s = typeof v === 'string' ? semControle(v) : ''; return s ? s.slice(0, max) : null; };
+const linhas = (v: unknown, max: number): string | null => { const s = typeof v === 'string' ? semControle(v, true) : ''; return s ? s.slice(0, max) : null; };
 
 /** Telefone brasileiro: 10 ou 11 dígitos com DDD, sem o 55 (mesmo formato de normalizar_telefone no banco). */
 function telefone(v: unknown): string | null {
@@ -82,7 +83,7 @@ const rajadas = new Map<string, number[]>();
 function freio(chave: string, porMinuto: number) {
   const agora = Date.now();
   const lista = (rajadas.get(chave) ?? []).filter((t) => agora - t < 60_000);
-  if (lista.length >= porMinuto) throw new ErroHttp(429, 'Muitas tentativas seguidas. Espere um minuto e tente de novo.');
+  if (lista.length >= porMinuto) throw new ErroHttp(429, 'Muitas tentativas seguidas. Espere um minuto e tente de novo.', 60);
   lista.push(agora);
   rajadas.set(chave, lista);
 }
@@ -124,7 +125,7 @@ function lerPedido(corpo: Record<string, unknown>): Pedido {
   return {
     nome, tel, servico, codigo,
     carro, preferencia: txt(corpo.preferencia, 60), mensagem: linhas(corpo.mensagem, 500),
-    pagina: txt(corpo.pagina, 200), utm,
+    pagina: (() => { const p = txt(corpo.pagina, 200); return p && p.startsWith('/') ? p : null; })(), utm,
     placa: placaDoCampo(corpo.placa) ?? extrairPlaca(carro), horario,
   };
 }
@@ -306,7 +307,11 @@ Deno.serve(async (req) => {
     if (req.method !== 'POST') throw new ErroHttp(405, 'Use POST.');
     return await tratar(req);
   } catch (e) {
-    if (e instanceof ErroHttp) return json(req, { ok: false, erro: e.message }, e.status);
+    if (e instanceof ErroHttp) {
+      const r = json(req, { ok: false, erro: e.message }, e.status);
+      if (e.espera) r.headers.set('Retry-After', String(e.espera)); // 429: quando tentar de novo
+      return r;
+    }
     console.error('site-lead', e);
     return json(req, { ok: false, erro: 'Não conseguimos registrar agora. Chame a gente no WhatsApp.' }, 500);
   }

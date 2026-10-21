@@ -87,18 +87,18 @@
     "@type": "OfferCatalog",
     "name": "Serviços",
     "itemListElement": [
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Diagnóstico digital com scanner" } },
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Troca de óleo de câmbio automático por diálise" } },
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Troca de óleo de motor" } },
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Pastilhas e discos de freio" } },
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Troca de amortecedores" } },
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Correia dentada" } },
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Venda de pneus com montagem" } },
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Alinhamento e balanceamento" } },
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Troca de embreagem" } },
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Revisão de motor" } },
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Revisão de suspensão" } },
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Limpeza de bicos injetores" } }
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Diagnóstico digital com scanner", "url": "https://indycar-taubate.netlify.app/#svc-scanner" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Troca de óleo de câmbio automático por diálise", "url": "https://indycar-taubate.netlify.app/#svc-cambio" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Troca de óleo de motor", "url": "https://indycar-taubate.netlify.app/#svc-oleo-motor" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Pastilhas e discos de freio", "url": "https://indycar-taubate.netlify.app/#svc-freios" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Troca de amortecedores", "url": "https://indycar-taubate.netlify.app/#svc-amortecedores" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Correia dentada", "url": "https://indycar-taubate.netlify.app/#svc-correia" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Venda de pneus com montagem", "url": "https://indycar-taubate.netlify.app/#svc-pneus" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Alinhamento e balanceamento", "url": "https://indycar-taubate.netlify.app/#svc-alinhamento" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Troca de embreagem", "url": "https://indycar-taubate.netlify.app/#svc-embreagem" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Revisão de motor", "url": "https://indycar-taubate.netlify.app/#svc-motor" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Revisão de suspensão", "url": "https://indycar-taubate.netlify.app/#svc-suspensao" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Limpeza de bicos injetores", "url": "https://indycar-taubate.netlify.app/#svc-bicos" } }
     ]
   }
 }
@@ -213,6 +213,8 @@
   <meta name="geo.region" content="BR-SP" />
   <meta name="geo.placename" content="Taubaté" />
   <meta name="format-detection" content="telephone=yes" />
+  <meta name="application-name" content="IndyCar Taubaté" />
+  <meta name="apple-mobile-web-app-title" content="IndyCar" />
   <meta property="og:site_name" content="IndyCar Centro Automotivo" />
   <meta property="og:image:alt" content="IndyCar Taubaté: diagnóstico digital gratuito com scanner + foto" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -1256,6 +1258,7 @@
         </div>
         <small id="areaColaMsg" class="area-cola-msg" role="status" aria-live="polite">Serve para o acompanhamento do carro, a Minha IndyCar e o orçamento que a equipe mandou.</small>
       </form>
+      <p class="area-nota reveal">Quer indicar um amigo? <a href="https://indycar-patio.netlify.app/minha/#indique" target="_blank" rel="noopener">Indique pela Minha IndyCar</a> e a equipe cuida dele como cuida de você.</p>
       <p class="area-nota reveal">Não recebeu o seu link? <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20j%C3%A1%20sou%20cliente%20e%20quero%20o%20link%20da%20minha%20%C3%A1rea%20(Minha%20IndyCar).%20(site%2Farea-cliente)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=area-cliente" target="_blank" rel="noopener">Peça pelo WhatsApp</a> que a equipe manda na hora.</p>
     </div>
   </section>
@@ -1296,6 +1299,7 @@
         <a href="#diferenciais">Diferenciais</a>
         <a href="#avaliacoes">Avaliações</a>
         <a href="#faq">Dúvidas</a>
+        <a href="#horarios" data-so-horarios>Horários livres</a>
         <a href="#contato">Contato</a>
       </div>
 
@@ -1313,6 +1317,8 @@
         <p class="footer-h footer-h--2">Área do cliente</p>
         <a href="https://indycar-patio.netlify.app/acompanhar/" target="_blank" rel="noopener">Acompanhar meu carro</a>
         <a href="https://indycar-patio.netlify.app/minha/" target="_blank" rel="noopener">Minha IndyCar</a>
+        <a href="https://indycar-patio.netlify.app/minha/#indique" target="_blank" rel="noopener">Indicar um amigo</a>
+        <a href="#areaCola">Colar link ou código</a>
       </div>
     </div>
     <div class="footer-bottom container">
@@ -1372,7 +1378,8 @@
       <form id="leadForm" novalidate>
         <div class="field">
           <label for="fName">Seu nome</label>
-          <input type="text" id="fName" name="name" autocomplete="name" maxlength="80" placeholder="Ex: João da Silva" required />
+          <input type="text" id="fName" name="name" autocomplete="name" maxlength="80" placeholder="Ex: João da Silva" required aria-describedby="fNameErr" />
+          <small class="field-err" id="fNameErr" hidden>Conta pra gente o seu nome (pelo menos 2 letras).</small>
         </div>
         <div class="field">
           <label for="fPhone">WhatsApp / Telefone</label>
@@ -1381,7 +1388,7 @@
         </div>
         <div class="field">
           <label for="fService">Serviço desejado</label>
-          <select id="fService" name="service" required>
+          <select id="fService" name="service" required aria-describedby="fServiceErr">
             <option value="" disabled selected>Selecione um serviço</option>
             <option data-codigo="diagnostico">Diagnóstico digital gratuito</option>
             <option data-codigo="motor">Revisão de motor</option>
@@ -1396,6 +1403,7 @@
             <option data-codigo="bicos">Limpeza de bicos</option>
             <option data-codigo="outro-servico">Outro / Não sei ainda</option>
           </select>
+          <small class="field-err" id="fServiceErr" hidden>Escolha o serviço (ou "Outro / Não sei ainda").</small>
         </div>
         <div class="field-row">
           <div class="field">
@@ -1429,7 +1437,8 @@
         </div>
         <div class="field">
           <label for="fMsg">O que o carro está fazendo? <small>opcional</small></label>
-          <textarea id="fMsg" name="mensagem" maxlength="500" rows="2" placeholder="Ex: luz do motor acesa e barulho ao frear"></textarea>
+          <textarea id="fMsg" name="mensagem" maxlength="500" rows="2" placeholder="Ex: luz do motor acesa e barulho ao frear" aria-describedby="fMsgConta"></textarea>
+          <small class="field-dica field-conta" id="fMsgConta" aria-live="off">0/500</small>
         </div>
         <!-- armadilha para robô: invisível para gente, robô preenche e o pedido é ignorado -->
         <div class="campo-isca" aria-hidden="true">

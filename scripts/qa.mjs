@@ -484,6 +484,15 @@ for (const w of [375, 1440]) {
   // roteador de links e códigos
   const t36 = 'a'.repeat(36), t48 = 'b1'.repeat(24), t32 = 'c2'.repeat(16);
   await page.evaluate(() => { document.querySelector('#formOk [data-close-form]').click(); });
+  await new Promise(r => setTimeout(r, 700));
+  await page.evaluate(() => { document.querySelector('.hero-cta [data-open-modal]').click(); });
+  await page.waitForFunction(() => !document.getElementById('leadForm').hidden, { timeout: 4000 }).catch(() => {});
+  await page.type('#fMsg', 'barulho ao frear');
+  ok(await page.$eval('#fMsgConta', e => e.textContent) === '16/500', `${w}px: contador de caracteres do campo "o que o carro está fazendo" (16/500)`);
+  await page.evaluate(() => { document.getElementById('fName').value = ''; document.querySelector('#leadForm button[type=submit]').click(); });
+  const erroCampos = await page.evaluate(() => ({ nome: !document.getElementById('fNameErr').hidden, servico: !document.getElementById('fServiceErr').hidden || document.getElementById('fService').value !== '', desc: document.getElementById('fName').getAttribute('aria-describedby') }));
+  ok(erroCampos.nome && erroCampos.desc === 'fNameErr', `${w}px: nome vazio mostra a frase de erro ligada ao campo (aria-describedby)`);
+  await page.evaluate(() => { document.querySelector('#formBackdrop [data-close-form]').click(); });
   const rota = async (txt) => {
     await page.evaluate((t) => {
       window.__aberto = null;
@@ -502,6 +511,8 @@ for (const w of [375, 1440]) {
   ok(r.url === 'https://indycar-patio.netlify.app/acompanhar/?t=' + t36, `${w}px: link colado do Pátio é refeito só com o código (sem lixo)`);
   r = await rota('https://indycar-orcador.netlify.app/#/o/Abc12345Def');
   ok(r.url === 'https://indycar-orcador.netlify.app/#/o/Abc12345Def', `${w}px: link de orçamento colado abre o mesmo orçamento`);
+  r = await rota('indycar-patio.netlify.app/minha/?c=' + t48);
+  ok(r.url === 'https://indycar-patio.netlify.app/minha/?c=' + t48, `${w}px: link colado sem https:// também é reconhecido`);
   r = await rota('https://site-malicioso.com/acompanhar/?t=' + t36);
   ok(!r.url && r.inv === 'true' && /Não reconheci/.test(r.msg), `${w}px: link de outro site nunca é aberto (sem redirecionamento aberto) e o campo avisa`);
   r = await rota('javascript:alert(1)');
@@ -532,7 +543,7 @@ for (const w of [375, 1440]) {
   await new Promise(r => setTimeout(r, 900));
   const sem = await page.evaluate(() => ({ escondido: document.getElementById('horarios').hidden, form: document.getElementById('fHorarios').hidden }));
   ok(sem.escondido && sem.form, 'se a Agenda não responde, as caixas de horário ficam escondidas (o formulário segue igual)');
-  ok(await page.evaluate(() => [...document.querySelectorAll('[data-so-horarios]')].length === 2 && [...document.querySelectorAll('[data-so-horarios]')].every(e => getComputedStyle(e).display === 'none')), 'sem Agenda, os links "Ver horários livres" também somem (nenhum link para o vazio)');
+  ok(await page.evaluate(() => [...document.querySelectorAll('[data-so-horarios]')].length === 3 && [...document.querySelectorAll('[data-so-horarios]')].every(e => getComputedStyle(e).display === 'none')), 'sem Agenda, os links "Ver horários livres" também somem (nenhum link para o vazio)');
   await page.close();
 }
 {
@@ -550,7 +561,14 @@ for (const w of [375, 1440]) {
   ok(fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8').includes('<lastmod>2026-10-21</lastmod>'), 'sitemap com lastmod de hoje');
   ok(html.includes('<noscript><p class="sem-js">') && html.includes('href="tel:+551236245957"') && html.includes('href="tel:+5512996830272"'), 'sem JavaScript aparece o aviso com WhatsApp e telefone; o celular tem link "Ligar" (tel:)');
   ok(toml.includes('Link = "</fontes/archivo-variavel.woff2>') && toml.includes('inter-variavel.woff2>; rel=preload'), 'netlify.toml: cabeçalho Link pré-carrega as duas fontes da primeira dobra');
+  const urlsServico = (ld.hasOfferCatalog.itemListElement || []).map(o => o.itemOffered.url);
+  ok(urlsServico.length === 12 && urlsServico.every(u => /^https:\/\/indycar-taubate\.netlify\.app\/#svc-[a-z-]+$/.test(u)) && urlsServico.every(u => html.includes('id="' + u.split('#')[1] + '"')), 'JSON-LD: cada um dos 12 serviços tem endereço próprio (#svc-…) que existe na página');
+  const robots = fs.readFileSync(path.join(ROOT, 'robots.txt'), 'utf8');
+  ok(['/s/', '/agendar', '/orcamento', '/horarios', '/indicar'].every(p => robots.includes('Disallow: ' + p)) && robots.includes('Sitemap:'), 'robots.txt: atalhos que só redirecionam fora do Google e sitemap mantido');
+  ok(html.includes('href="#areaCola"') && html.includes('minha/#indique') && html.includes('name="application-name"'), 'rodapé e Área do Cliente: "Colar link ou código", "Indicar um amigo" (Minha IndyCar) e nome do app');
+  ok(/pedido de horário direto para a oficina/.test(priv), 'privacidade: descrição da página também diz a verdade');
   const fn = fs.readFileSync(path.join(ROOT, 'supabase/functions/site-lead/index.ts'), 'utf8');
+  ok(fn.includes('semControle(') && fn.includes("'Retry-After'"), 'Edge Function: texto sem caracteres de controle/invisíveis e Retry-After no 429');
   ok(fn.includes('venceEm('), 'Edge Function: a tarefa vence antes do horário pedido (hoje)');
   ok(/servico_id: servicoId/.test(fn) && /horario_livre/.test(fn), 'Edge Function: serviço do cadastro (servico_id) e rastro do horário/placa em site_pedidos');
   ok(/rota === 'horarios'/.test(fn) && /horarioLivre\(/.test(fn) && /linksDaEquipe\(/.test(fn) && /extrairPlaca/.test(fn), 'Edge Function: /horarios, conferência do horário, links da equipe e placa no lead');

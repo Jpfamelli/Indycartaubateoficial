@@ -1795,3 +1795,6 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
 #fQuando:disabled { opacity: .45; cursor: not-allowed; }
 .sem-js { margin: 0; padding: 12px 16px; background: #1a1a1d; color: #fff; text-align: center; font-size: .95rem; }
 .sem-js a { color: #fff; text-decoration: underline; }
+.field-conta { text-align: right; }
+.field-conta.perto { color: #ffb4b8; }
+@media (prefers-reduced-motion: reduce) { .horario-chip, .form-ok-copiar { transition: none; } }

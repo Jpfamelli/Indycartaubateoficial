@@ -1,3 +1,11 @@
 User-agent: *
 Allow: /
+# atalhos que só redirecionam (anúncios, Atendimento, balcão): não precisam aparecer no Google
+Disallow: /s/
+Disallow: /agendar
+Disallow: /orcamento
+Disallow: /whatsapp
+Disallow: /horarios
+Disallow: /indicar
+Disallow: /minha-indycar
 Sitemap: https://indycar-taubate.netlify.app/sitemap.xml

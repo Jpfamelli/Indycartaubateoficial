@@ -914,6 +914,8 @@
       if (bad) ok = false;
     });
     $('#fPhoneErr').hidden = foneOk || !phone.value.trim();
+    $('#fNameErr').hidden = !name.classList.contains('invalid');
+    $('#fServiceErr').hidden = !service.classList.contains('invalid');
     if (!ok) { [name, phone, service].find(f => f.classList.contains('invalid')).focus(); return; }
 
     // Rápido demais para uma pessoa (preenchimento automático de robô): pede para conferir.
@@ -977,6 +979,8 @@
     f.addEventListener('input', () => {
       f.classList.remove('invalid'); f.removeAttribute('aria-invalid');
       if (f.id === 'fPhone') $('#fPhoneErr').hidden = true;
+      if (f.id === 'fName') $('#fNameErr').hidden = true;
+      if (f.id === 'fService') $('#fServiceErr').hidden = true;
     }));
 
   /* ================================================================
@@ -1079,6 +1083,14 @@
       .observe(formBackdrop, { attributes: true, attributeFilter: ['class'] });
   })();
 
+  // Contador de caracteres do "o que o carro está fazendo" (limite 500): a pessoa vê antes de o texto ser cortado.
+  (function () {
+    const m = $('#fMsg'), c = $('#fMsgConta');
+    if (!m || !c) return;
+    const atualizar = () => { const n = m.value.length; c.textContent = n + '/500'; c.classList.toggle('perto', n >= 450); };
+    m.addEventListener('input', atualizar); form.addEventListener('reset', () => setTimeout(atualizar, 0)); atualizar();
+  })();
+
   // Placa: maiúscula e só letras/números; vale a antiga (ABC1234) e a Mercosul (ABC1D23).
   const PLACA_RE = /^[A-Z]{3}\d{4}$|^[A-Z]{3}\d[A-Z]\d{2}$/;
   const placaLimpa = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
@@ -1103,8 +1115,9 @@
       if (/^[0-9a-f]{32}$/.test(c)) return { url: DESTINOS.orcador + '/#/o/' + c, rotulo: 'o seu orçamento' };
       return null;
     };
-    if (/^https?:\/\//i.test(s)) {
-      let u; try { u = new URL(s); } catch (_) { return null; }
+    const comEsquema = /^(indycar-patio|indycar-orcador)\.netlify\.app(\/|$)/i.test(s) ? 'https://' + s : s;
+    if (/^https?:\/\//i.test(comEsquema)) {
+      let u; try { u = new URL(comEsquema); } catch (_) { return null; }
       if (u.protocol !== 'https:') return null;
       if (u.origin === DESTINOS.patio) return porCodigo(u.searchParams.get('t') || u.searchParams.get('c') || '');
       if (u.origin === DESTINOS.orcador) {

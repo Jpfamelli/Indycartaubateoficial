@@ -56,7 +56,7 @@ export function horarioLivre(data: string, hora: string, o: { agora: Agora; agen
   const t = minutos(hora);
   if (!dataValida(data) || t === null || t % EXPEDIENTE.passo !== 0) return false;
   if (!EXPEDIENTE.dias.includes(diaDaSemana(data) as never)) return false;
-  if (data < o.agora.data) return false;
+  if (data < o.agora.data || data > somaDias(o.agora.data, 30)) return false; // passado ou longe demais (30 dias)
   if (data === o.agora.data && t < o.agora.min + 30) return false;
   if (t < EXPEDIENTE.abre || t + DURACAO_DIAGNOSTICO > EXPEDIENTE.fecha) return false;
   return (ocupacao(o.agendamentos).get(`${data}|${t}`) ?? 0) < Math.max(1, o.capacidade);
@@ -143,4 +143,13 @@ export function venceEm(agoraMs: number, horario: { data: string; hora: string }
   const alvo = Date.parse(`${horario.data}T${horario.hora}:00-03:00`);
   if (Number.isNaN(alvo) || alvo - agoraMs > 4 * 3600_000) return padrao;
   return Math.min(padrao, Math.max(agoraMs + 15 * 60_000, alvo - 30 * 60_000));
+}
+
+/**
+ * Texto vindo do site: troca por espaço os caracteres de controle e invisíveis (zero-width, marcas de direção, nulos...)
+ * que poderiam esconder conteúdo no CRM, e normaliza os espaços. `quebras` mantém quebra de linha e tab (campo de mensagem).
+ */
+export function semControle(s: string, quebras = false): string {
+  const limpo = s.normalize('NFC').replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, (c) => (quebras && (c === '\n' || c === '\t') ? c : ' '));
+  return quebras ? limpo.replace(/[ \t]+/g, ' ').replace(/\n[ \t]*/g, '\n').replace(/\n{3,}/g, '\n\n').trim() : limpo.replace(/\s+/g, ' ').trim();
 }

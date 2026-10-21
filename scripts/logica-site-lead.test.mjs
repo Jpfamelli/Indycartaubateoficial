@@ -75,3 +75,13 @@ test('a tarefa vence antes do horário pedido (hoje) e nunca antes de 15 min', (
   assert.equal(venceEm(agora, { data: '2026-10-22', hora: '08:00' }, true), agora + 2 * 3600_000);
   assert.equal(venceEm(agora, { data: '2026-10-21', hora: '14:00' }, false), agora + 2 * 3600_000);
 });
+test('texto do site: sem caracteres de controle ou invisíveis, mensagem mantém as quebras', async () => {
+  const { semControle } = await import('../supabase/functions/site-lead/logica.ts');
+  assert.equal(semControle('Jo​ão\u0000  Silva‮'), 'Jo ão Silva');
+  assert.equal(semControle('  linha 1\n\n\n\nlinha 2\t ​ fim  ', true), 'linha 1\n\nlinha 2 fim');
+  assert.equal(semControle('a\nb'), 'a b');
+});
+test('horário a mais de 30 dias não vale', () => {
+  assert.equal(horarioLivre('2026-11-20', '10:00', base()), true);
+  assert.equal(horarioLivre('2026-11-23', '10:00', base()), false);
+});
