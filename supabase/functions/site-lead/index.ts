@@ -2,12 +2,26 @@
 // (https://indycar-taubate.netlify.app) grava o pedido direto no banco da IndyCar.
 //   POST /            { nome, telefone, servico, codigo, carro?, preferencia?, mensagem?, pagina?, utm?, empresa? (isca), decorrido? }
 //   GET  /saude       → { ok: true }
+//   GET  /horarios    → { ok, dias:[{ data, rotulo, horas:[] }] } próximos horários livres da Agenda (rodada 6)
+//   POST também aceita (rodada 6): placa?, horario? { data, hora } escolhido entre os livres (conferido de novo no servidor)
 // O que faz: cria o lead em public.leads (origem organico + utm_source='site', utm_medium='formulario',
 // utm_campaign='formulario-<serviço>'), abre uma tarefa para a equipe (quem cuida do cliente; sem ninguém, avisa os
 // gestores) e guarda o rastro em public.site_pedidos (IP só em hash). Sem login (verify_jwt false): quem protege é o
 // freio por IP/telefone, o campo-isca, o tempo mínimo de preenchimento e a validação de cada campo.
 // Nunca devolve dado interno (nem o id do lead): só um protocolo curto para a pessoa.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.117.2';
+import { agoraSP, dataValida, extrairPlaca, horarioLivre, linksDaEquipe, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, type Agendamento } from './logica.ts';
+
+/** Agenda: capacidade (consultores ativos) e agendamentos dos próximos dias. Só leitura. */
+async function lerAgenda(sb: SupabaseClient, dias = 16) {
+  const agora = agoraSP();
+  const [{ data: cons }, { data: ags }] = await Promise.all([
+    sb.from('consultores').select('id').eq('ativo', true),
+    sb.from('agendamentos').select('data,hora,status').gte('data', agora.data).lte('data', somaDias(agora.data, dias)),
+  ]);
+  return { agora, capacidade: Math.max(1, (cons ?? []).length), agendamentos: (ags ?? []) as Agendamento[] };
+}
+let cacheHorarios: { em: number; corpo: unknown } | null = null;
 
 const ORIGENS = [/^https:\/\/indycar-taubate\.netlify\.app$/, /^https:\/\/[a-z0-9-]+--indycar-taubate\.netlify\.app$/, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/];
 const CODIGO = /^[a-z0-9_-]{1,30}$/;
@@ -81,11 +95,12 @@ function banco(): SupabaseClient {
 }
 
 const primeiroNome = (n: string) => n.split(' ')[0];
-const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24);
+const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24);
 
 interface Pedido {
   nome: string; tel: string; servico: string; codigo: string; carro: string | null; preferencia: string | null;
   mensagem: string | null; pagina: string | null; utm: Record<string, string>;
+  placa: string | null; horario: { data: string; hora: string } | null;
 }
 
 function lerPedido(corpo: Record<string, unknown>): Pedido {
@@ -103,10 +118,14 @@ function lerPedido(corpo: Record<string, unknown>): Pedido {
     const v = txt(utmBruto[k], 80);
     if (v) utm[k] = v;
   }
+  const carro = txt(corpo.carro, 100);
+  const h = corpo.horario as Record<string, unknown> | null | undefined;
+  const horario = h && typeof h === 'object' && dataValida(h.data) && /^\d{2}:\d{2}$/.test(String(h.hora)) ? { data: String(h.data), hora: String(h.hora) } : null;
   return {
     nome, tel, servico, codigo,
-    carro: txt(corpo.carro, 100), preferencia: txt(corpo.preferencia, 60), mensagem: linhas(corpo.mensagem, 500),
+    carro, preferencia: txt(corpo.preferencia, 60), mensagem: linhas(corpo.mensagem, 500),
     pagina: txt(corpo.pagina, 200), utm,
+    placa: placaDoCampo(corpo.placa) ?? extrairPlaca(carro), horario,
   };
 }
 
@@ -180,8 +199,27 @@ async function tratar(req: Request): Promise<Response> {
 
   // Lead (origem site + UTM). Se a pessoa chegou por anúncio, a campanha paga vai junto no utm_campaign.
   const campanha = pedido.utm.source ? `${pedido.codigo}--${slug(pedido.utm.source)}${pedido.utm.campaign ? '-' + slug(pedido.utm.campaign) : ''}`.slice(0, 60) : pedido.codigo;
+  // Horário escolhido no site: confere de novo na Agenda (alguém pode ter ocupado nesse meio-tempo).
+  let horarioTexto: string | null = null;
+  let horarioOcupado = false;
+  if (pedido.horario) {
+    const ag = await lerAgenda(sb).catch(() => null);
+    const rotulo = rotuloHorario(pedido.horario.data, pedido.horario.hora);
+    if (ag && horarioLivre(pedido.horario.data, pedido.horario.hora, ag)) horarioTexto = `${rotulo} (estava livre na Agenda quando a pessoa pediu)`;
+    else { horarioOcupado = true; horarioTexto = `${rotulo} (já não estava livre — sugira outro)`; }
+  }
+  // Quem é essa pessoa para a oficina? Cliente conhecido e carro dentro do pátio agora (só para a equipe; nada disso volta ao site).
+  let contexto: string | null = null;
+  const { data: cli } = await sb.from('clientes').select('id').eq('telefone_e164', pedido.tel).maybeSingle();
+  if (cli?.id) {
+    const { data: os } = await sb.from('patio_os').select('numero,etapa').eq('cliente_id', cli.id).not('etapa', 'in', '(entregue,cancelado)').limit(1);
+    contexto = os?.length ? `CARRO NO PÁTIO AGORA: OS nº ${os[0].numero} (${String(os[0].etapa).replace(/_/g, ' ')}).` : 'Cliente já cadastrado na oficina.';
+  }
   const observacoes = [
     `Pedido pelo site (formulário): ${pedido.servico}`,
+    contexto,
+    horarioTexto ? `Horário escolhido no site: ${horarioTexto}` : null,
+    pedido.placa ? `Placa: ${pedido.placa}` : null,
     pedido.preferencia ? `Preferência de horário: ${pedido.preferencia}` : null,
     pedido.carro ? `Carro: ${pedido.carro}` : null,
     pedido.mensagem ? `O que o carro está fazendo: ${pedido.mensagem}` : null,
@@ -189,7 +227,7 @@ async function tratar(req: Request): Promise<Response> {
     pedido.pagina ? `Página: ${pedido.pagina}` : null,
   ].filter(Boolean).join('\n');
   const { data: lead, error: eLead } = await sb.from('leads').insert({
-    nome: pedido.nome, telefone: pedido.tel, carro_modelo: pedido.carro, servico: pedido.servico, status: 'novo', origem: 'organico',
+    nome: pedido.nome, telefone: pedido.tel, carro_modelo: pedido.carro, placa: pedido.placa, servico: pedido.servico, status: 'novo', origem: 'organico',
     utm_source: 'site', utm_medium: 'formulario', utm_campaign: campanha, observacoes,
   }).select('id,cliente_id,responsavel_id').single();
   if (eLead || !lead) throw new Error(eLead?.message ?? 'lead');
@@ -197,16 +235,26 @@ async function tratar(req: Request): Promise<Response> {
   // Tarefa para quem cuida do cliente (o gatilho do banco já herdou o responsável da conversa); sem ninguém, avisa os gestores.
   const nome = primeiroNome(pedido.nome);
   const vence = new Date(Date.now() + 2 * 3600_000).toISOString();
+  const L = linksDaEquipe({ leadId: lead.id, telefone: pedido.tel, nome: pedido.nome });
   const { data: tarefa, error: eT } = await sb.from('tarefas').insert({
-    titulo: `Pedido de horário pelo site: ${nome}`,
-    descricao: `${pedido.nome} pediu horário pelo site para: ${pedido.servico}.` +
-      (pedido.preferencia ? `\nPreferência: ${pedido.preferencia}.` : '') + (pedido.carro ? `\nCarro: ${pedido.carro}.` : '') +
-      (pedido.mensagem ? `\nO carro está: ${pedido.mensagem}` : '') + `\nTelefone: ${pedido.tel}. Confirme o horário pelo WhatsApp e marque na Agenda.`,
+    titulo: `${contexto?.startsWith('CARRO NO PÁTIO') ? '[no pátio] ' : ''}Pedido de horário pelo site: ${nome}${horarioTexto && !horarioOcupado ? ' · ' + rotuloHorario(pedido.horario!.data, pedido.horario!.hora) : ''}`,
+    descricao: `${pedido.nome} pediu horário pelo site para: ${pedido.servico}.` + (contexto ? `\n${contexto}` : '') +
+      (horarioTexto ? `\nHorário escolhido: ${horarioTexto}.` : '') +
+      (pedido.preferencia ? `\nPreferência: ${pedido.preferencia}.` : '') + (pedido.carro ? `\nCarro: ${pedido.carro}.` : '') + (pedido.placa ? `\nPlaca: ${pedido.placa}.` : '') +
+      (pedido.mensagem ? `\nO carro está: ${pedido.mensagem}` : '') + `\nTelefone: ${pedido.tel}. Confirme o horário pelo WhatsApp e marque na Agenda.` +
+      `\nLead: ${L.lead}\nConversa: ${L.conversa}\nCriar orçamento: ${L.orcamento}\nAgenda: ${L.agenda}`,
     responsavel_id: lead.responsavel_id ?? null, cliente_id: lead.cliente_id ?? null, lead_id: lead.id,
     origem: 'automacao', prioridade: 1, vence_em: vence,
   }).select('id').single();
   if (eT) console.error('tarefas', eT.message);
-  if (!lead.responsavel_id) {
+  if (lead.responsavel_id) {
+    // Quem já cuida do cliente também recebe o aviso no sino (antes só os gestores, e só sem responsável).
+    const { error } = await sb.rpc('notificar', {
+      p_perfil: lead.responsavel_id, p_tipo: 'lead', p_titulo: `Seu cliente ${nome} pediu horário pelo site`,
+      p_corpo: `${pedido.servico}${horarioTexto && !horarioOcupado ? ' · ' + rotuloHorario(pedido.horario!.data, pedido.horario!.hora) : ''}`, p_link: `/?lead=${lead.id}`, p_app: 'crm', p_chave: `site_lead_resp:${lead.id}`,
+    });
+    if (error) console.error('notificar responsavel', error.message);
+  } else {
     const { data: gestores } = await sb.from('perfis').select('id').in('papel', ['admin', 'gestor']).eq('ativo', true);
     for (const g of gestores ?? []) {
       const { error } = await sb.rpc('notificar', {
@@ -222,7 +270,11 @@ async function tratar(req: Request): Promise<Response> {
   });
   return json(req, {
     ok: true, protocolo: String(lead.id).replace(/-/g, '').slice(-6).toUpperCase(),
-    mensagem: `Pedido enviado, ${nome}! A equipe confirma o horário com você pelo WhatsApp (${HORARIO}).`,
+    mensagem: horarioTexto && !horarioOcupado
+      ? `Pedido enviado, ${nome}! Você pediu ${rotuloHorario(pedido.horario!.data, pedido.horario!.hora)}: a equipe confirma com você pelo WhatsApp (${HORARIO}).`
+      : horarioOcupado
+        ? `Pedido enviado, ${nome}! Esse horário acabou de ser ocupado; a equipe sugere outro pelo WhatsApp (${HORARIO}).`
+        : `Pedido enviado, ${nome}! A equipe confirma o horário com você pelo WhatsApp (${HORARIO}).`,
   });
 }
 
@@ -231,6 +283,17 @@ Deno.serve(async (req) => {
   try {
     const rota = new URL(req.url).pathname.split('/').filter(Boolean).pop();
     if (req.method === 'GET' && rota === 'saude') return json(req, { ok: true, servico: 'site-lead' });
+    if (req.method === 'GET' && rota === 'horarios') {
+      // Horários livres de verdade na Agenda (só data e hora; nada de gente). Cache de 60 s para não pesar no banco.
+      freio(`h:${ipDe(req)}`, 30);
+      if (!cacheHorarios || Date.now() - cacheHorarios.em > 60_000) {
+        const ag = await lerAgenda(banco());
+        cacheHorarios = { em: Date.now(), corpo: { ok: true, atualizado_em: new Date().toISOString(), dias: proximosHorarios(ag) } };
+      }
+      const r = json(req, cacheHorarios.corpo);
+      r.headers.set('Cache-Control', 'public, max-age=60');
+      return r;
+    }
     if (req.method !== 'POST') throw new ErroHttp(405, 'Use POST.');
     return await tratar(req);
   } catch (e) {

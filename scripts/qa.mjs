@@ -16,7 +16,7 @@ import { texto as textoWa, MENSAGENS, PREFIXO } from './mensagens-whatsapp.mjs';
 const AXE = fs.readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
 const SITE_LEAD = 'https://nppfqhavqahapmugnyng.supabase.co/functions/v1/site-lead';
 // Resposta falsa da Edge Function site-lead: o teste NUNCA grava no banco de verdade.
-const FETCH_FALSO = `window.__envios = []; window.fetch = async (url, opts) => { window.__envios.push({ url: String(url), body: JSON.parse(opts.body) }); if (window.__fetchFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, protocolo: 'QA1234', mensagem: 'Pedido enviado, Teste! (resposta de teste)' }) }; };`;
+const FETCH_FALSO = `window.__envios = []; window.__horariosPedidos = 0; window.fetch = async (url, opts) => { if (String(url).endsWith('/horarios')) { window.__horariosPedidos++; if (window.__horariosFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, atualizado_em: '2026-10-21T15:00:00.000Z', dias: [{ data: '2026-10-21', rotulo: 'hoje', horas: ['08:00', '10:00', '12:00', '14:00', '16:00'] }, { data: '2026-10-22', rotulo: 'amanhã', horas: ['08:00', '10:00'] }, { data: '2026-10-23', rotulo: 'sex 23/10', horas: ['09:00'] }] }) }; } window.__envios.push({ url: String(url), body: JSON.parse(opts.body) }); if (window.__fetchFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, protocolo: 'QA1234', mensagem: 'Pedido enviado, Teste! (resposta de teste)' }) }; };`;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'qa-out');
@@ -56,7 +56,7 @@ await new Promise(r => server.listen(0, '127.0.0.1', r));
 const BASE = (process.env.QA_URL || 'http://127.0.0.1:' + server.address().port).replace(/\/$/, ''); // QA_URL=https://... testa produção
 fs.mkdirSync(OUT, { recursive: true });
 
-const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--no-first-run', '--no-default-browser-check'] });
+const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, protocolTimeout: 240000, args: ['--no-first-run', '--no-default-browser-check'] });
 
 async function abrir(largura, altura, url = BASE + '/') {
   const page = await browser.newPage();
@@ -435,6 +435,96 @@ console.log('\n== cabeçalhos de segurança ==');
   const embutidos = [...html.matchAll(/<script([^>]*)>([^<]*)<\/script>/gi)].filter(m => !m[1].includes('application/ld+json') && m[2].trim());
   ok(embutidos.length === 0 && !/ on[a-z]+="/i.test(html), 'HTML sem script embutido nem onload/onerror (a CSP barraria)');
   ok(!/<script[^>]+src="https?:/i.test(html), 'nenhum script de CDN (nada a proteger com SRI)');
+}
+
+console.log('\n== rodada 6: horários livres, placa, roteador de links, atalhos e SEO ==');
+for (const w of [375, 1440]) {
+  const { page, erros } = await abrir(w, w === 375 ? 812 : 900);
+  await page.evaluate(FETCH_FALSO);
+  await page.evaluate(() => window.open = u => { window.__aberto = u; return null; });
+  await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; document.getElementById('diagnostico').scrollIntoView(); });
+  await page.waitForFunction(() => document.querySelector('#horariosLista .horario-chip'), { timeout: 5000 }).catch(() => {});
+  const h = await page.evaluate(() => {
+    const caixa = document.getElementById('horarios');
+    return { vis: getComputedStyle(caixa).display !== 'none' && !caixa.hidden, chips: caixa.querySelectorAll('.horario-chip').length, pedidos: window.__horariosPedidos,
+      dias: caixa.querySelectorAll('.horarios-dia').length, atual: document.getElementById('horariosAtualizado').textContent, ancora: document.documentElement.scrollWidth <= innerWidth, y: scrollY, top: Math.round(document.getElementById('diagnostico').getBoundingClientRect().top), li: document.getElementById('horariosLista').innerHTML.slice(0,80) };
+  });
+  ok(h.vis && h.chips === 7 && h.dias === 3 && h.pedidos === 1 && /Atualizado às \d{2}:\d{2}/.test(h.atual), `${w}px: "Próximos horários livres" lidos da Agenda (1 consulta, ${h.chips} horários em ${h.dias} dias, hora da atualização) ${JSON.stringify(h)} ${JSON.stringify(erros.slice(0,3))}`);
+  ok(h.ancora, `${w}px: sem rolagem horizontal com os horários`);
+  const alvo = await page.evaluate(() => [...document.querySelectorAll('.horario-chip')].every(b => b.getBoundingClientRect().height >= 38 || b.offsetParent === null));
+  ok(alvo, `${w}px: cada horário é um botão com pelo menos 38 px de altura (toque)`);
+  // clicar num horário abre o formulário com o serviço e o horário escolhidos
+  await page.evaluate(() => document.querySelector('#horariosLista .horario-chip[data-hora="10:00"]').click());
+  await page.waitForSelector('#formBackdrop.open', { timeout: 3000 });
+  await page.waitForFunction(() => !document.getElementById('fHorarios').hidden, { timeout: 3000 }).catch(() => {});
+  const f = await page.evaluate(() => ({
+    servico: document.getElementById('fService').selectedOptions[0]?.dataset.codigo, quandoOff: document.getElementById('fQuando').disabled,
+    marcados: [...document.querySelectorAll('.horario-chip[aria-pressed="true"]')].length, pedidos: window.__horariosPedidos,
+    formLista: document.querySelectorAll('#fHorariosLista .horario-chip').length,
+  }));
+  ok(f.servico === 'diagnostico' && f.quandoOff && f.marcados >= 2 && f.formLista > 0, `${w}px: tocar num horário abre o formulário com o diagnóstico e o horário marcado nas duas listas`);
+  ok(f.pedidos === 1, `${w}px: a consulta de horários é reaproveitada (não repete a cada abertura)`);
+  // placa com máscara e envio com horário + placa
+  await page.type('#fPlaca', 'abc-1d23');
+  ok(await page.$eval('#fPlaca', i => i.value) === 'ABC1D23', `${w}px: placa vira maiúscula e sem hífen (ABC1D23)`);
+  await page.type('#fName', 'Teste Horario'); await page.type('#fPhone', '12996830272');
+  await page.type('#fCar', 'Civic 2018');
+  await new Promise(r => setTimeout(r, 2700));
+  await page.evaluate(() => document.querySelector('#leadForm button[type=submit]').click());
+  await page.waitForSelector('#formOk:not([hidden])', { timeout: 5000 }).catch(() => {});
+  const e = await page.evaluate(() => ({ envios: window.__envios, wa: document.getElementById('formOkWa').href, quandoOff: document.getElementById('fQuando').disabled, marcados: document.querySelectorAll('.horario-chip[aria-pressed="true"]').length }));
+  const c = e.envios[0]?.body || {};
+  ok(e.envios.length === 1 && c.horario && c.horario.data === '2026-10-21' && c.horario.hora === '10:00' && c.placa === 'ABC1D23' && c.servico === 'Diagnóstico digital gratuito', `${w}px: o pedido leva o horário escolhido (2026-10-21 10:00) e a placa ABC1D23 para a Edge Function`);
+  ok(decodeURIComponent(e.wa).includes('Placa: ABC1D23') && decodeURIComponent(e.wa).includes('Horário: hoje às 10:00'), `${w}px: a mensagem do WhatsApp também leva a placa e o horário`);
+  ok(!e.quandoOff && e.marcados === 0, `${w}px: depois de enviar o horário é desmarcado e "Quando prefere?" volta`);
+  // roteador de links e códigos
+  const t36 = 'a'.repeat(36), t48 = 'b1'.repeat(24), t32 = 'c2'.repeat(16);
+  await page.evaluate(() => { document.querySelector('#formOk [data-close-form]').click(); });
+  const rota = async (txt) => {
+    await page.evaluate((t) => {
+      window.__aberto = null;
+      const c = document.getElementById('areaColaCampo'); c.value = t; c.dispatchEvent(new Event('input'));
+      document.querySelector('#areaCola button[type=submit]').click();
+    }, txt);
+    return page.evaluate(() => ({ url: window.__aberto, msg: document.getElementById('areaColaMsg').textContent, inv: document.getElementById('areaColaCampo').getAttribute('aria-invalid') }));
+  };
+  let r = await rota(t36);
+  ok(r.url === 'https://indycar-patio.netlify.app/acompanhar/?t=' + t36, `${w}px: código de 36 letras leva ao Acompanhar meu carro`);
+  r = await rota(t48);
+  ok(r.url === 'https://indycar-patio.netlify.app/minha/?c=' + t48, `${w}px: código de 48 letras leva à Minha IndyCar`);
+  r = await rota(t32);
+  ok(r.url === 'https://indycar-orcador.netlify.app/#/o/' + t32, `${w}px: código de 32 letras leva ao orçamento no Orçador`);
+  r = await rota('https://indycar-patio.netlify.app/acompanhar/?t=' + t36 + '&x=1');
+  ok(r.url === 'https://indycar-patio.netlify.app/acompanhar/?t=' + t36, `${w}px: link colado do Pátio é refeito só com o código (sem lixo)`);
+  r = await rota('https://indycar-orcador.netlify.app/#/o/Abc12345Def');
+  ok(r.url === 'https://indycar-orcador.netlify.app/#/o/Abc12345Def', `${w}px: link de orçamento colado abre o mesmo orçamento`);
+  r = await rota('https://site-malicioso.com/acompanhar/?t=' + t36);
+  ok(!r.url && r.inv === 'true' && /Não reconheci/.test(r.msg), `${w}px: link de outro site nunca é aberto (sem redirecionamento aberto) e o campo avisa`);
+  r = await rota('javascript:alert(1)');
+  ok(!r.url && r.inv === 'true', `${w}px: javascript: e lixo são recusados`);
+  ok(erros.length === 0, `${w}px: sem erro de console nos horários e no roteador` + (erros.length ? ': ' + erros.slice(0, 2).join(' | ') : ''));
+  await page.screenshot({ path: path.join(OUT, `r6-horarios-${w}.png`) });
+  await page.close();
+}
+{
+  // Sem rede: os horários somem sem quebrar nada
+  const { page } = await abrir(375, 812);
+  await page.evaluate(FETCH_FALSO);
+  await page.evaluate(() => { window.__horariosFalha = true; document.documentElement.style.scrollBehavior = 'auto'; document.getElementById('diagnostico').scrollIntoView(); });
+  await new Promise(r => setTimeout(r, 900));
+  const sem = await page.evaluate(() => ({ escondido: document.getElementById('horarios').hidden, form: document.getElementById('fHorarios').hidden }));
+  ok(sem.escondido && sem.form, 'se a Agenda não responde, as caixas de horário ficam escondidas (o formulário segue igual)');
+  await page.close();
+}
+{
+  const toml = fs.readFileSync(path.join(ROOT, 'netlify.toml'), 'utf8');
+  ok(/from = "\/s\/:servico"[\s\S]*?to = "\/\?servico=:servico&abrir=form"/.test(toml) && /from = "\/orcamento"/.test(toml) && /from = "\/horarios"[\s\S]*?to = "\/#horarios"/.test(toml) && /from = "\/indicar"[\s\S]*?minha\/#indique/.test(toml) && /from = "\/minha-indycar"/.test(toml), 'netlify.toml: atalhos /s/<serviço>, /orcamento, /horarios, /indicar e /minha-indycar');
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const ld = JSON.parse(/<script type="application\/ld\+json">\s*(\{[\s\S]*?"@type": "AutoRepair"[\s\S]*?\n\})\s*<\/script>/.exec(html)[1]);
+  ok(ld.potentialAction && ld.potentialAction.target.urlTemplate === 'https://indycar-taubate.netlify.app/agendar' && !('priceRange' in ld), 'JSON-LD: ação "Pedir horário" (ReserveAction → /agendar) e sem faixa de preço inventada');
+  ok(/hreflang="pt-BR"/.test(html) && /geo\.region" content="BR-SP"/.test(html), 'SEO local: hreflang pt-BR e geo.region BR-SP');
+  const fn = fs.readFileSync(path.join(ROOT, 'supabase/functions/site-lead/index.ts'), 'utf8');
+  ok(/rota === 'horarios'/.test(fn) && /horarioLivre\(/.test(fn) && /linksDaEquipe\(/.test(fn) && /extrairPlaca/.test(fn), 'Edge Function: /horarios, conferência do horário, links da equipe e placa no lead');
 }
 
 console.log('\n== páginas extras ==');

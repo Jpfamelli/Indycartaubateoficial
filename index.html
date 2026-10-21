@@ -62,7 +62,17 @@
       "closes": "17:30"
     }
   ],
-  "priceRange": "$$",
+  "potentialAction": {
+    "@type": "ReserveAction",
+    "name": "Pedir horário para o diagnóstico digital gratuito",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://indycar-taubate.netlify.app/agendar",
+      "inLanguage": "pt-BR",
+      "actionPlatform": ["http://schema.org/DesktopWebPlatform", "http://schema.org/MobileWebPlatform"]
+    },
+    "result": { "@type": "Reservation", "name": "Diagnóstico digital gratuito" }
+  },
   "sameAs": [
     "https://www.instagram.com/indycartaubateoficial/",
     "https://www.facebook.com/people/Indycar-Centro-Automotivo/61553407254400/"
@@ -199,6 +209,10 @@
   <!-- favicon: versão mínima da logomarca vetorial (paralelogramo vermelho + banda de pneu) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M16 10h42l-10 44H6z' fill='%23e50914'/><path d='M24 46l8-7 8 7M24 33l8-7 8 7M24 20l8-7 8 7' fill='none' stroke='white' stroke-width='5'/></svg>" />
   <link rel="canonical" href="https://indycar-taubate.netlify.app/" />
+  <link rel="alternate" hreflang="pt-BR" href="https://indycar-taubate.netlify.app/" />
+  <meta name="geo.region" content="BR-SP" />
+  <meta name="geo.placename" content="Taubaté" />
+  <meta name="format-detection" content="telephone=yes" />
   <meta property="og:site_name" content="IndyCar Centro Automotivo" />
   <meta property="og:image:alt" content="IndyCar Taubaté: diagnóstico digital gratuito com scanner + foto" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -772,6 +786,12 @@
         <a class="btn btn-primary glow" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fdiagnostico)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=diagnostico" target="_blank" rel="noopener" data-magnetic>Agendar meu diagnóstico</a>
         <span class="diag-note">Gratuito · sem compromisso · garantia de 12 meses no que você aprovar</span>
       </div>
+      <!-- Horários livres de verdade, lidos da Agenda da oficina (rodada 6). Escondido se a consulta falhar. -->
+      <div class="horarios-vivo reveal" id="horarios" aria-labelledby="horariosTitulo" hidden>
+        <h3 id="horariosTitulo">Próximos horários livres</h3>
+        <p class="horarios-sub">Toque num horário e o pedido já vai com ele. <span id="horariosAtualizado"></span></p>
+        <div class="horarios-dias" id="horariosLista"></div>
+      </div>
     </div>
   </section>
 
@@ -1226,6 +1246,15 @@
           <span class="area-go" aria-hidden="true">Abrir →</span>
         </a>
       </div>
+      <!-- Roteador de links e códigos (rodada 6): a pessoa cola o que recebeu e cai no lugar certo -->
+      <form class="area-cola reveal" id="areaCola" novalidate aria-labelledby="areaColaTit">
+        <label id="areaColaTit" for="areaColaCampo">Recebeu um link ou código da oficina? Cole aqui</label>
+        <div class="area-cola-linha">
+          <input type="text" id="areaColaCampo" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="300" placeholder="Cole o link ou o código" aria-describedby="areaColaMsg" />
+          <button type="submit" class="btn btn-light sm">Abrir</button>
+        </div>
+        <small id="areaColaMsg" class="area-cola-msg" role="status" aria-live="polite">Serve para o acompanhamento do carro, a Minha IndyCar e o orçamento que a equipe mandou.</small>
+      </form>
       <p class="area-nota reveal">Não recebeu o seu link? <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20j%C3%A1%20sou%20cliente%20e%20quero%20o%20link%20da%20minha%20%C3%A1rea%20(Minha%20IndyCar).%20(site%2Farea-cliente)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=area-cliente" target="_blank" rel="noopener">Peça pelo WhatsApp</a> que a equipe manda na hora.</p>
     </div>
   </section>
@@ -1372,6 +1401,18 @@
             <label for="fCar">Carro (modelo/ano) <small>opcional</small></label>
             <input type="text" id="fCar" name="car" maxlength="100" placeholder="Ex: Honda Civic 2018" autocomplete="off" enterkeyhint="next" />
           </div>
+          <div class="field">
+            <label for="fPlaca">Placa <small>opcional</small></label>
+            <input type="text" id="fPlaca" name="placa" maxlength="8" placeholder="ABC1D23" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="next" aria-describedby="fPlacaDica" />
+            <small class="field-dica" id="fPlacaDica">Ajuda a equipe a achar o histórico do seu carro.</small>
+          </div>
+        </div>
+        <!-- Horários livres de verdade na Agenda (rodada 6): o script preenche e mostra só se a consulta funcionar -->
+        <div class="field horarios-form" id="fHorarios" hidden>
+          <span class="rotulo" id="fHorariosRot">Horários livres agora <small>opcional</small></span>
+          <div class="horarios-dias" id="fHorariosLista" role="group" aria-labelledby="fHorariosRot"></div>
+        </div>
+        <div class="field-row">
           <div class="field">
             <label for="fQuando">Quando prefere? <small>opcional</small></label>
             <select id="fQuando" name="quando">

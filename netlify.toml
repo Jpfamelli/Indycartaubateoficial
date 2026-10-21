@@ -123,3 +123,30 @@
   from = "/privacidade"
   to = "/privacidade.html"
   status = 301
+
+# Rodada 6: atalhos para o Atendimento, o Comunicar e os anúncios mandarem a pessoa direto ao ponto.
+# /s/freios abre o formulário já com o serviço (os códigos são os de #svc-<código>); /orcamento e /horarios idem.
+[[redirects]]
+  from = "/s/:servico"
+  to = "/?servico=:servico&abrir=form"
+  status = 302
+
+[[redirects]]
+  from = "/orcamento"
+  to = "/?servico=diagnostico&abrir=form"
+  status = 302
+
+[[redirects]]
+  from = "/horarios"
+  to = "/#horarios"
+  status = 302
+
+[[redirects]]
+  from = "/minha-indycar"
+  to = "https://indycar-patio.netlify.app/minha/"
+  status = 302
+
+[[redirects]]
+  from = "/indicar"
+  to = "https://indycar-patio.netlify.app/minha/#indique"
+  status = 302

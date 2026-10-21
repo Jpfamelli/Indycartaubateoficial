@@ -4,7 +4,7 @@
   "description": "Site da IndyCar Centro Automotivo Taubaté (estático, sem build). Dependências só para o teste automático.",
   "type": "module",
   "scripts": {
-    "test": "node scripts/qa.mjs",
+    "test": "node --test scripts/logica-site-lead.test.mjs && node scripts/qa.mjs",
     "serve": "npx serve .",
     "publicar": "node scripts/publicar.mjs && npx netlify-cli deploy --prod --dir dist",
     "vitais": "node scripts/vitais.mjs",

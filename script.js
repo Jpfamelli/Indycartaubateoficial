@@ -915,12 +915,14 @@
     const car = $('#fCar').value.trim();
     const quando = ($('#fQuando') || {}).value || '';
     const mensagem = (($('#fMsg') || {}).value || '').trim();
+    const placa = placaDoForm();
+    const horario = horarioEscolhido ? { data: horarioEscolhido.data, hora: horarioEscolhido.hora } : null;
     // Código de origem por serviço: o Atendimento lê "(site/formulario-freios)" e marca a UTM do lead.
     const codigoServico = (service.selectedOptions[0] && service.selectedOptions[0].dataset.codigo) || 'servico';
     const codigo = codigoComCampanha('formulario-' + codigoServico);
     const textoWa = PREFIXO_WA + ', quero orçar: ' + service.value + '.\n' +
       'Nome: ' + name.value.trim() + ' · Telefone: ' + phone.value.trim() +
-      (car ? ' · Carro: ' + car : '') + (quando ? ' · Quando: ' + quando : '') +
+      (car ? ' · Carro: ' + car : '') + (placa ? ' · Placa: ' + placa : '') + (horario ? ' · Horário: ' + horarioEscolhido.rotulo : quando ? ' · Quando: ' + quando : '') +
       (mensagem ? '\nO carro está: ' + mensagem : '');
     const waHref = linkWhatsApp(textoWa, codigo);
 
@@ -934,7 +936,7 @@
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           nome: name.value.trim(), telefone: digitos, servico: service.value, codigo: codigoServico, carro: car || null,
-          preferencia: quando || null, mensagem: mensagem || null, pagina: (location.pathname + location.search).slice(0, 200),
+          preferencia: quando || null, placa, horario, mensagem: mensagem || null, pagina: (location.pathname + location.search).slice(0, 200),
           utm: UTM, decorrido: Date.now() - comecouEm, empresa: ($('#fEmpresa') || {}).value || '',
         }),
       });
@@ -954,6 +956,7 @@
     sessao.set('indycar_promo', '1');
     mostrarSucesso(resposta, waHref);
     form.reset();
+    limparHorario();
     comecouEm = 0;
   });
 
@@ -963,6 +966,153 @@
       f.classList.remove('invalid'); f.removeAttribute('aria-invalid');
       if (f.id === 'fPhone') $('#fPhoneErr').hidden = true;
     }));
+
+  /* ================================================================
+     9b. RODADA 6 — horários livres da Agenda, placa e roteador de links
+     ================================================================ */
+  // Horários livres de verdade: GET site-lead/horarios (data e hora livres na Agenda; nunca dado de cliente).
+  // Se a consulta falhar, as duas caixas ficam escondidas e o formulário segue como sempre.
+  let horarioEscolhido = null; // { data, hora, rotulo }
+  let horariosPromessa = null, horariosEm = 0;
+  function carregarHorarios() {
+    if (horariosPromessa && Date.now() - horariosEm < 60000) return horariosPromessa;
+    horariosEm = Date.now();
+    horariosPromessa = (async () => {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 7000);
+        const r = await fetch(SITE_LEAD_URL + '/horarios', { mode: 'cors', signal: ctrl.signal });
+        clearTimeout(t);
+        const corpo = await r.json();
+        if (!r.ok || !corpo || !Array.isArray(corpo.dias) || !corpo.dias.length) return null;
+        return corpo;
+      } catch (_) { return null; }
+    })();
+    return horariosPromessa;
+  }
+  function pintarHorarios(alvo, corpo, modo) {
+    if (!alvo) return;
+    alvo.textContent = '';
+    corpo.dias.slice(0, 3).forEach(dia => {
+      const linha = document.createElement('div'); linha.className = 'horarios-dia';
+      const rot = document.createElement('span'); rot.className = 'horarios-dia-rot'; rot.textContent = dia.rotulo;
+      const horas = document.createElement('div'); horas.className = 'horarios-horas';
+      dia.horas.slice(0, 4).forEach(hora => {
+        const b = document.createElement('button');
+        const longo = dia.rotulo + ' às ' + hora;
+        b.type = 'button'; b.className = 'horario-chip'; b.textContent = hora;
+        b.dataset.data = dia.data; b.dataset.hora = hora; b.dataset.rotulo = longo;
+        b.setAttribute('aria-pressed', 'false');
+        b.setAttribute('aria-label', 'Horário de ' + longo);
+        horas.appendChild(b);
+      });
+      linha.append(rot, horas); alvo.appendChild(linha);
+    });
+  }
+  function marcarHorario() {
+    $$('.horario-chip').forEach(b => b.setAttribute('aria-pressed', String(!!horarioEscolhido && b.dataset.data === horarioEscolhido.data && b.dataset.hora === horarioEscolhido.hora)));
+    const q = $('#fQuando');
+    if (q) q.disabled = !!horarioEscolhido; // o horário escolhido já diz quando; o campo volta se a pessoa desmarcar
+  }
+  function limparHorario() { horarioEscolhido = null; marcarHorario(); }
+  async function montarHorarios() {
+    const corpo = await carregarHorarios();
+    const caixa = $('#horarios');
+    if (!corpo) { if (caixa) caixa.hidden = true; return; } // Agenda não respondeu: a caixa some, o formulário segue igual
+    if (caixa && !$('#horariosLista').querySelector('.horarios-dia')) {
+      pintarHorarios($('#horariosLista'), corpo, 'secao');
+      const hh = new Date(corpo.atualizado_em);
+      if (!isNaN(hh)) $('#horariosAtualizado').textContent = 'Atualizado às ' + hh.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) + '.';
+      caixa.hidden = false; caixa.removeAttribute('aria-busy');
+    }
+    const f = $('#fHorarios');
+    if (f && !$('#fHorariosLista').children.length) { pintarHorarios($('#fHorariosLista'), corpo, 'form'); f.hidden = false; }
+    marcarHorario();
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('.horario-chip');
+    if (!b) return;
+    const mesmo = horarioEscolhido && horarioEscolhido.data === b.dataset.data && horarioEscolhido.hora === b.dataset.hora;
+    horarioEscolhido = mesmo ? null : { data: b.dataset.data, hora: b.dataset.hora, rotulo: b.dataset.rotulo };
+    marcarHorario();
+    if (!mesmo && !formBackdrop.classList.contains('open')) {
+      if (!$('#fService').value) escolherServico('diagnostico');
+      openEl(formBackdrop);
+    }
+  });
+  // A caixa já nasce com o tamanho final (esqueleto com altura reservada): quando os horários chegam nada pula na tela,
+  // e quem entra por #contato ou #faq não perde o lugar. Sem JavaScript ela fica escondida.
+  (function () {
+    const caixa = $('#horarios'), lista = $('#horariosLista');
+    if (!caixa || !lista) return;
+    lista.textContent = '';
+    const esq = document.createElement('p'); esq.className = 'horarios-carregando'; esq.textContent = 'Consultando a Agenda…';
+    lista.appendChild(esq); caixa.setAttribute('aria-busy', 'true'); caixa.hidden = false;
+  })();
+  // A seção de horários carrega quando chega perto da tela; o formulário carrega ao abrir.
+  (function () {
+    const caixa = $('#diagnostico');
+    if (caixa && 'IntersectionObserver' in window) {
+      const io = new IntersectionObserver((en) => { if (en.some(x => x.isIntersecting)) { io.disconnect(); montarHorarios(); } }, { rootMargin: '600px 0px' });
+      io.observe(caixa);
+    }
+    new MutationObserver(() => { if (formBackdrop.classList.contains('open')) montarHorarios(); })
+      .observe(formBackdrop, { attributes: true, attributeFilter: ['class'] });
+  })();
+
+  // Placa: maiúscula e só letras/números; vale a antiga (ABC1234) e a Mercosul (ABC1D23).
+  const PLACA_RE = /^[A-Z]{3}\d{4}$|^[A-Z]{3}\d[A-Z]\d{2}$/;
+  const placaLimpa = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+  function placaDoForm() { const p = placaLimpa(($('#fPlaca') || {}).value); return PLACA_RE.test(p) ? p : null; }
+  (function () {
+    const campo = $('#fPlaca'), dica = $('#fPlacaDica');
+    if (!campo) return;
+    const dicaPadrao = dica.textContent;
+    campo.addEventListener('input', () => { campo.value = placaLimpa(campo.value); dica.textContent = dicaPadrao; });
+    campo.addEventListener('blur', () => { if (campo.value && !PLACA_RE.test(campo.value)) dica.textContent = 'Confira a placa (ex.: ABC1D23). Se preferir, deixe em branco.'; });
+  })();
+
+  // Roteador: cole o link ou o código que a oficina mandou e caia no lugar certo (Acompanhar, Minha IndyCar ou orçamento).
+  const DESTINOS = { patio: 'https://indycar-patio.netlify.app', orcador: 'https://indycar-orcador.netlify.app' };
+  function rotearCodigo(entrada) {
+    const s = String(entrada || '').trim();
+    if (!s) return null;
+    const porCodigo = (c) => {
+      c = c.toLowerCase();
+      if (/^[0-9a-f]{36}$/.test(c)) return { url: DESTINOS.patio + '/acompanhar/?t=' + c, rotulo: 'o acompanhamento do seu carro' };
+      if (/^[0-9a-f]{48}$/.test(c)) return { url: DESTINOS.patio + '/minha/?c=' + c, rotulo: 'a Minha IndyCar' };
+      if (/^[0-9a-f]{32}$/.test(c)) return { url: DESTINOS.orcador + '/#/o/' + c, rotulo: 'o seu orçamento' };
+      return null;
+    };
+    if (/^https?:\/\//i.test(s)) {
+      let u; try { u = new URL(s); } catch (_) { return null; }
+      if (u.protocol !== 'https:') return null;
+      if (u.origin === DESTINOS.patio) return porCodigo(u.searchParams.get('t') || u.searchParams.get('c') || '');
+      if (u.origin === DESTINOS.orcador) {
+        const m = /^#\/o\/([A-Za-z0-9_-]{8,128})$/.exec(u.hash);
+        return m ? { url: DESTINOS.orcador + '/#/o/' + m[1], rotulo: 'o seu orçamento' } : null;
+      }
+      return null; // qualquer outro endereço: nunca abre (sem redirecionamento aberto)
+    }
+    return porCodigo(s.replace(/\s+/g, ''));
+  }
+  (function () {
+    const f = $('#areaCola'); if (!f) return;
+    const campo = $('#areaColaCampo'), msg = $('#areaColaMsg'), padrao = msg.textContent;
+    campo.addEventListener('input', () => { msg.textContent = padrao; msg.classList.remove('erro'); campo.removeAttribute('aria-invalid'); });
+    f.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const r = rotearCodigo(campo.value);
+      if (!r) {
+        campo.setAttribute('aria-invalid', 'true'); msg.classList.add('erro');
+        msg.textContent = 'Não reconheci esse link ou código. Confira se copiou inteiro, ou peça outro pelo WhatsApp.';
+        campo.focus(); return;
+      }
+      msg.textContent = 'Abrindo ' + r.rotulo + '…';
+      window.open(r.url, '_blank', 'noopener');
+      campo.value = '';
+    });
+  })();
 
   /* ================================================================
      10. PROVA SOCIAL — notificações rotativas (canto inferior esq.)
