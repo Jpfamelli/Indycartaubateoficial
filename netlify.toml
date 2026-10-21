@@ -150,3 +150,9 @@
   from = "/indicar"
   to = "https://indycar-patio.netlify.app/minha/#indique"
   status = 302
+
+# Rodada 6: o navegador já começa a baixar CSS e as duas fontes da primeira dobra com a resposta do HTML (dicas de pré-carregamento).
+[[headers]]
+  for = "/"
+  [headers.values]
+    Link = "</fontes/archivo-variavel.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </fontes/inter-variavel.woff2>; rel=preload; as=font; type=font/woff2; crossorigin"

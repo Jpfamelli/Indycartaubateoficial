@@ -45,6 +45,7 @@ export const MENSAGENS = {
   rodape: PREFIXO + '.',
   'area-cliente': PREFIXO + ', já sou cliente e quero o link da minha área (Minha IndyCar).',
   atalho: ORCAR + SERVICOS.diagnostico + '.',
+  'sem-js': ORCAR + SERVICOS.diagnostico + '.',
 };
 for (const [codigo, nome] of Object.entries(SERVICOS)) if (!MENSAGENS[codigo]) MENSAGENS[codigo] = ORCAR + nome + '.';
 

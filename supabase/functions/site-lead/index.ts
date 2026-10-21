@@ -10,7 +10,7 @@
 // freio por IP/telefone, o campo-isca, o tempo mínimo de preenchimento e a validação de cada campo.
 // Nunca devolve dado interno (nem o id do lead): só um protocolo curto para a pessoa.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.117.2';
-import { agoraSP, dataValida, extrairPlaca, horarioLivre, linksDaEquipe, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, NOME_NO_CATALOGO, type Agendamento } from './logica.ts';
+import { agoraSP, dataValida, extrairPlaca, horarioLivre, linksDaEquipe, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, NOME_NO_CATALOGO, venceEm, type Agendamento } from './logica.ts';
 
 /** Agenda: capacidade (consultores ativos) e agendamentos dos próximos dias. Só leitura. */
 async function lerAgenda(sb: SupabaseClient, dias = 16) {
@@ -242,7 +242,7 @@ async function tratar(req: Request): Promise<Response> {
 
   // Tarefa para quem cuida do cliente (o gatilho do banco já herdou o responsável da conversa); sem ninguém, avisa os gestores.
   const nome = primeiroNome(pedido.nome);
-  const vence = new Date(Date.now() + 2 * 3600_000).toISOString();
+  const vence = new Date(venceEm(Date.now(), pedido.horario, !!pedido.horario && !horarioOcupado)).toISOString();
   const L = linksDaEquipe({ leadId: lead.id, telefone: pedido.tel, nome: pedido.nome });
   const { data: tarefa, error: eT } = await sb.from('tarefas').insert({
     titulo: `${contexto?.startsWith('CARRO NO PÁTIO') ? '[no pátio] ' : ''}Pedido de horário pelo site: ${nome}${horarioTexto && !horarioOcupado ? ' · ' + rotuloHorario(pedido.horario!.data, pedido.horario!.hora) : ''}`,

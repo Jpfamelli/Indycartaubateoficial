@@ -1,7 +1,7 @@
 // Regras puras da Edge Function site-lead (horários livres, placa, links da equipe). Roda com `node --test`.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { proximosHorarios, horarioLivre, extrairPlaca, placaDoCampo, linksDaEquipe, rotuloHorario, agoraSP } from '../supabase/functions/site-lead/logica.ts';
+import { proximosHorarios, horarioLivre, extrairPlaca, placaDoCampo, linksDaEquipe, rotuloHorario, agoraSP, venceEm } from '../supabase/functions/site-lead/logica.ts';
 
 // 2026-10-21 é quarta-feira.
 const base = (min = 7 * 60) => ({ agora: { data: '2026-10-21', min }, agendamentos: [], capacidade: 1 });
@@ -65,4 +65,13 @@ test('todo código do formulário tem serviço no cadastro (exceto "outro")', as
   const codigos = [...html.matchAll(/<option data-codigo="([a-z-]+)"/g)].map(m => m[1]).filter(c => c !== 'outro-servico');
   assert.equal(codigos.length, 11);
   for (const c of codigos) assert.ok(NOME_NO_CATALOGO[c], 'sem serviço no cadastro: ' + c);
+});
+test('a tarefa vence antes do horário pedido (hoje) e nunca antes de 15 min', () => {
+  const agora = Date.parse('2026-10-21T13:00:00-03:00');
+  assert.equal(venceEm(agora, null, false), agora + 2 * 3600_000);
+  assert.equal(venceEm(agora, { data: '2026-10-21', hora: '14:00' }, true), Date.parse('2026-10-21T13:30:00-03:00'));
+  assert.equal(venceEm(agora, { data: '2026-10-21', hora: '13:30' }, true), agora + 15 * 60_000);
+  assert.equal(venceEm(agora, { data: '2026-10-21', hora: '16:30' }, true), agora + 2 * 3600_000);
+  assert.equal(venceEm(agora, { data: '2026-10-22', hora: '08:00' }, true), agora + 2 * 3600_000);
+  assert.equal(venceEm(agora, { data: '2026-10-21', hora: '14:00' }, false), agora + 2 * 3600_000);
 });

@@ -238,6 +238,7 @@
 
 <body data-nota="4,8" data-avaliacoes="1.200" data-anos="18">
   <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <noscript><p class="sem-js">Para pedir horário e ver os horários livres este site precisa de JavaScript. Sem ele, chame a gente: WhatsApp <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fsem-js)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=sem-js">(12) 99683-0272</a> ou telefone <a href="tel:+551236245957">(12) 3624-5957</a>, de segunda a sábado, das 8h às 17h30.</p></noscript>
 
   <!-- MAR DE METAL FUNDIDO: canvas fixed z-negativo atrás de tudo.
        As seções claras são opacas e cobrem; nas escuras o metal aparece
@@ -790,7 +791,7 @@
       <div class="horarios-vivo reveal" id="horarios" aria-labelledby="horariosTitulo" hidden>
         <h3 id="horariosTitulo">Próximos horários livres</h3>
         <p class="horarios-sub">Toque num horário e o pedido já vai com ele. <span id="horariosAtualizado"></span></p>
-        <div class="horarios-dias" id="horariosLista"></div>
+        <div class="horarios-dias" id="horariosLista" role="group" aria-labelledby="horariosTitulo"></div>
       </div>
     </div>
   </section>
@@ -1161,7 +1162,7 @@
               </span>
               <div>
                 <strong>Telefone / WhatsApp</strong>
-                <p><a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site.%20(site%2Fcontato)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=contato" target="_blank" rel="noopener">(12) 99683-0272</a> · WhatsApp<br><a href="tel:+551236245957">(12) 3624-5957</a> · Fixo</p>
+                <p><a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site.%20(site%2Fcontato)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=contato" target="_blank" rel="noopener">(12) 99683-0272</a> · WhatsApp · <a href="tel:+5512996830272" aria-label="Ligar para (12) 99683-0272">Ligar</a><br><a href="tel:+551236245957">(12) 3624-5957</a> · Fixo</p>
               </div>
             </li>
             <li>
@@ -1411,6 +1412,7 @@
         <div class="field horarios-form" id="fHorarios" hidden>
           <span class="rotulo" id="fHorariosRot">Horários livres agora <small>opcional</small></span>
           <div class="horarios-dias" id="fHorariosLista" role="group" aria-labelledby="fHorariosRot"></div>
+          <small class="field-dica" id="fHorarioEscolhido" role="status" aria-live="polite"></small>
         </div>
         <div class="field-row">
           <div class="field">

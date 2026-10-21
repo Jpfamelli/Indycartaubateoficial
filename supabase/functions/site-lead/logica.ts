@@ -131,3 +131,16 @@ export const NOME_NO_CATALOGO: Readonly<Record<string, string>> = {
   correia: 'Correia Dentada',
   bicos: 'Limpeza de Bicos',
 };
+
+/**
+ * Até quando a tarefa "confirme o horário" vale (ms). Padrão: 2 h. Se a pessoa pediu um horário LIVRE que é hoje,
+ * vence 30 min antes dele (nunca antes de 15 min a partir de agora): a equipe confirma antes de o carro chegar.
+ * O Brasil está sem horário de verão (UTC-3).
+ */
+export function venceEm(agoraMs: number, horario: { data: string; hora: string } | null, livre: boolean): number {
+  const padrao = agoraMs + 2 * 3600_000;
+  if (!horario || !livre) return padrao;
+  const alvo = Date.parse(`${horario.data}T${horario.hora}:00-03:00`);
+  if (Number.isNaN(alvo) || alvo - agoraMs > 4 * 3600_000) return padrao;
+  return Math.min(padrao, Math.max(agoraMs + 15 * 60_000, alvo - 30 * 60_000));
+}

@@ -257,3 +257,64 @@ Conversão ligada ao ecossistema (pedido do site vira lead + tarefa no banco), �
 | Acessibilidade · Boas práticas · SEO | 100 · 100 · 100 | 100 · 100 · 100 (sem o aviso `label-content-name-mismatch`) |
 
 O computador bateu a meta (≥ 95 nas quatro notas, 99 na melhor rodada). No celular a meta de 95 **não** foi atingida: o que sobra é o custo de estilo+layout da página inteira (~0,5 s a cada relayout com CPU 4× mais lenta; as fontes Archivo/Inter chegando depois da primeira pintura refazem esse layout). Caminhos para a próxima rodada, em ordem: instâncias estáticas das fontes (Archivo 900 expandida e 400; hoje a variável tem 90 KB), CSS dos efeitos em arquivo adiado, HTML mais enxuto (30 ícones SVG embutidos). 182. `performance.measure('efeito:<nome>')` em cada efeito da fila: o Lighthouse/DevTools mostra quanto cada um custou (no celular, nenhum passa de 20 ms).
+
+## Rodada 6 (21/10/2026)
+
+Site ligado ao resto da IndyCar: horários livres da Agenda no site e no formulário, placa e horário que chegam ao CRM, links da equipe prontos na tarefa e roteador de links do cliente. Numeração continua a anterior (183 em diante). 🔗 = conexão com outro sistema.
+
+### Horários reais (Agenda)
+183. 🔗 Edge Function `site-lead` ganhou `GET /horarios`: próximos dias com vaga lidos da Agenda de verdade (seg–sáb, 8h–17h30, meia em meia hora, capacidade = consultores ativos, status que seguram a casa, hoje só daqui a 30 min). Só data e hora saem: nunca nome, telefone ou placa.
+184. 🔗 Regras dos horários numa lógica pura (`logica.ts`) com 10 testes no `npm test` (domingo, 17h30, lotado, cancelado/não veio liberam, fuso de Taubaté).
+185. 🔗 Seção "Próximos horários livres" (no #diagnostico) com botões de 44 px; tocar num horário abre o formulário já com o diagnóstico e o horário marcado.
+186. 🔗 O mesmo seletor dentro do formulário ("Horários livres agora"), nas duas listas sincronizadas; tocar de novo desmarca.
+187. 🔗 O pedido leva o horário escolhido e o servidor **confere de novo** na Agenda (se alguém ocupou nesse meio-tempo, o lead diz "já não estava livre — sugira outro" e a pessoa recebe a frase certa).
+188. 🔗 Horário vai para a observação do lead, o título da tarefa e o sino de quem cuida do cliente; a mensagem do WhatsApp também leva "Horário: hoje às 10:00".
+189. 🔗 A tarefa "confirme o horário" vence 30 min antes do horário pedido quando é hoje (nunca antes de 15 min), em vez de 2 h fixas.
+190. Consulta com cache de 60 s no servidor e no site (uma abertura do formulário não repete a ida à Agenda), freio de 30/min por IP.
+191. Caixa de horários nasce com o tamanho final (esqueleto): quando os horários chegam nada pula, e entradas por `#contato`, `#faq` e `#garantia` continuam caindo no lugar certo.
+192. Agenda cheia: aviso "A agenda está cheia nos próximos dias, chame no WhatsApp" em vez de sumir sem explicar.
+193. Agenda fora do ar: a caixa, o seletor do formulário e os links "Ver horários livres" somem juntos (nenhum link para o vazio); o formulário segue igual.
+194. 🔗 Links "Ver horários livres" no passo 1 do diagnóstico e no contato; 404 também oferece os horários.
+195. O formulário avisa em voz alta (aria-live) "Você escolheu hoje às 10:00" e "Quando prefere?" fica desativado enquanto há horário escolhido.
+
+### Placa, cliente e serviço no CRM
+196. 🔗 Campo "Placa" no formulário (maiúscula, só letras e números, aceita antiga e Mercosul, dica se estiver errada) → `leads.placa`: a busca por placa do CRM/Central acha o lead.
+197. 🔗 Placa escrita no campo "Carro" ("Civic 2018 ABC-1D23") também é reconhecida no servidor.
+198. 🔗 O lead nasce com `servico_id` do cadastro `servicos` (id buscado pelo nome, nunca fixo): relatórios do CRM por serviço contam o pedido do site. Teste garante um serviço do cadastro para cada código do formulário.
+199. 🔗 Cliente conhecido pelo telefone: observação "Cliente já cadastrado na oficina" ou "CARRO NO PÁTIO AGORA: OS nº X (etapa)", e o título da tarefa ganha "[no pátio]" (só para a equipe; nada volta ao site).
+200. 🔗 A tarefa traz os links prontos: Lead (CRM), Conversa (Atendimento, por telefone), **Criar orçamento** (Orçador `#/cotacao?tel=&nome=`, já com cliente) e Agenda.
+201. 🔗 Quem já cuida do cliente também recebe o aviso no sino (antes só os gestores, e só sem responsável).
+202. 🔗 Segundo envio no mesmo dia acrescenta ao lead o horário e a placa novos.
+203. 🔗 `site_pedidos` guarda placa, horário e se estava livre (migração `r6_x1_site_pedidos_placa_horario`, cópia em `scripts/sql/` e `indycar-ferramentas/sql/`): auditoria dos pedidos.
+204. Nome com menos de 2 letras é barrado no próprio site (antes só o servidor recusava).
+
+### Cliente com link ou código na mão
+205. 🔗 Roteador "Recebeu um link ou código da oficina? Cole aqui" (#area-cliente): código de 36 caracteres → Acompanhar meu carro; 48 → Minha IndyCar; 32 → orçamento no Orçador (`#/o/<token>`).
+206. 🔗 Cola o link inteiro do Pátio ou do Orçador e ele é refeito só com o código (sem lixo de parâmetros).
+207. Segurança do roteador: link de qualquer outro site, `javascript:` e lixo nunca abrem (sem redirecionamento aberto) e o campo avisa com `aria-invalid`.
+208. 🔗 Atalhos no ar: `/s/<serviço>` (formulário já com o serviço — para o Atendimento e o Comunicar mandarem), `/orcamento`, `/horarios`, `/indicar` (Minha IndyCar, seção indicar amigo), `/minha-indycar`.
+209. 🔗 Manifesto (PWA) com atalho "Horários livres".
+210. 🔗 JSON-LD com ação `ReserveAction` apontando para `/agendar`: o Google pode oferecer "Pedir horário".
+
+### SEO local, verdade e acessibilidade
+211. Privacidade corrigida: dizia "o formulário não envia nada para servidor nenhum" (falso desde a rodada 5). Agora explica o pedido ao sistema da oficina, placa, horário, hash da rede e o roteador.
+212. `priceRange: "$$"` retirado do JSON-LD (não havia preço confirmado — regra da casa).
+213. `hreflang pt-BR`, `geo.region BR-SP`, `geo.placename Taubaté` e `format-detection` (telefone clicável no iPhone).
+214. Aviso `<noscript>` com WhatsApp e telefone para quem está sem JavaScript.
+215. Link "Ligar" (`tel:`) ao lado do WhatsApp principal no contato.
+216. "Copiar protocolo" e lembrete da Minha IndyCar na confirmação do pedido.
+217. Cabeçalho `Link: rel=preload` das duas fontes da primeira dobra no `netlify.toml`.
+218. Alto contraste (`forced-colors`) nos novos botões e campos; impressão sem horários e sem o roteador.
+219. Sitemap com `lastmod` de hoje.
+220. Teste (`npm test`) com timeout de protocolo maior e rolagem instantânea nos novos cenários (a máquina compartilhada ficava lenta e derrubava o Chrome): 119 → 176 verificações.
+
+### Como verifiquei
+- `npm test` (176 verificações em 375/1440 px com a Edge Function falsa: nada vai ao banco real) + 10 testes da lógica (`node --test`).
+- Edge Function publicada (v4+): `GET /horarios` real devolve os dias e horas da Agenda; as colunas, o `servico_id`, a placa e o rastro foram testados por DO-block revertido (`TESTE_REVERTIDO`); `get_advisors` sem aviso novo.
+- Nenhum pedido de teste foi gravado no banco real.
+
+### Pendências
+- Publicar o site (`npm run publicar`) depois de o coordenador liberar.
+- O Atendimento/IA pode ler "Placa:" e "Horário:" da mensagem do WhatsApp do formulário (prefixo "Olá! Vim pelo site, quero orçar: …").
+- Pedido ao Orçador: aceitar `&placa=` em `#/cotacao?...` (hoje só `tel` e `nome`).
+- Pedido à Casa/CRM: abrir o lead mostrando a observação "CARRO NO PÁTIO AGORA".

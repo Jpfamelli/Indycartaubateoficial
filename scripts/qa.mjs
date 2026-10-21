@@ -16,7 +16,7 @@ import { texto as textoWa, MENSAGENS, PREFIXO } from './mensagens-whatsapp.mjs';
 const AXE = fs.readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
 const SITE_LEAD = 'https://nppfqhavqahapmugnyng.supabase.co/functions/v1/site-lead';
 // Resposta falsa da Edge Function site-lead: o teste NUNCA grava no banco de verdade.
-const FETCH_FALSO = `window.__envios = []; window.__horariosPedidos = 0; window.fetch = async (url, opts) => { if (String(url).endsWith('/horarios')) { window.__horariosPedidos++; if (window.__horariosFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, atualizado_em: '2026-10-21T15:00:00.000Z', dias: [{ data: '2026-10-21', rotulo: 'hoje', horas: ['08:00', '10:00', '12:00', '14:00', '16:00'] }, { data: '2026-10-22', rotulo: 'amanhã', horas: ['08:00', '10:00'] }, { data: '2026-10-23', rotulo: 'sex 23/10', horas: ['09:00'] }] }) }; } window.__envios.push({ url: String(url), body: JSON.parse(opts.body) }); if (window.__fetchFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, protocolo: 'QA1234', mensagem: 'Pedido enviado, Teste! (resposta de teste)' }) }; };`;
+const FETCH_FALSO = `window.__envios = []; window.__horariosPedidos = 0; window.fetch = async (url, opts) => { if (String(url).endsWith('/horarios')) { window.__horariosPedidos++; if (window.__horariosFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, atualizado_em: '2026-10-21T15:00:00.000Z', dias: window.__horariosVazio ? [] : [{ data: '2026-10-21', rotulo: 'hoje', horas: ['08:00', '10:00', '12:00', '14:00', '16:00'] }, { data: '2026-10-22', rotulo: 'amanhã', horas: ['08:00', '10:00'] }, { data: '2026-10-23', rotulo: 'sex 23/10', horas: ['09:00'] }] }) }; } window.__envios.push({ url: String(url), body: JSON.parse(opts.body) }); if (window.__fetchFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, protocolo: 'QA1234', mensagem: 'Pedido enviado, Teste! (resposta de teste)' }) }; };`;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'qa-out');
@@ -463,6 +463,8 @@ for (const w of [375, 1440]) {
     formLista: document.querySelectorAll('#fHorariosLista .horario-chip').length,
   }));
   ok(f.servico === 'diagnostico' && f.quandoOff && f.marcados >= 2 && f.formLista > 0, `${w}px: tocar num horário abre o formulário com o diagnóstico e o horário marcado nas duas listas`);
+  ok(await page.evaluate(() => /Você escolheu hoje às 10:00/.test(document.getElementById('fHorarioEscolhido').textContent) && document.getElementById('fHorarioEscolhido').getAttribute('aria-live') === 'polite'), `${w}px: o formulário avisa em voz alta (aria-live) qual horário foi escolhido`);
+  ok(await page.evaluate(() => document.getElementById('horariosLista').getAttribute('role') === 'group' && document.getElementById('horariosLista').getAttribute('aria-labelledby') === 'horariosTitulo'), `${w}px: lista de horários é um grupo com nome acessível`);
   ok(f.pedidos === 1, `${w}px: a consulta de horários é reaproveitada (não repete a cada abertura)`);
   // placa com máscara e envio com horário + placa
   await page.type('#fPlaca', 'abc-1d23');
@@ -477,6 +479,7 @@ for (const w of [375, 1440]) {
   ok(e.envios.length === 1 && c.horario && c.horario.data === '2026-10-21' && c.horario.hora === '10:00' && c.placa === 'ABC1D23' && c.servico === 'Diagnóstico digital gratuito', `${w}px: o pedido leva o horário escolhido (2026-10-21 10:00) e a placa ABC1D23 para a Edge Function`);
   ok(decodeURIComponent(e.wa).includes('Placa: ABC1D23') && decodeURIComponent(e.wa).includes('Horário: hoje às 10:00'), `${w}px: a mensagem do WhatsApp também leva a placa e o horário`);
   ok(await page.evaluate(() => { const b = document.getElementById('formOkCopiar'); return !b.hidden && getComputedStyle(b).display !== 'none' && /Copiar/.test(b.textContent); }), `${w}px: a confirmação oferece "Copiar protocolo" e leva à Minha IndyCar`);
+  ok(await page.evaluate(() => document.getElementById('fHorarioEscolhido').textContent === ''), `${w}px: depois de enviar o aviso "Você escolheu…" some`);
   ok(!e.quandoOff && e.marcados === 0, `${w}px: depois de enviar o horário é desmarcado e "Quando prefere?" volta`);
   // roteador de links e códigos
   const t36 = 'a'.repeat(36), t48 = 'b1'.repeat(24), t32 = 'c2'.repeat(16);
@@ -508,6 +511,20 @@ for (const w of [375, 1440]) {
   await page.close();
 }
 {
+  // Agenda cheia: aviso com caminho para o WhatsApp, em vez de sumir sem explicar
+  const { page } = await abrir(375, 812);
+  await page.evaluate(FETCH_FALSO);
+  await page.evaluate(() => { window.__horariosVazio = true; document.documentElement.style.scrollBehavior = 'auto'; document.getElementById('diagnostico').scrollIntoView(); });
+  await page.waitForFunction(() => /agenda está cheia/.test(document.getElementById('horariosLista').textContent), { timeout: 6000 }).catch(() => {});
+  ok(await page.evaluate(() => !document.getElementById('horarios').hidden && /agenda está cheia/.test(document.getElementById('horariosLista').textContent) && document.getElementById('fHorarios').hidden), 'agenda cheia: a caixa avisa e manda chamar no WhatsApp (e o formulário não mostra horários)');
+  // Nome de um caractere só é barrado no próprio site
+  await page.evaluate(() => { document.querySelector('.hero-cta [data-open-modal]').click(); });
+  await page.type('#fName', 'X'); await page.type('#fPhone', '12996830272');
+  await page.evaluate(() => document.querySelector('#leadForm button[type=submit]').click());
+  ok(await page.evaluate(() => document.getElementById('fName').getAttribute('aria-invalid') === 'true' && window.__envios.length === 0), 'nome com menos de 2 letras é barrado no site (sem ir ao servidor)');
+  await page.close();
+}
+{
   // Sem rede: os horários somem sem quebrar nada
   const { page } = await abrir(375, 812);
   await page.evaluate(FETCH_FALSO);
@@ -531,7 +548,10 @@ for (const w of [375, 1440]) {
   ok(man.shortcuts.some(x => x.url === '/horarios') && man.shortcuts.length <= 4, 'manifesto: atalho "Horários livres" e no máximo 4 atalhos');
   ok(fs.readFileSync(path.join(ROOT, '404.html'), 'utf8').includes('href="/#horarios"'), '404 oferece os horários livres');
   ok(fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8').includes('<lastmod>2026-10-21</lastmod>'), 'sitemap com lastmod de hoje');
+  ok(html.includes('<noscript><p class="sem-js">') && html.includes('href="tel:+551236245957"') && html.includes('href="tel:+5512996830272"'), 'sem JavaScript aparece o aviso com WhatsApp e telefone; o celular tem link "Ligar" (tel:)');
+  ok(toml.includes('Link = "</fontes/archivo-variavel.woff2>') && toml.includes('inter-variavel.woff2>; rel=preload'), 'netlify.toml: cabeçalho Link pré-carrega as duas fontes da primeira dobra');
   const fn = fs.readFileSync(path.join(ROOT, 'supabase/functions/site-lead/index.ts'), 'utf8');
+  ok(fn.includes('venceEm('), 'Edge Function: a tarefa vence antes do horário pedido (hoje)');
   ok(/servico_id: servicoId/.test(fn) && /horario_livre/.test(fn), 'Edge Function: serviço do cadastro (servico_id) e rastro do horário/placa em site_pedidos');
   ok(/rota === 'horarios'/.test(fn) && /horarioLivre\(/.test(fn) && /linksDaEquipe\(/.test(fn) && /extrairPlaca/.test(fn), 'Edge Function: /horarios, conferência do horário, links da equipe e placa no lead');
 }

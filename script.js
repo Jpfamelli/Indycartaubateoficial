@@ -908,7 +908,7 @@
     const digitos = phone.value.replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
     const foneOk = (digitos.length === 10 || digitos.length === 11) && !/^(\d)\1+$/.test(digitos) && /^[1-9][1-9]/.test(digitos) && digitos[2] !== '0' && (digitos.length === 10 || digitos[2] === '9'); // mesma regra da Edge Function
     [name, phone, service].forEach(f => {
-      const bad = !f.value.trim() || (f === phone && !foneOk);
+      const bad = !f.value.trim() || (f === phone && !foneOk) || (f === name && !/[A-Za-zÀ-ÿ]{2}/.test(f.value));
       f.classList.toggle('invalid', bad);
       f.setAttribute('aria-invalid', String(bad));
       if (bad) ok = false;
@@ -996,8 +996,8 @@
         const r = await fetch(SITE_LEAD_URL + '/horarios', { mode: 'cors', signal: ctrl.signal });
         clearTimeout(t);
         const corpo = await r.json();
-        if (!r.ok || !corpo || !Array.isArray(corpo.dias) || !corpo.dias.length) return null;
-        return corpo;
+        if (!r.ok || !corpo || !Array.isArray(corpo.dias)) return null;
+        return corpo; // dias vazio = agenda cheia nos próximos dias (mostrada com aviso, sem esconder)
       } catch (_) { return null; }
     })();
     return horariosPromessa;
@@ -1023,6 +1023,8 @@
   }
   function marcarHorario() {
     $$('.horario-chip').forEach(b => b.setAttribute('aria-pressed', String(!!horarioEscolhido && b.dataset.data === horarioEscolhido.data && b.dataset.hora === horarioEscolhido.hora)));
+    const dica = $('#fHorarioEscolhido');
+    if (dica) dica.textContent = horarioEscolhido ? 'Você escolheu ' + horarioEscolhido.rotulo + '. Toque de novo no horário para tirar.' : '';
     const q = $('#fQuando');
     if (q) q.disabled = !!horarioEscolhido; // o horário escolhido já diz quando; o campo volta se a pessoa desmarcar
   }
@@ -1031,14 +1033,19 @@
     const corpo = await carregarHorarios();
     const caixa = $('#horarios');
     if (!corpo) { if (caixa) caixa.hidden = true; $$('[data-so-horarios]').forEach(e => { e.hidden = true; }); return; } // Agenda não respondeu: a caixa some, o formulário segue igual
-    if (caixa && !$('#horariosLista').querySelector('.horarios-dia')) {
+    if (caixa && !corpo.dias.length) {
+      const l = $('#horariosLista'); l.textContent = '';
+      const p = document.createElement('p'); p.className = 'horarios-carregando';
+      p.textContent = 'A agenda está cheia nos próximos dias. Chame a gente no WhatsApp que a equipe encaixa o seu carro.';
+      l.appendChild(p); caixa.hidden = false; caixa.removeAttribute('aria-busy');
+    } else if (caixa && !$('#horariosLista').querySelector('.horarios-dia')) {
       pintarHorarios($('#horariosLista'), corpo, 'secao');
       const hh = new Date(corpo.atualizado_em);
       if (!isNaN(hh)) $('#horariosAtualizado').textContent = 'Atualizado às ' + hh.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) + '.';
       caixa.hidden = false; caixa.removeAttribute('aria-busy');
     }
     const f = $('#fHorarios');
-    if (f && !$('#fHorariosLista').children.length) { pintarHorarios($('#fHorariosLista'), corpo, 'form'); f.hidden = false; }
+    if (f && corpo.dias.length && !$('#fHorariosLista').children.length) { pintarHorarios($('#fHorariosLista'), corpo, 'form'); f.hidden = false; }
     marcarHorario();
   }
   document.addEventListener('click', (e) => {
