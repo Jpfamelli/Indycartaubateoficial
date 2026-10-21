@@ -306,10 +306,35 @@ Site ligado ao resto da IndyCar: horários livres da Agenda no site e no formul�
 217. Cabeçalho `Link: rel=preload` das duas fontes da primeira dobra no `netlify.toml`.
 218. Alto contraste (`forced-colors`) nos novos botões e campos; impressão sem horários e sem o roteador.
 219. Sitemap com `lastmod` de hoje.
-220. Teste (`npm test`) com timeout de protocolo maior e rolagem instantânea nos novos cenários (a máquina compartilhada ficava lenta e derrubava o Chrome): 119 → 176 verificações.
+220. Teste (`npm test`) com timeout de protocolo maior e rolagem instantânea nos novos cenários (a máquina compartilhada ficava lenta e derrubava o Chrome): 119 → ~200 verificações.
+
+### Mais ligações, segurança e acabamento (lotes 4 e 5)
+221. 🔗 JSON-LD: cada um dos 12 serviços da oficina tem endereço próprio (`#svc-cambio`, `#svc-freios`…), conferido pelo teste contra os ids da página (o Google pode mostrar o serviço direto).
+222. `robots.txt`: os atalhos que só redirecionam (`/s/`, `/agendar`, `/orcamento`, `/horarios`, `/indicar`, `/whatsapp`, `/minha-indycar`) ficam fora do Google; o sitemap continua.
+223. `application-name` e `apple-mobile-web-app-title` (nome certo ao instalar o site na tela inicial).
+224. 🔗 Rodapé: "Horários livres" (some se a Agenda não responde), "Indicar um amigo" (Minha IndyCar, seção indicar) e "Colar link ou código".
+225. 🔗 Área do Cliente: "Quer indicar um amigo? Indique pela Minha IndyCar" (lead com origem indicação no CRM, feito pelo Pátio).
+226. Contador "0/500" no campo "o que o carro está fazendo": a pessoa vê antes de o texto ser cortado.
+227. Erro por campo com frase e `aria-describedby` (nome com pelo menos 2 letras e serviço), além do telefone que já tinha.
+228. 🔗 Roteador aceita o link colado sem `https://` (como chega copiado de mensagem).
+229. Segurança: o servidor troca por espaço caracteres de controle e invisíveis (zero-width, marcas de direção, nulos) em nome, carro, mensagem e campanha, para ninguém esconder texto no CRM; teste cobre.
+230. Segurança: a "página de origem" só vale se começar com `/` (nada de endereço de outro site gravado no lead).
+231. `Retry-After: 60` nas respostas 429 (limite por minuto).
+232. Horário escolhido só vale até 30 dias à frente (a lista mostra no máximo 14).
+233. Privacidade: a descrição da página (meta) também deixou de dizer "contato só pelo WhatsApp".
+234. `prefers-reduced-motion` também nos botões de horário e no "copiar protocolo".
+235. Botão "Abrir" do roteador centralizado e em largura total no celular (conferido em captura de 375 px).
+236. 🔗 O convite de 8 s mostra o próximo horário livre da Agenda ("hoje às 14:30"); tocar fecha o convite e abre o formulário com o diagnóstico e o horário marcados.
+237. 🔗 A consulta de horários é aquecida aos 5 s (quando a página assentou): convite e formulário já abrem com os horários, sem espera.
+238. A lista de horários é repintada quando a Agenda muda; o horário escolhido que sumiu é solto e o aviso em voz alta diz qual foi ("acabou de ser ocupado, escolha outro").
+239. "Quando prefere?" só oferece o que existe: sem "Hoje" aos domingos e depois das 17h30, sem "Amanhã" aos sábados.
+240. Teste: página sem JavaScript (aviso com WhatsApp e telefone, caixa de horários escondida, sem rolagem horizontal).
+241. Teste contra a Edge Function de verdade (só leitura): `GET /horarios` com CORS, até 4 dias, horas de meia em meia hora e só data/hora (nenhum dado de cliente).
+242. Teste do axe-core (WCAG 2.1 AA) com os horários na tela, o formulário aberto (placa, horário, contador) e o roteador: nenhuma violação séria/crítica em 375 e 1440 px.
+243. README com o contrato novo (horários, placa, códigos de WhatsApp, roteador, atalhos e a Edge Function).
 
 ### Como verifiquei
-- `npm test` (176 verificações em 375/1440 px com a Edge Function falsa: nada vai ao banco real) + 10 testes da lógica (`node --test`).
+- `npm test` (200 verificações em 375/1440 px com a Edge Function falsa: nada vai ao banco real) + 12 testes da lógica (`node --test`).
 - Edge Function publicada (v4+): `GET /horarios` real devolve os dias e horas da Agenda; as colunas, o `servico_id`, a placa e o rastro foram testados por DO-block revertido (`TESTE_REVERTIDO`); `get_advisors` sem aviso novo.
 - Nenhum pedido de teste foi gravado no banco real.
 

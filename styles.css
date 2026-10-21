@@ -1798,3 +1798,7 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
 .field-conta { text-align: right; }
 .field-conta.perto { color: #ffb4b8; }
 @media (prefers-reduced-motion: reduce) { .horario-chip, .form-ok-copiar { transition: none; } }
+.promo-proximo { margin: 4px 0 14px; color: #d8d8dc; font-size: .95rem; }
+.promo-slot { color: #fff; font-weight: 700; text-decoration: underline; text-decoration-color: rgba(229,9,20,.7); text-underline-offset: 4px; cursor: pointer; padding: 6px 2px; min-height: 40px; }
+.promo-slot:hover { color: var(--red); }
+.area-cola-linha .btn { justify-content: center; text-align: center; }

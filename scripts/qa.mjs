@@ -16,7 +16,7 @@ import { texto as textoWa, MENSAGENS, PREFIXO } from './mensagens-whatsapp.mjs';
 const AXE = fs.readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
 const SITE_LEAD = 'https://nppfqhavqahapmugnyng.supabase.co/functions/v1/site-lead';
 // Resposta falsa da Edge Function site-lead: o teste NUNCA grava no banco de verdade.
-const FETCH_FALSO = `window.__envios = []; window.__horariosPedidos = 0; window.fetch = async (url, opts) => { if (String(url).endsWith('/horarios')) { window.__horariosPedidos++; if (window.__horariosFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, atualizado_em: '2026-10-21T15:00:00.000Z', dias: window.__horariosVazio ? [] : [{ data: '2026-10-21', rotulo: 'hoje', horas: ['08:00', '10:00', '12:00', '14:00', '16:00'] }, { data: '2026-10-22', rotulo: 'amanhã', horas: ['08:00', '10:00'] }, { data: '2026-10-23', rotulo: 'sex 23/10', horas: ['09:00'] }] }) }; } window.__envios.push({ url: String(url), body: JSON.parse(opts.body) }); if (window.__fetchFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, protocolo: 'QA1234', mensagem: 'Pedido enviado, Teste! (resposta de teste)' }) }; };`;
+const FETCH_FALSO = `window.__envios = []; window.__horariosPedidos = 0; window.fetch = async (url, opts) => { if (String(url).endsWith('/horarios')) { window.__horariosPedidos++; if (window.__horariosFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, atualizado_em: '2026-10-21T15:0' + Math.min(window.__horariosPedidos, 9) + ':00.000Z', dias: window.__horariosVazio ? [] : [{ data: '2026-10-21', rotulo: 'hoje', horas: window.__horariosMuda && window.__horariosPedidos > 1 ? ['08:00', '12:00'] : ['08:00', '10:00', '12:00', '14:00', '16:00'] }, { data: '2026-10-22', rotulo: 'amanhã', horas: ['08:00', '10:00'] }, { data: '2026-10-23', rotulo: 'sex 23/10', horas: ['09:00'] }] }) }; } window.__envios.push({ url: String(url), body: JSON.parse(opts.body) }); if (window.__fetchFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, protocolo: 'QA1234', mensagem: 'Pedido enviado, Teste! (resposta de teste)' }) }; };`;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'qa-out');
@@ -466,6 +466,14 @@ for (const w of [375, 1440]) {
   ok(await page.evaluate(() => /Você escolheu hoje às 10:00/.test(document.getElementById('fHorarioEscolhido').textContent) && document.getElementById('fHorarioEscolhido').getAttribute('aria-live') === 'polite'), `${w}px: o formulário avisa em voz alta (aria-live) qual horário foi escolhido`);
   ok(await page.evaluate(() => document.getElementById('horariosLista').getAttribute('role') === 'group' && document.getElementById('horariosLista').getAttribute('aria-labelledby') === 'horariosTitulo'), `${w}px: lista de horários é um grupo com nome acessível`);
   ok(f.pedidos === 1, `${w}px: a consulta de horários é reaproveitada (não repete a cada abertura)`);
+  await page.evaluate(() => { document.documentElement.classList.add('cv-off'); document.querySelectorAll('.reveal, .section-head').forEach(e => e.classList.add('in')); });
+  await new Promise(r => setTimeout(r, 1200));
+  await page.evaluate(AXE);
+  const axe6 = await page.evaluate(async () => {
+    const r = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa'] }, resultTypes: ['violations'] });
+    return r.violations.filter(v => v.impact === 'serious' || v.impact === 'critical').map(v => v.id + ' (' + v.nodes.length + '): ' + v.nodes.slice(0, 2).map(n => n.target.join(' ')).join(' | '));
+  });
+  ok(axe6.length === 0, `${w}px: axe-core sem violação séria/crítica com horários na tela, formulário aberto (placa, horário, contador) e roteador` + (axe6.length ? ': ' + axe6.join(' ;; ') : ''));
   // placa com máscara e envio com horário + placa
   await page.type('#fPlaca', 'abc-1d23');
   ok(await page.$eval('#fPlaca', i => i.value) === 'ABC1D23', `${w}px: placa vira maiúscula e sem hífen (ABC1D23)`);
@@ -520,6 +528,65 @@ for (const w of [375, 1440]) {
   ok(erros.length === 0, `${w}px: sem erro de console nos horários e no roteador` + (erros.length ? ': ' + erros.slice(0, 2).join(' | ') : ''));
   await page.screenshot({ path: path.join(OUT, `r6-horarios-${w}.png`) });
   await page.close();
+}
+{
+  // A Agenda muda enquanto a página está aberta: a lista é repintada e o horário que sumiu é solto com aviso
+  const { page } = await abrir(375, 812);
+  await page.evaluate(FETCH_FALSO);
+  await page.evaluate(() => { window.__horariosTtl = 0; document.documentElement.style.scrollBehavior = 'auto'; document.getElementById('diagnostico').scrollIntoView(); });
+  await page.waitForFunction(() => document.querySelector('#horariosLista .horario-chip'), { timeout: 6000 }).catch(() => {});
+  await page.evaluate(() => { document.querySelector('#horariosLista .horario-chip[data-hora="10:00"]').click(); });
+  await page.waitForSelector('#formBackdrop.open', { timeout: 3000 });
+  await page.evaluate(() => { window.__horariosMuda = true; document.querySelector('#formBackdrop [data-close-form]').click(); });
+  await new Promise(r => setTimeout(r, 500));
+  await page.evaluate(() => { document.querySelector('.hero-cta [data-open-modal]').click(); });
+  await page.waitForFunction(() => /acabou de ser ocupado/.test(document.getElementById('fHorarioEscolhido').textContent), { timeout: 5000 }).catch(() => {});
+  const mud = await page.evaluate(() => ({ aviso: document.getElementById('fHorarioEscolhido').textContent, marcados: document.querySelectorAll('.horario-chip[aria-pressed="true"]').length, tem10: !!document.querySelector('.horario-chip[data-data="2026-10-21"][data-hora="10:00"]'), quandoOff: document.getElementById('fQuando').disabled }));
+  ok(/acabou de ser ocupado/.test(mud.aviso) && mud.marcados === 0 && !mud.tem10 && !mud.quandoOff, 'Agenda mudou: a lista é repintada, o horário que sumiu é solto e o aviso fala qual foi ' + JSON.stringify(mud));
+  await page.close();
+}
+{
+  // Convite de 8 s mostra o próximo horário livre; tocar leva ao formulário com ele marcado
+  const page = await browser.newPage();
+  await page.evaluateOnNewDocument(FETCH_FALSO);
+  await page.setViewport({ width: 375, height: 812, isMobile: true, hasTouch: true });
+  await page.goto(BASE + '/', { waitUntil: 'networkidle2', timeout: 45000 });
+  await page.waitForSelector('#promoBackdrop.open', { timeout: 15000 }).catch(() => {});
+  const promo = await page.evaluate(() => ({ aberto: document.getElementById('promoBackdrop').classList.contains('open'), vis: !document.getElementById('promoProximo').hidden, txt: document.getElementById('promoSlot').textContent }));
+  ok(promo.aberto && promo.vis && promo.txt === 'hoje às 08:00', 'convite de 8 s mostra o próximo horário livre (hoje às 08:00)');
+  await page.evaluate(() => document.getElementById('promoSlot').click());
+  await page.waitForSelector('#formBackdrop.open', { timeout: 3000 });
+  const viaPromo = await page.evaluate(() => ({ servico: document.getElementById('fService').selectedOptions[0]?.dataset.codigo, aviso: document.getElementById('fHorarioEscolhido').textContent, promoFechou: !document.getElementById('promoBackdrop').classList.contains('open') }));
+  ok(viaPromo.servico === 'diagnostico' && /hoje às 08:00/.test(viaPromo.aviso) && viaPromo.promoFechou, 'tocar no horário do convite fecha o convite e abre o formulário com o diagnóstico e o horário marcados');
+  await page.close();
+}
+{
+  // Domingo: "Quando prefere?" não oferece "Hoje"; sábado: não oferece "Amanhã"
+  for (const [quando, tira, fica] of [['2026-10-25T15:00:00Z', 'Hoje', 'Amanhã'], ['2026-10-24T15:00:00Z', 'Amanhã', 'Hoje']]) {
+    const page = await browser.newPage();
+    await page.evaluateOnNewDocument((fixo) => { const R = Date; const F = R.parse(fixo); globalThis.Date = class extends R { constructor(...a) { if (a.length) super(...a); else super(F); } static now() { return F; } }; try { sessionStorage.setItem('indycar_promo', '1'); } catch (_) {} }, quando);
+    await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 45000 });
+    const ops = await page.evaluate(() => [...document.querySelectorAll('#fQuando option')].map(o => o.textContent.trim()));
+    ok(!ops.includes(tira) && ops.includes(fica), '"Quando prefere?" em ' + (tira === 'Hoje' ? 'domingo' : 'sábado') + ' não oferece "' + tira + '" (mas mantém "' + fica + '")');
+    await page.close();
+  }
+}
+{
+  // Sem JavaScript: aviso com WhatsApp e telefone aparece e a caixa de horários não fica vazia na tela
+  const page = await browser.newPage();
+  await page.setJavaScriptEnabled(false);
+  await page.setViewport({ width: 375, height: 812, isMobile: true, hasTouch: true });
+  await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 45000 });
+  const nj = await page.evaluate(() => ({ aviso: !!document.querySelector('noscript') && document.body.innerText.includes('precisa de JavaScript'), caixa: getComputedStyle(document.getElementById('horarios')).display, sw: document.documentElement.scrollWidth <= innerWidth }));
+  ok(nj.aviso && nj.caixa === 'none' && nj.sw, 'sem JavaScript: aviso com WhatsApp e telefone, caixa de horários escondida e sem rolagem horizontal');
+  await page.close();
+}
+{
+  // Edge Function de verdade (só leitura): /horarios responde no formato certo e sem dado de cliente
+  let r = null;
+  try { const x = await fetch(SITE_LEAD + '/horarios', { headers: { origin: 'https://indycar-taubate.netlify.app' } }); r = { status: x.status, cors: x.headers.get('access-control-allow-origin'), corpo: await x.json() }; } catch (_) { /* sem internet */ }
+  if (r) ok(r.status === 200 && r.cors === 'https://indycar-taubate.netlify.app' && Array.isArray(r.corpo.dias) && r.corpo.dias.length <= 4 && r.corpo.dias.every(d => /^\d{4}-\d{2}-\d{2}$/.test(d.data) && Object.keys(d).sort().join() === 'data,horas,rotulo' && d.horas.every(h => /^\d{2}:(00|30)$/.test(h))), 'Edge Function no ar: GET /horarios com CORS, até 4 dias, horas de meia em meia hora e só data/hora (nenhum dado de cliente)');
+  else console.log('  info sem internet: /horarios não conferido');
 }
 {
   // Agenda cheia: aviso com caminho para o WhatsApp, em vez de sumir sem explicar

@@ -989,9 +989,9 @@
   // Horários livres de verdade: GET site-lead/horarios (data e hora livres na Agenda; nunca dado de cliente).
   // Se a consulta falhar, as duas caixas ficam escondidas e o formulário segue como sempre.
   let horarioEscolhido = null; // { data, hora, rotulo }
-  let horariosPromessa = null, horariosEm = 0;
+  let horariosPromessa = null, horariosEm = 0, horariosPintados = '';
   function carregarHorarios() {
-    if (horariosPromessa && Date.now() - horariosEm < 60000) return horariosPromessa;
+    if (horariosPromessa && Date.now() - horariosEm < Number(window.__horariosTtl ?? 60000)) return horariosPromessa;
     horariosEm = Date.now();
     horariosPromessa = (async () => {
       try {
@@ -1042,15 +1042,23 @@
       const p = document.createElement('p'); p.className = 'horarios-carregando';
       p.textContent = 'A agenda está cheia nos próximos dias. Chame a gente no WhatsApp que a equipe encaixa o seu carro.';
       l.appendChild(p); caixa.hidden = false; caixa.removeAttribute('aria-busy');
-    } else if (caixa && !$('#horariosLista').querySelector('.horarios-dia')) {
+    } else if (caixa && corpo.atualizado_em !== horariosPintados) {
       pintarHorarios($('#horariosLista'), corpo, 'secao');
       const hh = new Date(corpo.atualizado_em);
       if (!isNaN(hh)) $('#horariosAtualizado').textContent = 'Atualizado às ' + hh.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) + '.';
       caixa.hidden = false; caixa.removeAttribute('aria-busy');
     }
     const f = $('#fHorarios');
-    if (f && corpo.dias.length && !$('#fHorariosLista').children.length) { pintarHorarios($('#fHorariosLista'), corpo, 'form'); f.hidden = false; }
+    if (f && corpo.dias.length && corpo.atualizado_em !== horariosPintados) { pintarHorarios($('#fHorariosLista'), corpo, 'form'); f.hidden = false; }
+    horariosPintados = corpo.atualizado_em;
+    if (horarioEscolhido && !$$('.horario-chip').some(b => b.dataset.data === horarioEscolhido.data && b.dataset.hora === horarioEscolhido.hora)) {
+      // a Agenda mudou e o horário escolhido não está mais livre: solta e avisa em voz alta
+      const rot = horarioEscolhido.rotulo; horarioEscolhido = null; marcarHorario();
+      const d = $('#fHorarioEscolhido'); if (d) d.textContent = 'O horário ' + rot + ' acabou de ser ocupado. Escolha outro.';
+      return;
+    }
     marcarHorario();
+    preencherPromo(corpo);
   }
   document.addEventListener('click', (e) => {
     const b = e.target.closest && e.target.closest('.horario-chip');
@@ -1063,6 +1071,32 @@
       openEl(formBackdrop);
     }
   });
+  // Convite de 8 s: mostra o próximo horário livre de verdade (e um toque já leva ao formulário com ele marcado).
+  function preencherPromo(corpo) {
+    const p = $('#promoProximo'), b = $('#promoSlot');
+    const dia = corpo && corpo.dias && corpo.dias[0];
+    if (!p || !b || !dia || !dia.horas || !dia.horas.length) return;
+    b.dataset.data = dia.data; b.dataset.hora = dia.horas[0]; b.dataset.rotulo = dia.rotulo + ' às ' + dia.horas[0];
+    b.textContent = b.dataset.rotulo; p.hidden = false;
+  }
+  (function () {
+    const b = $('#promoSlot'); if (!b) return;
+    b.addEventListener('click', () => {
+      horarioEscolhido = { data: b.dataset.data, hora: b.dataset.hora, rotulo: b.dataset.rotulo };
+      if (!$('#fService').value) escolherServico('diagnostico');
+      closeEl(promoBackdrop); openEl(formBackdrop); montarHorarios();
+    });
+    // aquece a consulta depois de a página assentar: o convite e o formulário já abrem com os horários
+    setTimeout(() => { if (!document.hidden) montarHorarios(); }, 5000);
+  })();
+  // "Quando prefere?" só oferece o que existe: domingo e depois das 17h30 não tem "Hoje"; sábado não tem "Amanhã" (domingo fechado).
+  (function () {
+    const q = $('#fQuando'); if (!q) return;
+    const { dia, minutos } = agoraSP();
+    const tirar = (txt) => { const o = $$('option', q).find(x => x.textContent.trim() === txt); if (o) o.remove(); };
+    if (dia === 'Sun' || minutos >= 1050) tirar('Hoje');
+    if (dia === 'Sat') tirar('Amanhã');
+  })();
   // A caixa já nasce com o tamanho final (esqueleto com altura reservada): quando os horários chegam nada pula na tela,
   // e quem entra por #contato ou #faq não perde o lugar. Sem JavaScript ela fica escondida.
   (function () {
