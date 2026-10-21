@@ -865,12 +865,24 @@
     $('#formOkTexto').textContent = resposta.mensagem || 'A equipe confirma o horário com você pelo WhatsApp, de segunda a sábado, das 8h às 17h30.';
     const proto = $('#formOkProto');
     if (proto) { proto.hidden = !resposta.protocolo; if (resposta.protocolo) $('b', proto).textContent = resposta.protocolo; }
+    const copiar = $('#formOkCopiar');
+    if (copiar) { copiar.hidden = !resposta.protocolo; copiar.textContent = 'Copiar protocolo'; }
     const wa = $('#formOkWa');
     if (wa) { wa.href = waHref; wa.textContent = resposta.direto ? 'Abrir no WhatsApp' : 'Quer adiantar? Abrir no WhatsApp'; }
     formOk.hidden = false;
     formOk.focus?.();
     $('.form-ok-fechar', formOk)?.focus();
   }
+  // Copiar o protocolo (para colar no WhatsApp se a pessoa quiser adiantar a conversa).
+  (function () {
+    const b = $('#formOkCopiar');
+    if (!b) return;
+    b.addEventListener('click', async () => {
+      const codigo = ($('b', $('#formOkProto')) || {}).textContent || '';
+      try { await navigator.clipboard.writeText('Protocolo ' + codigo); b.textContent = 'Copiado!'; }
+      catch (_) { b.textContent = 'Protocolo: ' + codigo; }
+    });
+  })();
   function voltarAoFormulario() {
     if (!formOk || formOk.hidden) return;
     formOk.hidden = true;
@@ -1018,7 +1030,7 @@
   async function montarHorarios() {
     const corpo = await carregarHorarios();
     const caixa = $('#horarios');
-    if (!corpo) { if (caixa) caixa.hidden = true; return; } // Agenda não respondeu: a caixa some, o formulário segue igual
+    if (!corpo) { if (caixa) caixa.hidden = true; $$('[data-so-horarios]').forEach(e => { e.hidden = true; }); return; } // Agenda não respondeu: a caixa some, o formulário segue igual
     if (caixa && !$('#horariosLista').querySelector('.horarios-dia')) {
       pintarHorarios($('#horariosLista'), corpo, 'secao');
       const hh = new Date(corpo.atualizado_em);

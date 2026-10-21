@@ -476,6 +476,7 @@ for (const w of [375, 1440]) {
   const c = e.envios[0]?.body || {};
   ok(e.envios.length === 1 && c.horario && c.horario.data === '2026-10-21' && c.horario.hora === '10:00' && c.placa === 'ABC1D23' && c.servico === 'Diagnóstico digital gratuito', `${w}px: o pedido leva o horário escolhido (2026-10-21 10:00) e a placa ABC1D23 para a Edge Function`);
   ok(decodeURIComponent(e.wa).includes('Placa: ABC1D23') && decodeURIComponent(e.wa).includes('Horário: hoje às 10:00'), `${w}px: a mensagem do WhatsApp também leva a placa e o horário`);
+  ok(await page.evaluate(() => { const b = document.getElementById('formOkCopiar'); return !b.hidden && getComputedStyle(b).display !== 'none' && /Copiar/.test(b.textContent); }), `${w}px: a confirmação oferece "Copiar protocolo" e leva à Minha IndyCar`);
   ok(!e.quandoOff && e.marcados === 0, `${w}px: depois de enviar o horário é desmarcado e "Quando prefere?" volta`);
   // roteador de links e códigos
   const t36 = 'a'.repeat(36), t48 = 'b1'.repeat(24), t32 = 'c2'.repeat(16);
@@ -514,6 +515,7 @@ for (const w of [375, 1440]) {
   await new Promise(r => setTimeout(r, 900));
   const sem = await page.evaluate(() => ({ escondido: document.getElementById('horarios').hidden, form: document.getElementById('fHorarios').hidden }));
   ok(sem.escondido && sem.form, 'se a Agenda não responde, as caixas de horário ficam escondidas (o formulário segue igual)');
+  ok(await page.evaluate(() => [...document.querySelectorAll('[data-so-horarios]')].length === 2 && [...document.querySelectorAll('[data-so-horarios]')].every(e => getComputedStyle(e).display === 'none')), 'sem Agenda, os links "Ver horários livres" também somem (nenhum link para o vazio)');
   await page.close();
 }
 {
@@ -523,7 +525,14 @@ for (const w of [375, 1440]) {
   const ld = JSON.parse(/<script type="application\/ld\+json">\s*(\{[\s\S]*?"@type": "AutoRepair"[\s\S]*?\n\})\s*<\/script>/.exec(html)[1]);
   ok(ld.potentialAction && ld.potentialAction.target.urlTemplate === 'https://indycar-taubate.netlify.app/agendar' && !('priceRange' in ld), 'JSON-LD: ação "Pedir horário" (ReserveAction → /agendar) e sem faixa de preço inventada');
   ok(/hreflang="pt-BR"/.test(html) && /geo\.region" content="BR-SP"/.test(html), 'SEO local: hreflang pt-BR e geo.region BR-SP');
+  const priv = fs.readFileSync(path.join(ROOT, 'privacidade.html'), 'utf8');
+  ok(!/não envia nada para servidor nenhum/.test(priv) && /envia o pedido direto para o sistema da oficina/.test(priv) && /placa/.test(priv) && /horários livres/i.test(priv), 'privacidade diz a verdade: o formulário envia o pedido ao sistema da oficina (placa, horário, hash de rede) e os horários só mostram dia e hora');
+  const man = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
+  ok(man.shortcuts.some(x => x.url === '/horarios') && man.shortcuts.length <= 4, 'manifesto: atalho "Horários livres" e no máximo 4 atalhos');
+  ok(fs.readFileSync(path.join(ROOT, '404.html'), 'utf8').includes('href="/#horarios"'), '404 oferece os horários livres');
+  ok(fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8').includes('<lastmod>2026-10-21</lastmod>'), 'sitemap com lastmod de hoje');
   const fn = fs.readFileSync(path.join(ROOT, 'supabase/functions/site-lead/index.ts'), 'utf8');
+  ok(/servico_id: servicoId/.test(fn) && /horario_livre/.test(fn), 'Edge Function: serviço do cadastro (servico_id) e rastro do horário/placa em site_pedidos');
   ok(/rota === 'horarios'/.test(fn) && /horarioLivre\(/.test(fn) && /linksDaEquipe\(/.test(fn) && /extrairPlaca/.test(fn), 'Edge Function: /horarios, conferência do horário, links da equipe e placa no lead');
 }
 

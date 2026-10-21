@@ -59,3 +59,10 @@ test('rótulo e fuso', () => {
   assert.equal(rotuloHorario('2026-10-22', '08:30'), 'qui 22/10 às 08:30');
   assert.deepEqual(agoraSP(new Date('2026-10-21T15:05:00Z')), { data: '2026-10-21', min: 12 * 60 + 5 });
 });
+test('todo código do formulário tem serviço no cadastro (exceto "outro")', async () => {
+  const { NOME_NO_CATALOGO } = await import('../supabase/functions/site-lead/logica.ts');
+  const html = (await import('node:fs')).readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const codigos = [...html.matchAll(/<option data-codigo="([a-z-]+)"/g)].map(m => m[1]).filter(c => c !== 'outro-servico');
+  assert.equal(codigos.length, 11);
+  for (const c of codigos) assert.ok(NOME_NO_CATALOGO[c], 'sem serviço no cadastro: ' + c);
+});

@@ -116,3 +116,18 @@ export function linksDaEquipe(o: { leadId: string; telefone: string; nome: strin
     agenda: `${APPS.central}/agenda/`,
   };
 }
+
+/** Código do site (data-codigo do formulário) → nome do serviço no cadastro `servicos` (o id é buscado pelo nome, nunca fixo). */
+export const NOME_NO_CATALOGO: Readonly<Record<string, string>> = {
+  diagnostico: 'Diagnóstico com Scanner',
+  motor: 'Revisão de Motor',
+  'oleo-motor': 'Troca de Óleo de Motor',
+  cambio: 'Troca de Óleo de Câmbio',
+  freios: 'Freios',
+  suspensao: 'Suspensão',
+  alinhamento: 'Alinhamento e balanceamento',
+  pneus: 'Pneus',
+  embreagem: 'Embreagem',
+  correia: 'Correia Dentada',
+  bicos: 'Limpeza de Bicos',
+};

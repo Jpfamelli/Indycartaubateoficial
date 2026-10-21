@@ -1788,3 +1788,8 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
 .horarios-vivo #horariosLista { min-height: 168px; align-content: start; }
 .horarios-carregando { color: var(--gray); font-size: .95rem; }
 @media (max-width: 480px) { .horarios-vivo #horariosLista { min-height: 252px; } }
+.form-ok-copiar { color: #fff; font-family: var(--font-cond); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: .85rem; padding: 8px 14px; min-height: 40px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,.05); cursor: pointer; }
+.form-ok-copiar:hover { border-color: rgba(229,9,20,.6); }
+.form-ok-dica { font-size: .85rem !important; color: var(--gray) !important; }
+.form-ok-dica a { color: #fff; text-decoration: underline; text-decoration-color: rgba(229,9,20,.6); text-underline-offset: 3px; }
+#fQuando:disabled { opacity: .45; cursor: not-allowed; }

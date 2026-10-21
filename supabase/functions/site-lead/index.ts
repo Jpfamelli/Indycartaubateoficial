@@ -10,7 +10,7 @@
 // freio por IP/telefone, o campo-isca, o tempo mínimo de preenchimento e a validação de cada campo.
 // Nunca devolve dado interno (nem o id do lead): só um protocolo curto para a pessoa.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.117.2';
-import { agoraSP, dataValida, extrairPlaca, horarioLivre, linksDaEquipe, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, type Agendamento } from './logica.ts';
+import { agoraSP, dataValida, extrairPlaca, horarioLivre, linksDaEquipe, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, NOME_NO_CATALOGO, type Agendamento } from './logica.ts';
 
 /** Agenda: capacidade (consultores ativos) e agendamentos dos próximos dias. Só leitura. */
 async function lerAgenda(sb: SupabaseClient, dias = 16) {
@@ -190,7 +190,8 @@ async function tratar(req: Request): Promise<Response> {
     if (leadId) {
       const { data: l } = await sb.from('leads').select('observacoes').eq('id', leadId).maybeSingle();
       const extra = `[${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' })}] Novo envio pelo site: ${pedido.servico}` +
-        (pedido.preferencia ? ` · ${pedido.preferencia}` : '') + (pedido.mensagem ? `\n${pedido.mensagem}` : '');
+        (pedido.preferencia ? ` · ${pedido.preferencia}` : '') + (pedido.horario ? ` · horário pedido: ${rotuloHorario(pedido.horario.data, pedido.horario.hora)}` : '') +
+        (pedido.placa ? ` · placa ${pedido.placa}` : '') + (pedido.mensagem ? `\n${pedido.mensagem}` : '');
       await sb.from('leads').update({ observacoes: [l?.observacoes, extra].filter(Boolean).join('\n\n').slice(0, 4000) }).eq('id', leadId);
     }
     await registrar(sb, { ...base, resultado: 'repetido', telefone: pedido.tel, nome: pedido.nome, codigo: pedido.codigo, servico: pedido.servico, lead_id: leadId, utm: pedido.utm });
@@ -215,6 +216,13 @@ async function tratar(req: Request): Promise<Response> {
     const { data: os } = await sb.from('patio_os').select('numero,etapa').eq('cliente_id', cli.id).not('etapa', 'in', '(entregue,cancelado)').limit(1);
     contexto = os?.length ? `CARRO NO PÁTIO AGORA: OS nº ${os[0].numero} (${String(os[0].etapa).replace(/_/g, ' ')}).` : 'Cliente já cadastrado na oficina.';
   }
+  // Serviço do cadastro (relatórios do CRM por serviço): o id vem do nome, nunca fixo no código.
+  const nomeCat = NOME_NO_CATALOGO[pedido.codigo.replace(/^formulario-/, '')];
+  let servicoId: string | null = null;
+  if (nomeCat) {
+    const { data: sv } = await sb.from('servicos').select('id').eq('nome', nomeCat).eq('ativo', true).limit(1);
+    servicoId = sv?.[0]?.id ?? null;
+  }
   const observacoes = [
     `Pedido pelo site (formulário): ${pedido.servico}`,
     contexto,
@@ -227,7 +235,7 @@ async function tratar(req: Request): Promise<Response> {
     pedido.pagina ? `Página: ${pedido.pagina}` : null,
   ].filter(Boolean).join('\n');
   const { data: lead, error: eLead } = await sb.from('leads').insert({
-    nome: pedido.nome, telefone: pedido.tel, carro_modelo: pedido.carro, placa: pedido.placa, servico: pedido.servico, status: 'novo', origem: 'organico',
+    nome: pedido.nome, telefone: pedido.tel, carro_modelo: pedido.carro, placa: pedido.placa, servico: pedido.servico, servico_id: servicoId, status: 'novo', origem: 'organico',
     utm_source: 'site', utm_medium: 'formulario', utm_campaign: campanha, observacoes,
   }).select('id,cliente_id,responsavel_id').single();
   if (eLead || !lead) throw new Error(eLead?.message ?? 'lead');
@@ -267,6 +275,7 @@ async function tratar(req: Request): Promise<Response> {
   await registrar(sb, {
     ...base, resultado: 'lead', telefone: pedido.tel, nome: pedido.nome, codigo: pedido.codigo, servico: pedido.servico, carro: pedido.carro,
     preferencia: pedido.preferencia, mensagem: pedido.mensagem, utm: pedido.utm, lead_id: lead.id, tarefa_id: tarefa?.id ?? null,
+    placa: pedido.placa, horario_data: pedido.horario?.data ?? null, horario_hora: pedido.horario?.hora ?? null, horario_livre: pedido.horario ? !horarioOcupado : null,
   });
   return json(req, {
     ok: true, protocolo: String(lead.id).replace(/-/g, '').slice(-6).toUpperCase(),
