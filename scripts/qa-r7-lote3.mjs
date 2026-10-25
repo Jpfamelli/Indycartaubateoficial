@@ -34,7 +34,7 @@ export async function lote3({ abrir, ok, espera, BASE, aplicarRedirect, ROOT, br
     const tentativas = [];
     await page.setRequestInterception(true);
     page.on('request', (req) => {
-      if (req.url().startsWith('https://indycar-')) { tentativas.push(req.url()); return req.respond({ status: 200, contentType: 'text/html', body: '<title>destino</title>' }); }
+      if (req.url().startsWith('https://indycar-patio.') || req.url().startsWith('https://indycar-orcador.')) { tentativas.push(req.url()); return req.respond({ status: 200, contentType: 'text/html', body: '<title>destino</title>' }); }
       req.continue();
     });
     await page.goto(BASE + caminho, { waitUntil: 'load', timeout: 30000 }).catch(() => {});
@@ -46,7 +46,7 @@ export async function lote3({ abrir, ok, espera, BASE, aplicarRedirect, ROOT, br
     const page = await browser.newPage();
     const fora = [];
     await page.setRequestInterception(true);
-    page.on('request', (req) => { if (req.url().startsWith('https://indycar-') || req.url().includes('evil')) { fora.push(req.url()); return req.respond({ status: 200, body: 'x' }); } req.continue(); });
+    page.on('request', (req) => { if (req.url().startsWith('https://indycar-patio.') || req.url().startsWith('https://indycar-orcador.') || req.url().includes('evil')) { fora.push(req.url()); return req.respond({ status: 200, body: 'x' }); } req.continue(); });
     for (const lixo of ['/nao-existe', '/0123456789abcdef0123456789abcdef012', '/zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz', '/a/b/c']) {
       await page.goto(BASE + lixo, { waitUntil: 'load' }).catch(() => {});
       await espera(250);

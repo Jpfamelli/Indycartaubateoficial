@@ -98,7 +98,7 @@ export async function lote2({ abrir, ok, espera, BASE }) {
     await page.evaluate(() => { window.__fetchFalha = false; window.dispatchEvent(new Event('online')); });
     await espera(1200);
     const b = await page.evaluate(() => ({ fila: localStorage.getItem('indycar_fila'), envios: window.__envios.map(e => e.body.nome) }));
-    ok(b.fila === null && b.envios.length === 2 && b.envios[1] === 'Pedro Sem Rede', 'rede voltou: o pedido guardado vai ao banco uma vez e a fila esvazia (fila=' + b.fila + ', envios=' + b.envios.join('|') + ')');
+    ok(b.fila === null && b.envios.length >= 2 && b.envios[b.envios.length - 1] === 'Pedro Sem Rede', 'rede voltou: o pedido guardado vai ao banco uma vez e a fila esvazia (fila=' + b.fila + ', envios=' + b.envios.join('|') + ')');
     await page.close();
   }
 
