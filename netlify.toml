@@ -104,9 +104,11 @@
   to = "https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fatalho)&utm_source=site&utm_medium=whatsapp&utm_campaign=atalho"
   status = 302
 
+# Rodada 7: o destino fica SEM "?" — a Netlify só repassa a query string (utm_*, gclid, fbclid) quando o destino não
+# tem query própria. Por isso os atalhos que abrem o formulário usam o fragmento #agendar[-serviço], que o script.js entende.
 [[redirects]]
   from = "/agendar"
-  to = "/?abrir=form"
+  to = "/#agendar"
   status = 302
 
 [[redirects]]
@@ -128,12 +130,12 @@
 # /s/freios abre o formulário já com o serviço (os códigos são os de #svc-<código>); /orcamento e /horarios idem.
 [[redirects]]
   from = "/s/:servico"
-  to = "/?servico=:servico&abrir=form"
+  to = "/#agendar-:servico"
   status = 302
 
 [[redirects]]
   from = "/orcamento"
-  to = "/?servico=diagnostico&abrir=form"
+  to = "/#agendar-diagnostico"
   status = 302
 
 [[redirects]]
@@ -156,3 +158,26 @@
   for = "/"
   [headers.values]
     Link = "</fontes/archivo-variavel.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </fontes/inter-variavel.woff2>; rel=preload; as=font; type=font/woff2; crossorigin"
+
+# Rodada 7: links curtos no domínio da oficina para o Pátio, o Orçador e o Atendimento mandarem no WhatsApp
+# (mais curtos e com a cara da IndyCar). /a/<código> = Acompanhar meu carro; /m/<código> = Minha IndyCar; /o/<código> = orçamento.
+[[redirects]]
+  from = "/a/:token"
+  to = "https://indycar-patio.netlify.app/acompanhar/?t=:token"
+  status = 302
+
+[[redirects]]
+  from = "/m/:token"
+  to = "https://indycar-patio.netlify.app/minha/?c=:token"
+  status = 302
+
+[[redirects]]
+  from = "/o/:token"
+  to = "https://indycar-orcador.netlify.app/#/o/:token"
+  status = 302
+
+# Como chegar (para o Atendimento mandar a rota pronta no Google Maps)
+[[redirects]]
+  from = "/rota"
+  to = "https://www.google.com/maps/dir/?api=1&destination=Av.+Bandeirantes%2C+875+-+Parque+Paduan%2C+Taubat%C3%A9+-+SP"
+  status = 302

@@ -8,12 +8,12 @@
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
 
   <!-- ===== SEO ===== -->
-  <title>IndyCar Centro Automotivo Taubaté | Oficina Mecânica Premium</title>
-  <meta name="description" content="Oficina mecânica em Taubaté. Diagnóstico digital gratuito com scanner + foto (~30 min). Garantia de 12 meses em peças e mão de obra. Seg–sáb, 8h–17h30." />
+  <title>Oficina Mecânica em Taubaté | Câmbio, Freios e Scanner | IndyCar</title>
+  <meta name="description" content="Oficina mecânica na Av. Bandeirantes, 875, Taubaté. Diagnóstico digital gratuito, óleo do câmbio por diálise, freios e 12 meses de garantia. Seg–sáb, 8h–17h30." />
   <meta name="author" content="IndyCar Centro Automotivo" />
 
   <!-- Open Graph -->
-  <meta property="og:title" content="IndyCar Centro Automotivo Taubaté" />
+  <meta property="og:title" content="IndyCar Centro Automotivo: oficina mecânica em Taubaté" />
   <meta property="og:description" content="Oficina mecânica em Taubaté. Diagnóstico digital gratuito (scanner + foto, ~30 min) e garantia de 12 meses em peças e mão de obra." />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="pt_BR" />
@@ -31,6 +31,10 @@
   "name": "IndyCar Centro Automotivo",
   "description": "Oficina mecânica em Taubaté-SP: mecânica em geral para carros nacionais e importados — revisões, troca de óleo do câmbio automático por diálise, freios, suspensão, alinhamento e diagnóstico com scanner. Diagnóstico digital gratuito e garantia de 12 meses em peças e mão de obra.",
   "slogan": "Quem conhece, Indyca!",
+  "alternateName": ["IndyCar Taubaté", "IndyCar Centro Automotivo Taubaté"],
+  "currenciesAccepted": "BRL",
+  "knowsLanguage": "pt-BR",
+  "knowsAbout": ["Troca de óleo do câmbio automático por diálise", "Diagnóstico com scanner", "Freios", "Suspensão e amortecedores", "Alinhamento 3D", "Correia dentada", "Embreagem", "Carros nacionais e importados"],
   "hasMap": "https://www.google.com/maps/search/?api=1&query=IndyCar+Centro+Automotivo+Av.+Bandeirantes+875+Taubat%C3%A9",
   "contactPoint": [
     { "@type": "ContactPoint", "telephone": "+55-12-99683-0272", "contactType": "customer service", "availableLanguage": "Portuguese" },
@@ -210,6 +214,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M16 10h42l-10 44H6z' fill='%23e50914'/><path d='M24 46l8-7 8 7M24 33l8-7 8 7M24 20l8-7 8 7' fill='none' stroke='white' stroke-width='5'/></svg>" />
   <link rel="canonical" href="https://indycar-taubate.netlify.app/" />
   <link rel="alternate" hreflang="pt-BR" href="https://indycar-taubate.netlify.app/" />
+  <link rel="alternate" hreflang="x-default" href="https://indycar-taubate.netlify.app/" />
   <meta name="geo.region" content="BR-SP" />
   <meta name="geo.placename" content="Taubaté" />
   <meta name="format-detection" content="telephone=yes" />
@@ -218,7 +223,7 @@
   <meta property="og:site_name" content="IndyCar Centro Automotivo" />
   <meta property="og:image:alt" content="IndyCar Taubaté: diagnóstico digital gratuito com scanner + foto" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="IndyCar Centro Automotivo Taubaté" />
+  <meta name="twitter:title" content="IndyCar Centro Automotivo: oficina mecânica em Taubaté" />
   <meta name="twitter:description" content="Diagnóstico digital gratuito com scanner + foto. Quem conhece, Indyca! 🏎" />
   <meta name="twitter:image" content="https://indycar-taubate.netlify.app/og-indycar.jpg" />
   <meta name="twitter:image:alt" content="IndyCar Taubaté: diagnóstico digital gratuito com scanner + foto" />
@@ -349,6 +354,9 @@
           Chamar no WhatsApp
         </a>
       </div>
+
+      <!-- Rodada 7: quem já é cliente vai direto ao Pátio, sem rolar até a Área do Cliente -->
+      <p class="hero-cliente reveal">Já é cliente? <a href="https://indycar-patio.netlify.app/acompanhar/" target="_blank" rel="noopener">Acompanhar meu carro</a> <span aria-hidden="true">·</span> <a href="https://indycar-patio.netlify.app/minha/" target="_blank" rel="noopener">Minha IndyCar</a></p>
 
       <!-- Badge flutuante de avaliação -->
       <div class="rating-badge floaty reveal">
@@ -764,7 +772,7 @@
           <span class="diag-n" aria-hidden="true">01</span>
           <span class="diag-meta">Agora</span>
           <h3>Chama no WhatsApp</h3>
-          <p>Conta o que o carro está fazendo e escolhe um horário de segunda a sábado, das 8h às 17h30. <span data-so-horarios><a href="#horarios">Ver horários livres</a>.</span></p>
+          <p>Conta o que o carro está fazendo e escolhe um horário de segunda a sábado, das 8h às 17h30. <span data-so-horarios><a class="link-bloco" href="#horarios">Ver horários livres</a></span></p>
         </li>
         <li class="diag-step reveal">
           <span class="diag-n" aria-hidden="true">02</span>
@@ -794,6 +802,7 @@
         <h3 id="horariosTitulo">Próximos horários livres</h3>
         <p class="horarios-sub">Toque num horário e o pedido já vai com ele. <span id="horariosAtualizado"></span></p>
         <div class="horarios-dias" id="horariosLista" role="group" aria-labelledby="horariosTitulo"></div>
+        <p class="sr-only" id="horariosResumo" role="status"></p>
       </div>
     </div>
   </section>
@@ -1258,6 +1267,11 @@
         </div>
         <small id="areaColaMsg" class="area-cola-msg" role="status" aria-live="polite">Serve para o acompanhamento do carro, a Minha IndyCar e o orçamento que a equipe mandou.</small>
       </form>
+      <!-- Rodada 7: quem pediu horário neste aparelho vê o protocolo e os atalhos (preenchido pelo script; fica escondido sem pedido recente) -->
+      <div class="area-pedido reveal" id="areaPedido" role="status" hidden>
+        <strong id="areaPedidoTit">Seu pedido está com a equipe</strong>
+        <span id="areaPedidoTxt"></span>
+      </div>
       <p class="area-nota reveal">Quer indicar um amigo? <a href="https://indycar-patio.netlify.app/minha/#indique" target="_blank" rel="noopener">Indique pela Minha IndyCar</a> e a equipe cuida dele como cuida de você.</p>
       <p class="area-nota reveal">Não recebeu o seu link? <a href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20j%C3%A1%20sou%20cliente%20e%20quero%20o%20link%20da%20minha%20%C3%A1rea%20(Minha%20IndyCar).%20(site%2Farea-cliente)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=area-cliente" target="_blank" rel="noopener">Peça pelo WhatsApp</a> que a equipe manda na hora.</p>
     </div>
@@ -1406,7 +1420,7 @@
           </select>
           <small class="field-err" id="fServiceErr" hidden>Escolha o serviço (ou "Outro / Não sei ainda").</small>
         </div>
-        <div class="field-row">
+        <div class="field-row field-row--carro">
           <div class="field">
             <label for="fCar">Carro (modelo/ano) <small>opcional</small></label>
             <input type="text" id="fCar" name="car" maxlength="100" placeholder="Ex: Honda Civic 2018" autocomplete="off" enterkeyhint="next" />
@@ -1450,6 +1464,11 @@
           <svg viewBox="0 0 32 32" class="btn-ico wa"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3z"/></svg>
           Pedir meu horário
         </button>
+        <!-- Rodada 7: lembrar os dados só neste aparelho (nome, telefone, carro e placa; nunca vai para servidor) -->
+        <div class="field-lembrar">
+          <label class="lembrar"><input type="checkbox" id="fLembrar" /> <span>Lembrar meus dados neste aparelho</span></label>
+          <button type="button" class="lembrar-limpar" id="fEsquecer" hidden>Não sou eu · limpar</button>
+        </div>
         <p class="field-err form-aviso" id="fEnvioMsg" role="status" hidden></p>
         <small class="form-mini">🔒 O pedido vai direto para a equipe da oficina, que confirma pelo WhatsApp. <a href="privacidade.html">Privacidade</a></small>
       </form>
@@ -1460,7 +1479,7 @@
         <p id="formOkTexto">A equipe confirma o horário com você pelo WhatsApp, de segunda a sábado, das 8h às 17h30.</p>
         <p class="form-ok-proto" id="formOkProto" hidden>Protocolo <b></b></p>
         <button type="button" class="form-ok-copiar" id="formOkCopiar" hidden>Copiar protocolo</button>
-        <p class="form-ok-dica">Já é cliente? Seu carro e seu histórico ficam na <a href="https://indycar-patio.netlify.app/minha/" target="_blank" rel="noopener">Minha IndyCar</a>.</p>
+        <p class="form-ok-dica">Já é cliente? Veja a etapa do carro em <a href="https://indycar-patio.netlify.app/acompanhar/" target="_blank" rel="noopener">Acompanhar meu carro</a>; o histórico e a próxima revisão ficam na <a href="https://indycar-patio.netlify.app/minha/" target="_blank" rel="noopener">Minha IndyCar</a>.</p>
         <a class="btn btn-whatsapp full" id="formOkWa" href="https://wa.me/5512996830272?text=Ol%C3%A1!%20Vim%20pelo%20site%2C%20quero%20or%C3%A7ar%3A%20Diagn%C3%B3stico%20digital%20gratuito.%20(site%2Fformulario)&amp;utm_source=site&amp;utm_medium=whatsapp&amp;utm_campaign=formulario" target="_blank" rel="noopener">Quer adiantar? Abrir no WhatsApp</a>
         <button type="button" class="form-ok-fechar" data-close-form>Fechar</button>
       </div>

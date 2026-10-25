@@ -395,7 +395,7 @@ console.log('\n== fontes de verdade (tabelas) ==');
     ok(okk, rotulo + ' (' + saida.split('\n')[0] + ')');
   }
   const toml = fs.readFileSync(path.join(ROOT, 'netlify.toml'), 'utf8');
-  ok(/from = "\/acompanhar"[\s\S]*?to = "https:\/\/indycar-patio\.netlify\.app\/acompanhar\/"/.test(toml) && /from = "\/minha"[\s\S]*?to = "https:\/\/indycar-patio\.netlify\.app\/minha\/"/.test(toml) && /from = "\/whatsapp"/.test(toml) && /from = "\/agendar"[\s\S]*?to = "\/\?abrir=form"/.test(toml), 'netlify.toml: atalhos /acompanhar, /minha, /whatsapp e /agendar');
+  ok(/from = "\/acompanhar"[\s\S]*?to = "https:\/\/indycar-patio\.netlify\.app\/acompanhar\/"/.test(toml) && /from = "\/minha"[\s\S]*?to = "https:\/\/indycar-patio\.netlify\.app\/minha\/"/.test(toml) && /from = "\/whatsapp"/.test(toml) && /from = "\/agendar"[\s\S]*?to = "\/#agendar"/.test(toml), 'netlify.toml: atalhos /acompanhar, /minha, /whatsapp e /agendar');
   ok(/for = "\/\*\.css"[\s\S]*?immutable/.test(toml) && /for = "\/\*\.js"[\s\S]*?immutable/.test(toml), 'netlify.toml: CSS e JS com cache de um ano (o publicar versiona os links com ?v=)');
   const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
   ok(manifest.icons.some(i => i.sizes === '192x192') && manifest.icons.some(i => i.sizes === '512x512' && i.purpose === 'maskable') && manifest.icons.every(i => fs.existsSync(path.join(ROOT, i.src.replace(/^\//, '')))) && manifest.shortcuts?.length >= 2, 'manifesto com ícones 192/512 (maskable) existentes e atalhos');
@@ -615,7 +615,7 @@ for (const w of [375, 1440]) {
 }
 {
   const toml = fs.readFileSync(path.join(ROOT, 'netlify.toml'), 'utf8');
-  ok(/from = "\/s\/:servico"[\s\S]*?to = "\/\?servico=:servico&abrir=form"/.test(toml) && /from = "\/orcamento"/.test(toml) && /from = "\/horarios"[\s\S]*?to = "\/#horarios"/.test(toml) && /from = "\/indicar"[\s\S]*?minha\/#indique/.test(toml) && /from = "\/minha-indycar"/.test(toml), 'netlify.toml: atalhos /s/<serviço>, /orcamento, /horarios, /indicar e /minha-indycar');
+  ok(/from = "\/s\/:servico"[\s\S]*?to = "\/#agendar-:servico"/.test(toml) && /from = "\/orcamento"/.test(toml) && /from = "\/horarios"[\s\S]*?to = "\/#horarios"/.test(toml) && /from = "\/indicar"[\s\S]*?minha\/#indique/.test(toml) && /from = "\/minha-indycar"/.test(toml), 'netlify.toml: atalhos /s/<serviço>, /orcamento, /horarios, /indicar e /minha-indycar');
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const ld = JSON.parse(/<script type="application\/ld\+json">\s*(\{[\s\S]*?"@type": "AutoRepair"[\s\S]*?\n\})\s*<\/script>/.exec(html)[1]);
   ok(ld.potentialAction && ld.potentialAction.target.urlTemplate === 'https://indycar-taubate.netlify.app/agendar' && !('priceRange' in ld), 'JSON-LD: ação "Pedir horário" (ReserveAction → /agendar) e sem faixa de preço inventada');
@@ -623,9 +623,9 @@ for (const w of [375, 1440]) {
   const priv = fs.readFileSync(path.join(ROOT, 'privacidade.html'), 'utf8');
   ok(!/não envia nada para servidor nenhum/.test(priv) && /envia o pedido direto para o sistema da oficina/.test(priv) && /placa/.test(priv) && /horários livres/i.test(priv), 'privacidade diz a verdade: o formulário envia o pedido ao sistema da oficina (placa, horário, hash de rede) e os horários só mostram dia e hora');
   const man = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
-  ok(man.shortcuts.some(x => x.url === '/horarios') && man.shortcuts.length <= 4, 'manifesto: atalho "Horários livres" e no máximo 4 atalhos');
+  ok(man.shortcuts.some(x => x.url.startsWith('/horarios')) && man.shortcuts.length <= 4, 'manifesto: atalho "Horários livres" e no máximo 4 atalhos');
   ok(fs.readFileSync(path.join(ROOT, '404.html'), 'utf8').includes('href="/#horarios"'), '404 oferece os horários livres');
-  ok(fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8').includes('<lastmod>2026-10-21</lastmod>'), 'sitemap com lastmod de hoje');
+  ok(fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8').includes('<lastmod>2026-10-25</lastmod>'), 'sitemap com lastmod de hoje');
   ok(html.includes('<noscript><p class="sem-js">') && html.includes('href="tel:+551236245957"') && html.includes('href="tel:+5512996830272"'), 'sem JavaScript aparece o aviso com WhatsApp e telefone; o celular tem link "Ligar" (tel:)');
   ok(toml.includes('Link = "</fontes/archivo-variavel.woff2>') && toml.includes('inter-variavel.woff2>; rel=preload'), 'netlify.toml: cabeçalho Link pré-carrega as duas fontes da primeira dobra');
   const urlsServico = (ld.hasOfferCatalog.itemListElement || []).map(o => o.itemOffered.url);

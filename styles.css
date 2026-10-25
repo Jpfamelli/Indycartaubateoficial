@@ -522,54 +522,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* ========================= DEPOIMENTOS ========================= */
 .reviews { background: linear-gradient(180deg, transparent, rgba(229,9,20,.04), transparent); }
-.google-badge { display: inline-flex; align-items: center; gap: 10px; margin-top: 18px; padding: 9px 18px; border-radius: 40px; background: var(--card); border: 1px solid var(--line); font-size: .9rem; color: var(--gray); }
-.google-badge b { color: var(--white); }
-.g-ico { width: 20px; height: 20px; }
-
-/* shell contido: 3 cards por vez no desktop + setas laterais grandes */
-.reviews-shell { position: relative; max-width: calc(var(--max) + 152px); margin: 0 auto; padding: 0 76px; }
-.reviews-viewport { overflow: hidden; padding: 10px 0; }
-.reviews-track { display: flex; gap: 24px; transition: transform .7s var(--ease); }
-.review-card {
-  flex: 0 0 calc((100% - 48px) / 3); padding: 30px;
-  background: linear-gradient(160deg, var(--card), var(--graphite));
-  border: 1px solid var(--line); border-radius: var(--radius);
-  box-shadow: 0 14px 40px rgba(0,0,0,.4); position: relative;
-}
-
-/* setas de navegação (acessíveis: aria-label no HTML + foco visível) */
-.rev-arrow {
-  position: absolute; top: 50%; transform: translateY(-50%); z-index: 6;
-  width: 54px; height: 54px; border-radius: 50%;
-  display: grid; place-items: center;
-  background: var(--lt-card); color: var(--lt-ink); border: 1px solid var(--lt-line);
-  box-shadow: 0 10px 26px rgba(23,24,28,.14);
-  transition: background .25s, color .25s, border-color .25s, transform .25s var(--ease), opacity .25s;
-}
-.rev-arrow svg { width: 22px; height: 22px; }
-.rev-prev { left: 8px; }
-.rev-next { right: 8px; }
-.rev-arrow:hover { background: var(--red); color: #fff; border-color: var(--red); transform: translateY(-50%) scale(1.06); }
-.rev-arrow:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
-.rev-arrow[disabled] { opacity: .3; pointer-events: none; }
-
-/* dots + contador "X de 10" */
-.reviews-controls { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 34px; }
-.reviews-dots { display: flex; justify-content: center; gap: 10px; }
-.reviews-count {
-  font-family: var(--font-cond); font-weight: 600; font-size: .92rem;
-  letter-spacing: .12em; color: var(--lt-ink-3); white-space: nowrap;
-}
-.review-card::before { content: '\201C'; position: absolute; top: 6px; right: 22px; font-family: Georgia, serif; font-size: 5rem; color: rgba(229,9,20,.2); line-height: 1; }
-.review-stars { color: var(--gold); letter-spacing: 3px; font-size: 1.1rem; margin-bottom: 14px; }
-.review-text { color: #d8d8dc; font-size: 1.02rem; margin-bottom: 22px; min-height: 96px; }
-.review-author { display: flex; align-items: center; gap: 14px; }
-.review-avatar { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-cond); font-weight: 700; color: #fff; background: var(--c, var(--red)); box-shadow: 0 0 0 3px rgba(255,255,255,.06); }
-.review-author strong { display: block; font-size: 1rem; }
-.review-author small { color: var(--gray); font-size: .8rem; }
-
-.reviews-dots button { width: 11px; height: 11px; border-radius: 50%; background: var(--line); transition: .3s; }
-.reviews-dots button.active { background: var(--red); width: 30px; border-radius: 6px; box-shadow: 0 0 12px var(--red-glow); }
 
 /* ========================= CONTATO ========================= */
 .contact-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; }
@@ -726,14 +678,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .confetti-piece { position: fixed; width: 11px; height: 11px; border-radius: 2px;
   z-index: 1300; pointer-events: none; will-change: transform, opacity; }
 
-/* Spotlight que segue o cursor DENTRO dos cards (efeito premium) */
-.service-card, .review-card { --mx: 50%; --my: 50%; }
-.service-card::after, .review-card::after {
+.service-card { --mx: 50%; --my: 50%; }
+.service-card::after {
   content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
   background: radial-gradient(240px circle at var(--mx) var(--my), rgba(229,9,20,.20), rgba(255,255,255,.07) 42%, transparent 66%);
   opacity: 0; transition: opacity .4s; mix-blend-mode: screen; z-index: 3;
 }
-.service-card:hover::after, .review-card:hover::after { opacity: 1; }
+.service-card:hover::after { opacity: 1; }
 
 /* Brilho diagonal que atravessa os tiles do bento (port do GlareHover) */
 .tile-glare {
@@ -813,13 +764,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .hero { padding-top: 100px; }
   .hero-cta { flex-direction: column; align-items: stretch; }
   .hero-cta .btn { justify-content: center; }
-  .reviews-shell { padding: 0 46px; }
-  .review-card { flex-basis: 100%; padding: 24px; }
-  .review-text { min-height: 120px; }
-  .rev-arrow { width: 40px; height: 40px; }
-  .rev-arrow svg { width: 18px; height: 18px; }
-  .rev-prev { left: 2px; }
-  .rev-next { right: 2px; }
   .footer-grid { grid-template-columns: 1fr; gap: 30px; }
   .footer-bottom { flex-direction: column; text-align: center; }
   .counters { grid-template-columns: 1fr 1fr; }
@@ -1021,9 +965,6 @@ body.tc-on, body.tc-on *:not(input):not(select):not(textarea) { cursor: none; }
 .why-item::after { inset: -10px -12px; }
 .about-pillar:hover::after, .why-item:hover::after { opacity: 1; }
 
-/* ---- TiltedCard: tilt 3D leve nos depoimentos (não interfere no swipe) ---- */
-.review-card { transition: transform .35s var(--ease); transform-style: preserve-3d; }
-
 /* ---- Marquee fantasma de profundidade (trust bar) ---- */
 .trust-ghost {
   position: absolute; left: 0; top: 0; height: 100%; z-index: 0;
@@ -1196,23 +1137,6 @@ body.perf-lite .cta-embers { display: none; }
 
 /* AVALIAÇÕES em claro */
 .reviews.sec-light { background: var(--lt-bg); }
-.sec-light .google-badge { background: var(--lt-card); border-color: var(--lt-line); color: var(--lt-ink-2); }
-.sec-light .google-badge b { color: var(--lt-ink); }
-.sec-light .review-card {
-  background: var(--lt-card); border-color: var(--lt-line);
-  box-shadow: 0 10px 30px rgba(23,24,28,.07);
-}
-.sec-light .review-card::before { color: rgba(229,9,20,.14); }
-.sec-light .review-stars { color: var(--red); text-shadow: none; }
-.sec-light .review-text { color: #3a3c44; }
-.sec-light .review-author strong { color: var(--lt-ink); }
-.sec-light .review-author small { color: var(--lt-ink-3); }
-.sec-light .review-card::after {
-  mix-blend-mode: multiply;
-  background: radial-gradient(240px circle at var(--mx) var(--my), rgba(229,9,20,.07), transparent 64%);
-}
-.sec-light .reviews-dots button { background: #d8dae0; }
-.sec-light .reviews-dots button.active { background: var(--red); }
 
 /* selo circular sobre claro */
 .sec-light .seal-rotor span { color: rgba(23,24,28,.6); text-shadow: none; }
@@ -1307,13 +1231,6 @@ body.perf-lite .cta-embers { display: none; }
 .rev-pop-note { font-size: .86rem; color: var(--lt-ink-2); }
 .rev-pop-note b { color: var(--lt-ink); }
 .rev-pop-body { overflow-y: auto; display: grid; gap: 12px; padding: 2px; margin-bottom: 16px; }
-.rev-pop-item { background: #f7f8fa; border: 1px solid var(--lt-line); border-radius: 12px; padding: 14px 15px; }
-.rev-pop-item p { font-size: .93rem; color: #3a3c44; line-height: 1.5; margin-bottom: 10px; }
-.rev-pop-item .rp-author { display: flex; align-items: center; gap: 10px; }
-.rev-pop-item .rp-avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-cond); font-weight: 700; font-size: .8rem; color: #fff; background: var(--c, var(--red)); flex: none; }
-.rev-pop-item .rp-author strong { font-size: .88rem; color: var(--lt-ink); display: block; }
-.rev-pop-item .rp-author small { font-size: .74rem; color: var(--lt-ink-3); display: block; }
-.rev-pop-item .rp-stars { color: var(--red); font-size: .8rem; letter-spacing: 2px; margin-bottom: 6px; display: block; }
 .rev-pop-empty { text-align: center; padding: 10px 6px 4px; }
 .rev-pop-empty .rp-big { font-family: var(--font-display); font-weight: 800; font-size: 2.8rem; letter-spacing: -.02em; color: var(--lt-ink); line-height: 1; }
 .rev-pop-empty .rp-big small { font-size: 1.1rem; color: var(--lt-ink-3); font-weight: 700; }
@@ -1802,3 +1719,73 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
 .promo-slot { color: #fff; font-weight: 700; text-decoration: underline; text-decoration-color: rgba(229,9,20,.7); text-underline-offset: 4px; cursor: pointer; padding: 6px 2px; min-height: 40px; }
 .promo-slot:hover { color: var(--red); }
 .area-cola-linha .btn { justify-content: center; text-align: center; }
+
+/* ====================================================================
+   RODADA 7 (25/10/2026) — toque no celular (alvos de 44 px), alto contraste e acabamento
+   ==================================================================== */
+.service-flag { font-size: .75rem; }
+@media (pointer: coarse), (max-width: 860px) {
+  .hamburger { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; margin-right: -6px; }
+  .nav-link, .btn-cta-nav { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  .service-link { min-height: 44px; align-items: center; }
+  .svc-rev, .svc-rev--sm { min-height: 44px; }
+  .footer-col a { display: flex; align-items: center; min-height: 44px; margin-bottom: 0; }
+  .footer-bottom a { display: inline-flex; align-items: center; min-height: 44px; }
+  .contact-list a { display: inline-flex; align-items: center; min-height: 44px; border-bottom: 0; text-decoration: underline; text-decoration-color: rgba(255,255,255,.35); text-underline-offset: 4px; }
+  .warranty-link { display: inline-flex; align-items: center; min-height: 44px; }
+  .btn.sm { min-height: 44px; }
+  .sp-close { width: 44px; height: 44px; top: 0; right: 0; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+  .form-mini a, .form-ok-dica a { display: inline-flex; align-items: center; min-height: 44px; }
+}
+.sr-only { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+.hero-cliente { margin-top: 14px; font-size: .95rem; color: #d8d8dc; }
+.hero-cliente a { color: #fff; font-weight: 600; text-decoration: underline; text-decoration-color: rgba(229,9,20,.7); text-underline-offset: 4px; display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; }
+.hero-cliente a:hover { color: var(--red); }
+.area-pedido { margin: 18px auto 0; max-width: 640px; padding: 14px 18px; border: 1px solid rgba(229,9,20,.45); border-radius: 12px; background: rgba(229,9,20,.08); color: #e9e9ee; display: grid; gap: 4px; }
+.area-pedido strong { color: #fff; }
+.area-pedido a { color: #fff; text-decoration: underline; text-decoration-color: rgba(229,9,20,.7); text-underline-offset: 3px; }
+.field-lembrar { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; margin: 2px 0 10px; }
+.lembrar { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: .9rem; color: #d8d8dc; cursor: pointer; }
+.lembrar input { width: 20px; height: 20px; accent-color: var(--red); flex: none; }
+.lembrar-limpar { color: #fff; font-size: .85rem; text-decoration: underline; text-decoration-color: rgba(229,9,20,.7); text-underline-offset: 3px; min-height: 44px; padding: 0 4px; }
+.lembrar-limpar:hover { color: var(--red); }
+.horarios-nota { grid-column: 1 / -1; margin-top: 6px; font-size: .88rem; color: var(--gray); }
+.horarios-dia-rot .feriado { display: block; font-size: .78rem; color: #ffcf6e; letter-spacing: .04em; }
+.hl-status.feriado .hl-dot { background: #ffcf6e; box-shadow: none; animation: none; }
+@media (prefers-contrast: more) {
+  .hero-cliente, .promo-proximo, .area-pedido, .lembrar, .horarios-nota { color: #fff; }
+  .field-dica, .form-mini, .horarios-sub, .field-conta { color: #fff !important; }
+  .field input, .field select, .field textarea { border-color: #fff !important; }
+  .horario-chip { border-color: #fff; }
+}
+@media (prefers-reduced-motion: reduce) { .hl-status.feriado .hl-dot { animation: none; } }
+.hero-cta + .hero-cliente { margin-top: -26px; margin-bottom: 30px; }
+.scroll-indicator { width: 44px; border: 0; }
+.scroll-indicator::before { content: ''; position: absolute; left: 9px; right: 9px; top: 0; bottom: 0; border: 2px solid rgba(255,255,255,.35); border-radius: 16px; }
+@media (pointer: coarse), (max-width: 860px) {
+  .contact-list a[href^="tel:"] { min-width: 44px; justify-content: center; }
+  .link-bloco { display: inline-flex; align-items: center; min-height: 44px; }
+}
+.link-bloco { text-decoration: underline; text-decoration-color: rgba(229,9,20,.7); text-underline-offset: 4px; }
+
+/* Rodada 7 — CORREÇÃO: o formulário (com horários livres, placa e "o que o carro está fazendo") é mais alto que a tela do celular
+   (1.600 px num 375x812) e o fundo era um grid centralizado SEM rolagem: o topo ficava cortado e o botão "Pedir meu horário"
+   ficava fora da tela, inalcançável. Agora o fundo rola e o diálogo se centraliza só quando cabe (margin: auto). */
+.modal-backdrop { display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.promo-modal, .form-modal { margin: auto; flex: none; }
+@media (max-width: 480px) {
+  .modal-backdrop { padding: 12px; }
+  .form-modal { padding: 26px 18px 22px; }
+  .form-modal-head { margin-bottom: 14px; }
+  .form-modal-head h3 { font-size: 1.6rem; }
+  .form-modal .field { margin-bottom: 10px; }
+}
+@media (max-width: 480px) {
+  /* o texto longo do topo já está dito embaixo do botão; no celular o formulário começa direto nos campos */
+  #formDesc { display: none; }
+  .form-modal .field-row--carro { grid-template-columns: 3fr 2fr; gap: 10px; }
+  .form-modal #fPlacaDica { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .horarios-form .horarios-dia { grid-template-columns: 1fr; gap: 4px; }
+  .horarios-form .horarios-horas { gap: 6px; }
+}
+@media (pointer: coarse), (max-width: 860px) { .horarios-form .horario-chip, .horario-chip { min-height: 44px; } }

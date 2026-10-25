@@ -8,4 +8,13 @@ Disallow: /whatsapp
 Disallow: /horarios
 Disallow: /indicar
 Disallow: /minha-indycar
+Disallow: /acompanhar
+Disallow: /minha
+Disallow: /area-cliente
+Disallow: /servicos
+Disallow: /contato
+Disallow: /a/
+Disallow: /m/
+Disallow: /o/
+Disallow: /rota
 Sitemap: https://indycar-taubate.netlify.app/sitemap.xml

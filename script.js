@@ -55,6 +55,9 @@
   const aoInteragir = (fn) => { interagiu.then(() => aposCarregar(fn)); };
   // No celular o título do hero não é dividido em letras (ele é o LCP e entra só com o deslize do CSS).
   const heroLeve = window.matchMedia('(max-width: 768px)').matches;
+  // Rodada 7: economia de dados (Save-Data ligado ou rede 2G): efeitos pesados desligados e nada de consulta antecipada.
+  const REDE = navigator.connection || {};
+  const POUPAR = REDE.saveData === true || /(^|-)2g$/.test(REDE.effectiveType || '');
   const sessao = {
     get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
     set(k, v) { try { sessionStorage.setItem(k, v); } catch (_) {} }
@@ -62,6 +65,9 @@
   // Rodada 5: a campanha que trouxe a pessoa (utm_*, gclid, fbclid) fica guardada na sessão e vai junto no pedido
   // do formulário e no código dos links de WhatsApp — o CRM enxerga "site" e, se houver, o anúncio de origem.
   const PARAMS = new URLSearchParams(location.search);
+  // Rodada 7: /s/<serviço>, /agendar e /orcamento (netlify.toml) chegam como /#agendar[-serviço] com a query intacta
+  // (utm_*, gclid, fbclid): abrem o formulário já com o serviço, sem rolar para lugar nenhum.
+  const ATALHO_RE = /^#agendar(?:-([a-z0-9-]{1,30}))?$/;
   const UTM = (() => {
     const u = {};
     for (const k of ['source', 'medium', 'campaign', 'content', 'term']) { const v = PARAMS.get('utm_' + k); if (v) u[k] = v.slice(0, 80); }
@@ -98,7 +104,7 @@
   // As seções abaixo da dobra usam content-visibility (styles.css). Antes de pular para uma âncora, todas ganham o
   // tamanho real (html.cv-off), senão o pulo cairia no lugar errado. Com âncora já no endereço, vale desde o início.
   const semAtalhoDeLayout = () => document.documentElement.classList.add('cv-off');
-  if (location.hash.length > 1) semAtalhoDeLayout();
+  if (location.hash.length > 1 && !ATALHO_RE.test(location.hash)) semAtalhoDeLayout();
   document.addEventListener('click', (e) => {
     const a = e.target.closest && e.target.closest('a[href^="#"]');
     if (a && a.getAttribute('href').length > 1) semAtalhoDeLayout();
@@ -727,9 +733,15 @@
   const formBackdrop = $('#formBackdrop');
   let lastFocus = null;
 
+  // Rodada 7: com um modal aberto o resto da página fica inerte (o leitor de tela e o Tab não saem do diálogo).
+  function fundoInerte() {
+    const aberto = promoBackdrop.classList.contains('open') || formBackdrop.classList.contains('open');
+    $$('#navbar, main, footer, aside[aria-label="Atalhos de contato"]').forEach(e => { if (aberto) e.setAttribute('inert', ''); else e.removeAttribute('inert'); });
+  }
   const openEl = (el) => {
     if (!el.classList.contains('open')) lastFocus = document.activeElement;
     el.classList.add('open');
+    fundoInerte();
     document.body.style.overflow = 'hidden';
     const first = el === formBackdrop ? $('#fName') : $('.modal-close', el);
     if (first) first.focus();
@@ -737,6 +749,7 @@
   const closeEl = (el) => {
     if (!el.classList.contains('open')) return;
     el.classList.remove('open');
+    fundoInerte();
     if (!promoBackdrop.classList.contains('open') && !formBackdrop.classList.contains('open')) {
       document.body.style.overflow = '';
       if (lastFocus && lastFocus.focus && document.contains(lastFocus)) lastFocus.focus();
@@ -772,22 +785,47 @@
   }));
   // Endereço vindo de anúncio ou do WhatsApp: /?servico=cambio rola até o card e deixa o serviço escolhido;
   // /?abrir=form abre o formulário direto (ex.: /?servico=freios&abrir=form).
-  (function entradaPorEndereco() {
-    const servico = (PARAMS.get('servico') || '').toLowerCase();
+  function entradaPorEndereco() {
+    const atalho = ATALHO_RE.exec(location.hash);
+    let servico = (PARAMS.get('servico') || '').toLowerCase();
+    if (atalho && atalho[1]) servico = atalho[1];
     if (servico && /^[a-z0-9-]{1,30}$/.test(servico)) {
-      escolherServico(servico);
+      // serviço que não existe no formulário (link antigo ou digitado errado): cai no diagnóstico, nunca num formulário sem nada
+      const achou = escolherServico(servico);
+      if (!achou && atalho) escolherServico('diagnostico');
       const card = document.getElementById('svc-' + servico);
-      if (card && !location.hash) {
+      if (card && !location.hash && !atalho) {
         semAtalhoDeLayout();
         card.classList.add('svc-destaque');
         setTimeout(() => card.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' }), 350);
       }
-    }
-    if (PARAMS.get('abrir') === 'form') setTimeout(() => openEl(formBackdrop), 600);
-    if (servico || PARAMS.has('abrir')) {
+    } else if (atalho) escolherServico('diagnostico');
+    // o CRM fica sabendo por qual atalho a pessoa chegou (ex.: /s/freios mandado pelo Atendimento ou pelo Comunicar)
+    if (atalho) sessao.set('indycar_entrada', atalho[1] ? '/s/' + atalho[1] : '/agendar');
+    if (atalho || PARAMS.get('abrir') === 'form') setTimeout(() => openEl(formBackdrop), atalho ? 300 : 600);
+    if (servico || atalho || PARAMS.has('abrir')) {
       // o endereço fica limpo (sem perder a campanha, que já está na sessão)
-      try { history.replaceState(null, '', location.pathname + (location.hash || '')); } catch (_) {}
+      try { history.replaceState(null, '', location.pathname + (atalho ? '' : location.hash || '')); } catch (_) {}
     }
+  }
+  entradaPorEndereco();
+  window.addEventListener('hashchange', () => { if (ATALHO_RE.test(location.hash)) entradaPorEndereco(); });
+  // Rodada 7: quem chega por #contato, #faq... cai no lugar certo mesmo quando imagens, fontes e horários mudam a altura
+  // da página depois da primeira pintura (antes o #contato podia parar 20 px acima do título no celular).
+  (function realinharAncora() {
+    const h = location.hash;
+    if (h.length < 2 || ATALHO_RE.test(h)) return;
+    let alvo = null;
+    try { alvo = document.getElementById(decodeURIComponent(h.slice(1))); } catch (_) {}
+    if (!alvo) return;
+    let mexeu = false;
+    ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(ev => window.addEventListener(ev, () => { mexeu = true; }, { once: true, passive: true }));
+    const ajustar = () => {
+      if (mexeu) return;
+      if (Math.abs(alvo.getBoundingClientRect().top - 80) > 8) alvo.scrollIntoView({ block: 'start', behavior: 'instant' });
+    };
+    window.addEventListener('load', () => { ajustar(); setTimeout(ajustar, 900); }, { once: true });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustar);
   })();
 
   // botões de fechar
@@ -942,17 +980,18 @@
 
     estadoEnviando(true);
     let resposta = null;
+    const pedido = {
+      nome: name.value.trim(), telefone: digitos, servico: service.value, codigo: codigoServico, carro: car || null,
+      preferencia: quando || null, placa, horario, mensagem: mensagem || null, pagina: (sessao.get('indycar_entrada') || (location.pathname + location.search)).slice(0, 200),
+      utm: UTM, decorrido: Date.now() - comecouEm, empresa: ($('#fEmpresa') || {}).value || '',
+    };
     try {
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 9000);
       const r = await fetch(SITE_LEAD_URL, {
         method: 'POST', mode: 'cors', signal: ctrl.signal,
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          nome: name.value.trim(), telefone: digitos, servico: service.value, codigo: codigoServico, carro: car || null,
-          preferencia: quando || null, placa, horario, mensagem: mensagem || null, pagina: (location.pathname + location.search).slice(0, 200),
-          utm: UTM, decorrido: Date.now() - comecouEm, empresa: ($('#fEmpresa') || {}).value || '',
-        }),
+        body: JSON.stringify(pedido),
       });
       clearTimeout(t);
       const corpo = await r.json().catch(() => ({}));
@@ -966,8 +1005,11 @@
       // O banco não respondeu: abre o WhatsApp com a mesma mensagem (comportamento das rodadas anteriores).
       window.open(waHref, '_blank', 'noopener');
       resposta = { ok: true, direto: true, mensagem: 'Seu pedido abriu no WhatsApp da oficina. Se a janela não apareceu, toque no botão abaixo.' };
+      // Rodada 7: o pedido também fica numa fila no aparelho e é reenviado ao banco quando a rede volta (nada se perde)
+      window.dispatchEvent(new CustomEvent('indycar:pedido-offline', { detail: { pedido } }));
     }
     sessao.set('indycar_promo', '1');
+    window.dispatchEvent(new CustomEvent('indycar:pedido', { detail: { resposta, pedido, horarioRotulo: horario ? horarioEscolhido.rotulo : '' } }));
     mostrarSucesso(resposta, waHref);
     form.reset();
     limparHorario();
@@ -1009,9 +1051,12 @@
   function pintarHorarios(alvo, corpo, modo) {
     if (!alvo) return;
     alvo.textContent = '';
-    corpo.dias.slice(0, 3).forEach(dia => {
+    let temFeriado = false;
+    corpo.dias.slice(0, modo === 'form' && window.innerWidth <= 480 ? 2 : 3).forEach(dia => {
       const linha = document.createElement('div'); linha.className = 'horarios-dia';
       const rot = document.createElement('span'); rot.className = 'horarios-dia-rot'; rot.textContent = dia.rotulo;
+      const feriadoDia = FERIADOS[dia.data];
+      if (feriadoDia) { const f = document.createElement('small'); f.className = 'feriado'; f.textContent = 'feriado'; rot.appendChild(f); temFeriado = true; }
       const horas = document.createElement('div'); horas.className = 'horarios-horas';
       dia.horas.slice(0, 4).forEach(hora => {
         const b = document.createElement('button');
@@ -1019,11 +1064,16 @@
         b.type = 'button'; b.className = 'horario-chip'; b.textContent = hora;
         b.dataset.data = dia.data; b.dataset.hora = hora; b.dataset.rotulo = longo;
         b.setAttribute('aria-pressed', 'false');
-        b.setAttribute('aria-label', 'Horário de ' + longo);
+        b.setAttribute('aria-label', 'Horário de ' + longo + (feriadoDia ? ' (feriado: a equipe confirma se a oficina abre)' : ''));
         horas.appendChild(b);
       });
       linha.append(rot, horas); alvo.appendChild(linha);
     });
+    if (temFeriado) {
+      const n = document.createElement('p'); n.className = 'horarios-nota';
+      n.textContent = 'Em feriado a equipe confirma pelo WhatsApp se a oficina abre.';
+      alvo.appendChild(n);
+    }
   }
   function marcarHorario() {
     $$('.horario-chip').forEach(b => b.setAttribute('aria-pressed', String(!!horarioEscolhido && b.dataset.data === horarioEscolhido.data && b.dataset.hora === horarioEscolhido.hora)));
@@ -1087,7 +1137,7 @@
       closeEl(promoBackdrop); openEl(formBackdrop); montarHorarios();
     });
     // aquece a consulta depois de a página assentar: o convite e o formulário já abrem com os horários
-    setTimeout(() => { if (!document.hidden) montarHorarios(); }, 5000);
+    setTimeout(() => { if (!document.hidden && !POUPAR) montarHorarios(); }, 5000);
   })();
   // "Quando prefere?" só oferece o que existe: domingo e depois das 17h30 não tem "Hoje"; sábado não tem "Amanhã" (domingo fechado).
   (function () {
@@ -1194,11 +1244,25 @@
   ];
   let proofIdx = 0, proofDismissed = false, toastActive = false;
 
+  // Rodada 7: feriados nacionais 2026–2027 (a mesma lista do Comunicar, dados.js › FERIADOS). A oficina pode ou não abrir
+  // nesses dias: o site não promete nada, só avisa e manda confirmar pelo WhatsApp.
+  const FERIADOS = {
+    '2026-01-01': 'Confraternização Universal', '2026-02-16': 'Carnaval', '2026-02-17': 'Carnaval',
+    '2026-04-03': 'Sexta-feira Santa', '2026-04-21': 'Tiradentes', '2026-05-01': 'Dia do Trabalho',
+    '2026-06-04': 'Corpus Christi', '2026-09-07': 'Independência', '2026-10-12': 'Nossa Senhora Aparecida',
+    '2026-11-02': 'Finados', '2026-11-15': 'Proclamação da República', '2026-11-20': 'Consciência Negra',
+    '2026-12-25': 'Natal',
+    '2027-01-01': 'Confraternização Universal', '2027-02-08': 'Carnaval', '2027-02-09': 'Carnaval',
+    '2027-03-26': 'Sexta-feira Santa', '2027-04-21': 'Tiradentes', '2027-05-01': 'Dia do Trabalho',
+    '2027-05-27': 'Corpus Christi', '2027-09-07': 'Independência', '2027-10-12': 'Nossa Senhora Aparecida',
+    '2027-11-02': 'Finados', '2027-11-15': 'Proclamação da República', '2027-11-20': 'Consciência Negra',
+    '2027-12-25': 'Natal',
+  };
   // Horário comercial: Seg–Sáb 8h–17h30 · Dom fechado (sempre no fuso de Taubaté)
   function agoraSP() {
-    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
     const part = type => parts.find(p => p.type === type).value;
-    return { dia: part('weekday'), minutos: Number(part('hour')) * 60 + Number(part('minute')) };
+    return { dia: part('weekday'), minutos: Number(part('hour')) * 60 + Number(part('minute')), data: part('year') + '-' + part('month') + '-' + part('day') };
   }
   function isBusinessHours() {
     const { dia, minutos } = agoraSP();
@@ -1210,8 +1274,18 @@
     if (!chip) return;
     const rotulo = $('b', chip), detalhe = $('span', chip);
     function pintar() {
-      const { dia, minutos } = agoraSP();
+      const { dia, minutos, data } = agoraSP();
       const aberto = isBusinessHours();
+      // Rodada 7: em feriado nacional o site não afirma "Aberto agora" (a equipe confirma pelo WhatsApp se abre)
+      const feriadoHoje = FERIADOS[data];
+      chip.classList.toggle('feriado', !!feriadoHoje && dia !== 'Sun');
+      if (feriadoHoje && dia !== 'Sun') {
+        chip.classList.remove('fechado');
+        rotulo.textContent = 'Hoje é feriado (' + feriadoHoje + ')';
+        detalhe.textContent = 'confirme no WhatsApp se abrimos';
+        chip.hidden = false;
+        return;
+      }
       chip.classList.toggle('fechado', !aberto);
       rotulo.textContent = aberto ? 'Aberto agora' : 'Fechado agora';
       if (aberto) detalhe.textContent = minutos >= 990 ? 'fecha às 17h30' : 'até 17h30';
@@ -2353,6 +2427,129 @@
         btn.setAttribute('aria-expanded', String(open));
       });
     });
+  })();
+
+
+  /* ================================================================
+     40. RODADA 7 — rascunho do formulário, lembrar dados neste aparelho,
+         fila de reenvio sem rede, pedido recente e economia de dados
+     ================================================================ */
+  (function rodada7() {
+    const store = {
+      get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
+      del(k) { try { localStorage.removeItem(k); } catch (_) {} },
+    };
+    const lerJson = (txt) => { try { return JSON.parse(txt || 'null'); } catch (_) { return null; } };
+    const DIA = 86400000;
+    const CAMPOS = { nome: '#fName', tel: '#fPhone', carro: '#fCar', placa: '#fPlaca', msg: '#fMsg' };
+
+    if (POUPAR) { document.body.classList.add('perf-lite'); document.documentElement.classList.add('poupar-dados'); }
+
+    // --- Rascunho (sessão): fechou o formulário sem querer ou recarregou? O que foi digitado volta. ---
+    function valores() {
+      const o = {};
+      for (const [k, sel] of Object.entries(CAMPOS)) o[k] = (($(sel) || {}).value || '');
+      o.servico = ($('#fService') || {}).value || '';
+      return o;
+    }
+    function preencher(d) {
+      if (!d) return;
+      for (const [k, sel] of Object.entries(CAMPOS)) {
+        const el = $(sel);
+        if (el && !el.value && d[k]) { el.value = String(d[k]).slice(0, Number(el.maxLength) > 0 ? el.maxLength : 500); if (k === 'msg') el.dispatchEvent(new Event('input')); }
+      }
+      const sv = $('#fService');
+      if (sv && !sv.value && d.servico && $$('option', sv).some(o => o.value === d.servico)) sv.value = d.servico;
+    }
+    function salvarRascunho() {
+      const v = valores();
+      if (Object.entries(v).some(([k, x]) => k !== 'servico' && String(x).trim())) sessao.set('indycar_rascunho', JSON.stringify(v));
+    }
+    form.addEventListener('input', salvarRascunho);
+    form.addEventListener('change', salvarRascunho);
+    const rascunho = lerJson(sessao.get('indycar_rascunho'));
+    if (rascunho) preencher(rascunho);
+
+    // --- Lembrar meus dados neste aparelho (localStorage, só se a pessoa marcar) ---
+    const EU = 'indycar_eu';
+    const euAtual = () => { const e = lerJson(store.get(EU)); return e && e.em && Date.now() - e.em < 180 * DIA ? e : null; };
+    const chk = $('#fLembrar'), esquecer = $('#fEsquecer');
+    function mostrarEu() {
+      const e = euAtual();
+      if (chk) chk.checked = !!e;
+      if (esquecer) esquecer.hidden = !e;
+      if (e) preencher(e);
+    }
+    mostrarEu();
+    if (esquecer) esquecer.addEventListener('click', () => {
+      store.del(EU);
+      for (const sel of Object.values(CAMPOS)) { const el = $(sel); if (el) { el.value = ''; if (el.id === 'fMsg') el.dispatchEvent(new Event('input')); } }
+      try { sessionStorage.removeItem('indycar_rascunho'); } catch (_) {}
+      if (chk) chk.checked = false;
+      esquecer.hidden = true;
+      const aviso = $('#fHorarioEscolhido'); if (aviso) aviso.textContent = 'Seus dados foram apagados deste aparelho.';
+      const n = $('#fName'); if (n) n.focus();
+    });
+    form.addEventListener('reset', () => setTimeout(mostrarEu, 0));
+
+    // --- Depois de um pedido: guarda o protocolo, apaga o rascunho, lembra os dados se a pessoa quis ---
+    const PEDIDO = 'indycar_pedido';
+    function pintarPedidoRecente() {
+      const alvo = $('#areaPedido');
+      if (!alvo) return;
+      const p = lerJson(store.get(PEDIDO));
+      if (!p || !p.em || Date.now() - p.em > 36 * 3600000 || !p.protocolo) { if (p) store.del(PEDIDO); alvo.hidden = true; return; }
+      $('#areaPedidoTit').textContent = 'Seu pedido ' + p.protocolo + ' está com a equipe';
+      const txt = $('#areaPedidoTxt'); txt.textContent = '';
+      txt.append((p.servico ? p.servico : 'Diagnóstico') + (p.horario ? ' · ' + p.horario : '') + '. A confirmação chega pelo seu WhatsApp. Se o carro já está na oficina, ');
+      const a = document.createElement('a'); a.href = 'https://indycar-patio.netlify.app/acompanhar/'; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'acompanhe por aqui';
+      txt.append(a, '.');
+      alvo.hidden = false;
+    }
+    window.addEventListener('indycar:pedido', (e) => {
+      const { resposta, pedido, horarioRotulo } = e.detail || {};
+      try { sessionStorage.removeItem('indycar_rascunho'); } catch (_) {}
+      if (chk && chk.checked && pedido) {
+        store.set(EU, JSON.stringify({ em: Date.now(), nome: pedido.nome, tel: ($('#fPhone') || {}).value || '', carro: pedido.carro || '', placa: pedido.placa || '' }));
+      } else if (chk && !chk.checked) store.del(EU);
+      if (resposta && resposta.protocolo && !resposta.direto) {
+        store.set(PEDIDO, JSON.stringify({ em: Date.now(), protocolo: String(resposta.protocolo).slice(0, 12), servico: pedido ? pedido.servico : '', horario: horarioRotulo || '' }));
+        pintarPedidoRecente();
+      }
+    });
+    pintarPedidoRecente();
+
+    // --- Fila de reenvio: sem rede o pedido abre o WhatsApp E fica guardado; quando a rede volta, vai ao banco ---
+    const FILA = 'indycar_fila';
+    const lerFila = () => (lerJson(store.get(FILA)) || []).filter(x => x && x.em && x.pedido && Date.now() - x.em < DIA);
+    window.addEventListener('indycar:pedido-offline', (e) => {
+      const pedido = e.detail && e.detail.pedido;
+      if (!pedido) return;
+      const f = lerFila(); f.push({ em: Date.now(), pedido });
+      store.set(FILA, JSON.stringify(f.slice(-3)));
+    });
+    let esvaziando = false;
+    async function esvaziarFila() {
+      if (esvaziando || navigator.onLine === false) return;
+      const f = lerFila();
+      if (!f.length) { store.del(FILA); return; }
+      esvaziando = true;
+      const restantes = [];
+      for (const item of f) {
+        try {
+          const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 9000);
+          const r = await fetch(SITE_LEAD_URL, { method: 'POST', mode: 'cors', signal: ctrl.signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify(item.pedido) });
+          clearTimeout(t);
+          if (r.status >= 500 || r.status === 429) restantes.push(item); // servidor ocupado: tenta de novo depois
+        } catch (_) { restantes.push(item); }
+      }
+      if (restantes.length) store.set(FILA, JSON.stringify(restantes)); else store.del(FILA);
+      esvaziando = false;
+    }
+    window.addEventListener('online', esvaziarFila);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) esvaziarFila(); });
+    setTimeout(esvaziarFila, 6000);
   })();
 
 })();
