@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lote2 } from './qa-r7-lote2.mjs';
 import { lote3 } from './qa-r7-lote3.mjs';
+import { lote4 } from './qa-r7-lote4.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'qa-out');
@@ -60,7 +61,7 @@ const server = http.createServer((req, res) => {
   const url = decodeURIComponent(rota);
   const f = path.join(ROOT, url === '/' ? 'index.html' : url);
   if (!fs.existsSync(f) || fs.statSync(f).isDirectory() || !f.startsWith(ROOT)) {
-    const r = aplicarRedirect(url, query);
+    const r = aplicarRedirect(rota, query);
     if (r && !r.to.startsWith('http')) { res.writeHead(r.status, { location: r.to }); return res.end(); }
     res.writeHead(404, { 'content-type': TIPOS['.html'], ...CABECALHOS }); return res.end(fs.readFileSync(path.join(ROOT, '404.html')));
   }
@@ -73,7 +74,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, protocolTimeout: 240000, args: ['--no-first-run', '--no-default-browser-check'] });
 
 // Resposta falsa da Edge Function: horários e envio.
-const FETCH_FALSO = `window.__envios = []; window.fetch = async (url, opts) => { if (String(url).endsWith('/horarios')) { return { ok: true, status: 200, json: async () => ({ ok: true, atualizado_em: '2026-10-26T15:00:00.000Z', dias: window.__dias || [{ data: '2026-10-26', rotulo: 'hoje', horas: ['08:00', '10:00', '12:00', '14:00'] }, { data: '2026-10-27', rotulo: 'amanhã', horas: ['08:00', '10:00'] }] }) }; } window.__envios.push({ url: String(url), body: JSON.parse(opts.body) }); if (window.__fetchFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, protocolo: 'QA1234', mensagem: 'Pedido enviado, Teste! (resposta de teste)' }) }; };`;
+const FETCH_FALSO = `window.__envios = []; window.fetch = async (url, opts) => { if (String(url).endsWith('/horarios')) { window.__horariosPedidos = (window.__horariosPedidos | 0) + 1; return { ok: true, status: 200, json: async () => ({ ok: true, atualizado_em: '2026-10-26T15:00:00.000Z', dias: window.__dias || [{ data: '2026-10-26', rotulo: 'hoje', horas: ['08:00', '10:00', '12:00', '14:00'] }, { data: '2026-10-27', rotulo: 'amanhã', horas: ['08:00', '10:00'] }] }) }; } window.__envios.push({ url: String(url), body: JSON.parse(opts.body) }); if (window.__fetchFalha) throw new TypeError('rede'); return { ok: true, status: 200, json: async () => ({ ok: true, protocolo: 'QA1234', mensagem: 'Pedido enviado, Teste! (resposta de teste)' }) }; };`;
 
 async function abrir(largura, altura, url = BASE + '/', { promo = true, antes = null } = {}) {
   const page = await browser.newPage();
@@ -173,6 +174,7 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
 
 await lote2({ abrir, ok, espera, BASE });
 await lote3({ abrir, ok, espera, BASE, aplicarRedirect, ROOT, browser });
+await lote4({ abrir, ok, espera, BASE, aplicarRedirect, ROOT });
 
 await browser.close();
 server.close();

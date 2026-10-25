@@ -67,7 +67,19 @@
   const PARAMS = new URLSearchParams(location.search);
   // Rodada 7: /s/<serviço>, /agendar e /orcamento (netlify.toml) chegam como /#agendar[-serviço] com a query intacta
   // (utm_*, gclid, fbclid): abrem o formulário já com o serviço, sem rolar para lugar nenhum.
-  const ATALHO_RE = /^#agendar(?:-([a-z0-9-]{1,30}))?$/;
+  const ATALHO_RE = /^#agendar(?:-([^?#]{1,80}))?$/;
+  // Nomes que os outros sistemas usam (cadastro `servicos` do banco, Comunicar, Atendimento) e o código do formulário.
+  const ALIAS_SERVICO = {
+    'alinhamento-3d': 'alinhamento', 'alinhamento-e-balanceamento': 'alinhamento', 'balanceamento': 'alinhamento',
+    'correia-dentada': 'correia', 'diagnostico-com-scanner': 'diagnostico', 'diagnostico-eletronico': 'diagnostico', 'scanner': 'diagnostico',
+    'revisao-completa': 'motor', 'revisao-de-motor': 'motor', 'troca-de-oleo': 'oleo-motor', 'troca-de-oleo-de-motor': 'oleo-motor',
+    'troca-de-oleo-cambio': 'cambio', 'troca-de-oleo-cambio-automatico': 'cambio', 'troca-de-oleo-de-cambio': 'cambio', 'dialise': 'cambio',
+    'limpeza-de-bicos': 'bicos', 'pastilhas': 'freios', 'pastilha': 'freios', 'amortecedores': 'suspensao', 'amortecedor': 'suspensao',
+    'pneu': 'pneus', 'ar-condicionado': 'outro-servico', 'direcao': 'outro-servico', 'oleo': 'oleo-motor'
+  };
+  // Horário que o Atendimento sugeriu: /s/freios?h=2026-10-27T10:00 (só data e hora, nada de pessoa)
+  let slotPedido = null, avisoSlot = '';
+  { const m = /^(\d{4}-\d{2}-\d{2})[T_ ](\d{2}:\d{2})$/.exec(PARAMS.get('h') || ''); if (m) slotPedido = { data: m[1], hora: m[2] }; }
   const UTM = (() => {
     const u = {};
     for (const k of ['source', 'medium', 'campaign', 'content', 'term']) { const v = PARAMS.get('utm_' + k); if (v) u[k] = v.slice(0, 80); }
@@ -181,6 +193,7 @@
     const open = hamburger.classList.toggle('open');
     navLinks.classList.toggle('open', open);
     hamburger.setAttribute('aria-expanded', String(open));
+    hamburger.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && navLinks.classList.contains('open')) { closeMenu(); hamburger.focus(); } });
   // fecha ao clicar num link
@@ -789,6 +802,7 @@
     const atalho = ATALHO_RE.exec(location.hash);
     let servico = (PARAMS.get('servico') || '').toLowerCase();
     if (atalho && atalho[1]) servico = atalho[1];
+    if (servico) { try { servico = decodeURIComponent(servico); } catch (_) {} servico = slug(servico); servico = ALIAS_SERVICO[servico] || servico; }
     if (servico && /^[a-z0-9-]{1,30}$/.test(servico)) {
       // serviço que não existe no formulário (link antigo ou digitado errado): cai no diagnóstico, nunca num formulário sem nada
       const achou = escolherServico(servico);
@@ -801,7 +815,8 @@
       }
     } else if (atalho) escolherServico('diagnostico');
     // o CRM fica sabendo por qual atalho a pessoa chegou (ex.: /s/freios mandado pelo Atendimento ou pelo Comunicar)
-    if (atalho) sessao.set('indycar_entrada', atalho[1] ? '/s/' + atalho[1] : '/agendar');
+    if (atalho) sessao.set('indycar_entrada', servico && /^[a-z0-9-]{1,30}$/.test(servico) ? '/s/' + servico : '/agendar');
+    if (slotPedido) setTimeout(() => montarHorarios(), 400);
     if (atalho || PARAMS.get('abrir') === 'form') setTimeout(() => openEl(formBackdrop), atalho ? 300 : 600);
     if (servico || atalho || PARAMS.has('abrir')) {
       // o endereço fica limpo (sem perder a campanha, que já está na sessão)
@@ -900,7 +915,7 @@
     form.hidden = true;
     if (formHead) formHead.hidden = true;
     $('#formOkTitulo').textContent = resposta.repetido ? 'Já estamos com o seu pedido!' : 'Pedido enviado!';
-    $('#formOkTexto').textContent = resposta.mensagem || 'A equipe confirma o horário com você pelo WhatsApp, de segunda a sábado, das 8h às 17h30.';
+    $('#formOkTexto').textContent = (resposta.mensagem || 'A equipe confirma o horário com você pelo WhatsApp, de segunda a sábado, das 8h às 17h30.') + (resposta.horarioPedido ? ' Horário pedido: ' + resposta.horarioPedido + '.' : '');
     const proto = $('#formOkProto');
     if (proto) { proto.hidden = !resposta.protocolo; if (resposta.protocolo) $('b', proto).textContent = resposta.protocolo; }
     const copiar = $('#formOkCopiar');
@@ -1009,6 +1024,8 @@
       window.dispatchEvent(new CustomEvent('indycar:pedido-offline', { detail: { pedido } }));
     }
     sessao.set('indycar_promo', '1');
+    resposta.horarioPedido = horario ? horarioEscolhido.rotulo : '';
+    horariosPromessa = null; horariosEm = 0; // a Agenda mudou: a próxima consulta traz a lista nova
     window.dispatchEvent(new CustomEvent('indycar:pedido', { detail: { resposta, pedido, horarioRotulo: horario ? horarioEscolhido.rotulo : '' } }));
     mostrarSucesso(resposta, waHref);
     form.reset();
@@ -1075,10 +1092,15 @@
       alvo.appendChild(n);
     }
   }
+  function resumirHorarios(corpo) {
+    const r = $('#horariosResumo'); if (!r) return;
+    const t = corpo.dias.slice(0, 3).map(d => d.horas.length + (d.horas.length === 1 ? ' horário livre ' : ' horários livres ') + d.rotulo).join('; ');
+    if (r.textContent !== t) r.textContent = t;
+  }
   function marcarHorario() {
     $$('.horario-chip').forEach(b => b.setAttribute('aria-pressed', String(!!horarioEscolhido && b.dataset.data === horarioEscolhido.data && b.dataset.hora === horarioEscolhido.hora)));
     const dica = $('#fHorarioEscolhido');
-    if (dica) dica.textContent = horarioEscolhido ? 'Você escolheu ' + horarioEscolhido.rotulo + '. Toque de novo no horário para tirar.' : '';
+    if (dica) dica.textContent = horarioEscolhido ? 'Você escolheu ' + horarioEscolhido.rotulo + '. Toque de novo no horário para tirar.' : avisoSlot;
     const q = $('#fQuando');
     if (q) q.disabled = !!horarioEscolhido; // o horário escolhido já diz quando; o campo volta se a pessoa desmarcar
   }
@@ -1101,6 +1123,14 @@
     const f = $('#fHorarios');
     if (f && corpo.dias.length && corpo.atualizado_em !== horariosPintados) { pintarHorarios($('#fHorariosLista'), corpo, 'form'); f.hidden = false; }
     horariosPintados = corpo.atualizado_em;
+    resumirHorarios(corpo);
+    if (slotPedido) {
+      const { data, hora } = slotPedido; slotPedido = null;
+      const dia = corpo.dias.find(d => d.data === data && d.horas.includes(hora));
+      const dica = $('#fHorarioEscolhido');
+      if (dia) { horarioEscolhido = { data, hora, rotulo: dia.rotulo + ' às ' + hora }; marcarHorario(); }
+      else avisoSlot = 'O horário que a equipe sugeriu já não está livre. Escolha outro abaixo ou deixe em branco.';
+    }
     if (horarioEscolhido && !$$('.horario-chip').some(b => b.dataset.data === horarioEscolhido.data && b.dataset.hora === horarioEscolhido.hora)) {
       // a Agenda mudou e o horário escolhido não está mais livre: solta e avisa em voz alta
       const rot = horarioEscolhido.rotulo; horarioEscolhido = null; marcarHorario();
