@@ -181,3 +181,24 @@
   from = "/rota"
   to = "https://www.google.com/maps/dir/?api=1&destination=Av.+Bandeirantes%2C+875+-+Parque+Paduan%2C+Taubat%C3%A9+-+SP"
   status = 302
+
+# Rodada 7: mais atalhos para o Atendimento mandar (todos repassam utm_*): /s sozinho abre o formulário.
+[[redirects]]
+  from = "/s"
+  to = "/#agendar"
+  status = 302
+
+[[redirects]]
+  from = "/garantia"
+  to = "/#garantia"
+  status = 302
+
+[[redirects]]
+  from = "/diagnostico"
+  to = "/#diagnostico"
+  status = 302
+
+[[redirects]]
+  from = "/duvidas"
+  to = "/#faq"
+  status = 302

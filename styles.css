@@ -1803,3 +1803,5 @@ a, button, [role="button"], label, select, summary { touch-action: manipulation;
 /* 16 px nos campos: abaixo disso o Safari do iPhone dá zoom ao tocar e o formulário "pula" */
 @media (pointer: coarse), (max-width: 860px) { .field input, .field select, .field textarea, .area-cola-linha input { font-size: 16px; } }
 @media print { .area-pedido, .field-lembrar, .hero-cliente { display: none !important; } }
+
+.modal-backdrop { color-scheme: dark; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.3) transparent; }

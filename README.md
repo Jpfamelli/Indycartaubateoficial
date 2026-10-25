@@ -78,3 +78,14 @@ Nada de depoimento ou nota inventada (avaliações só no Google), nada de preç
 - **Roteador de links** (#area-cliente): cole o link ou o código que a equipe mandou. 36 caracteres → Acompanhar meu carro, 48 → Minha IndyCar, 32 → orçamento (`#/o/<token>`); só abre os dois sites da casa.
 - **Atalhos** (netlify.toml): `/s/<serviço>` (formulário já com o serviço; para o Atendimento e o Comunicar mandarem), `/orcamento`, `/horarios`, `/indicar`, `/minha-indycar`. Ficam fora do Google (robots.txt).
 - Texto do formulário passa pelo servidor sem caracteres de controle/invisíveis; 429 devolve `Retry-After`.
+
+## Rodada 7 (25/10/2026): atalhos que não perdem a campanha, links curtos e celular
+Contrato para o Atendimento, o Comunicar, o Pátio, o Orçador e o balcão (QR). Todos aceitam `?utm_source=...&utm_campaign=...&gclid/fbclid` (a Netlify repassa a query porque o destino não tem `?`):
+- `/s/<serviço>` abre o formulário com o serviço. Aceita o código do site (`freios`, `cambio`, `oleo-motor`, `diagnostico`...) **e** o nome do cadastro `servicos` (`Troca de Óleo de Câmbio`, `Limpeza de Bicos`, `Revisão de Motor`...). Serviço desconhecido cai no diagnóstico. `?h=2026-10-27T10:00` deixa o horário já marcado (se ainda estiver livre na Agenda; senão avisa). O lead mostra `pagina = /s/<serviço>`.
+- `/agendar`, `/orcamento` (diagnóstico), `/horarios`, `/servicos`, `/contato`, `/rota` (Google Maps).
+- `/a/<código 36>` → Acompanhar meu carro; `/m/<código 48>` → Minha IndyCar; `/o/<código 32>` → orçamento. Se alguém cola o código direto na barra (`dominio/<código>`), a página 404 abre o destino certo.
+- Exemplo: `https://indycar-taubate.netlify.app/s/freios?utm_source=comunicar&utm_campaign=revisao&h=2026-10-27T10:00`.
+
+Fragmento interno: `/#agendar[-serviço]` (é o que os atalhos viram). Os links antigos `/?servico=&abrir=form` seguem valendo.
+Neste aparelho (nada sai dele): rascunho do formulário (aba), "Lembrar meus dados" (opcional, 180 dias), protocolo do último pedido (36 h) e fila de reenvio sem rede (24 h). A página de privacidade explica.
+Testes: `npm test` roda `qa.mjs` e `qa-r7.mjs` (emula os redirecionamentos do netlify.toml). `npm run css-morto` lista/remove CSS de classe inexistente. `npm run publicar` enxuga o HTML, aplica orçamento de peso e versiona o 404.js.

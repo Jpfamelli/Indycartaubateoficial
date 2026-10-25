@@ -96,6 +96,8 @@ export async function lote3({ abrir, ok, espera, BASE, aplicarRedirect, ROOT, br
     const distHtml = fs.readFileSync(dist('index.html'), 'utf8');
     ok(!/<!--/.test(distHtml) && distHtml.length < fonteHtml * 0.86, 'dist/index.html sem comentários nem indentação (' + Math.round(fonteHtml / 1024) + ' → ' + Math.round(distHtml.length / 1024) + ' KB)');
     ok(fs.existsSync(dist('404.js')) && !fs.existsSync(dist('oficina-fachada.png')) && !fs.existsSync(dist('qa-r7.mjs')), 'dist/ leva o 404.js e não leva o PNG de 483 KB que nenhuma página chama nem o teste');
+    const d404 = fs.readFileSync(dist('404.html'), 'utf8');
+    ok(/src="\/404\.js\?v=[0-9a-f]{10}"/.test(d404) && d404.includes('href="/rota"') && /Colou um código/.test(d404), '404 publicada: 404.js versionado (?v=), "Como chegar" (/rota) e a dica do código colado');
     const jsonld = [...distHtml.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => { try { JSON.parse(m[1]); return true; } catch (_) { return false; } });
     ok(jsonld.length === 3 && jsonld.every(Boolean), 'os 3 blocos JSON-LD continuam válidos depois de enxugar o HTML');
     ok(/<noscript>/.test(distHtml) && distHtml.includes('id="leadForm"') && distHtml.includes('<textarea'), 'noscript, formulário e textarea intactos no HTML enxuto');

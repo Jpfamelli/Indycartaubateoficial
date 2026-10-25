@@ -17,4 +17,7 @@ Disallow: /a/
 Disallow: /m/
 Disallow: /o/
 Disallow: /rota
+Disallow: /garantia
+Disallow: /diagnostico
+Disallow: /duvidas
 Sitemap: https://indycar-taubate.netlify.app/sitemap.xml

@@ -54,10 +54,19 @@ const antes = h.length;
 h = enxugarHtml(h);
 fs.writeFileSync(html, h);
 tamanhos.push(`index.html ${Math.round(antes / 1024)} → ${Math.round(h.length / 1024)} KB`);
+// 404.js também vai com ?v=<hash> (o netlify.toml deixa todo /*.js em cache de um ano)
+const js404 = crypto.createHash('sha256').update(fs.readFileSync(path.join(DIST, '404.js'))).digest('hex').slice(0, 10);
 for (const extra of ['404.html', 'privacidade.html']) {
   const p = path.join(DIST, extra);
-  fs.writeFileSync(p, enxugarHtml(fs.readFileSync(p, 'utf8')));
+  let t = enxugarHtml(fs.readFileSync(p, 'utf8'));
+  if (extra === '404.html') t = t.replace('src="/404.js"', 'src="/404.js?v=' + js404 + '"');
+  fs.writeFileSync(p, t);
 }
+
+// sitemap com a data do dia da publicação (lastmod nunca fica velho)
+const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+const sm = path.join(DIST, 'sitemap.xml');
+fs.writeFileSync(sm, fs.readFileSync(sm, 'utf8').replace(/<lastmod>[^<]*<\/lastmod>/g, '<lastmod>' + hoje + '</lastmod>'));
 
 // Orçamento de peso (rodada 7): falha o publicar se a página engordar sem querer. Valores em bytes, depois da minificação.
 const ORCAMENTO = { 'index.html': 96 * 1024, 'styles.css': 92 * 1024, 'script.js': 64 * 1024 };

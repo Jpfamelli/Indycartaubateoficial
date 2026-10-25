@@ -64,6 +64,34 @@ export async function lote4({ abrir, ok, espera, BASE, aplicarRedirect, ROOT }) 
     await p2.close();
   }
 
+  console.log('\n== mais atalhos, roteador e aviso de campos ==');
+  {
+    const q = 'utm_source=atendimento&utm_campaign=garantia';
+    ok(aplicarRedirect('/garantia', q).to === '/?' + q + '#garantia' && aplicarRedirect('/diagnostico', q).to === '/?' + q + '#diagnostico' && aplicarRedirect('/duvidas', q).to === '/?' + q + '#faq' && aplicarRedirect('/s', q).to === '/?' + q + '#agendar', '/garantia, /diagnostico, /duvidas e /s mantêm a campanha (o Atendimento manda o link certo da dúvida)');
+    const { page } = await abrir(1440, 900);
+    const r = await page.evaluate(() => {
+      const campo = document.getElementById('areaColaCampo'), f = document.getElementById('areaCola'), msg = document.getElementById('areaColaMsg');
+      const t = '0123456789abcdef0123456789abcdef0123';
+      const abertos = []; window.open = (u) => { abertos.push(u); return null; };
+      const tentar = (v) => { abertos.length = 0; campo.value = v; f.dispatchEvent(new Event('submit', { cancelable: true })); return abertos[0] || (msg.classList.contains('erro') ? 'erro' : ''); };
+      return { a: tentar(location.origin + '/a/' + t), m: tentar(location.origin + '/m/' + t + t.slice(0, 12)), outro: tentar('https://evil.example/a/' + t) };
+    });
+    ok(/acompanhar\/\?t=/.test(r.a) && /minha\/\?c=/.test(r.m) && r.outro === 'erro', 'o roteador aceita o link curto do site (/a/, /m/) colado inteiro e recusa link de outro domínio');
+    await page.evaluate(() => document.querySelector('.hero-cta [data-open-modal]').click()); await espera(700);
+    await page.evaluate(() => { document.getElementById('fName').value = 'x'; document.getElementById('fPhone').value = '123'; });
+    await page.click('#fName'); await espera(2700);
+    await page.evaluate(() => document.getElementById('fEnviar').click()); await espera(400);
+    const aviso = await page.evaluate(() => { const a = document.getElementById('fEnvioMsg'); return { t: a.textContent, v: !a.hidden, role: a.getAttribute('role') }; });
+    ok(aviso.v && /Confira: nome, telefone com DDD\./.test(aviso.t) && aviso.role === 'status', 'envio com campos errados anuncia em voz alta quais conferir: "' + aviso.t + '"');
+    await page.close();
+    const { execFileSync } = await import('node:child_process');
+    execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'publicar.mjs')], { cwd: ROOT, stdio: 'pipe' });
+    const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+    ok((fs.readFileSync(path.join(ROOT, 'dist', 'sitemap.xml'), 'utf8').match(new RegExp('<lastmod>' + hoje + '</lastmod>', 'g')) || []).length === 2, 'o publicar escreve a data de hoje no lastmod do sitemap (' + hoje + ')');
+    const css = fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8');
+    ok(/\.modal-backdrop \{ color-scheme: dark; scrollbar-width: thin/.test(css), 'barra de rolagem do formulário escura e fina (combina com o diálogo)');
+  }
+
   console.log('\n== iPhone e celular ==');
   {
     const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');

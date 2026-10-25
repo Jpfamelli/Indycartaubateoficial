@@ -969,7 +969,11 @@
     $('#fPhoneErr').hidden = foneOk || !phone.value.trim();
     $('#fNameErr').hidden = !name.classList.contains('invalid');
     $('#fServiceErr').hidden = !service.classList.contains('invalid');
-    if (!ok) { [name, phone, service].find(f => f.classList.contains('invalid')).focus(); return; }
+    if (!ok) {
+      const faltam = [[name, 'nome'], [phone, 'telefone com DDD'], [service, 'serviço']].filter(([f]) => f.classList.contains('invalid')).map(([, n]) => n);
+      mostrarAviso('Confira: ' + faltam.join(', ') + '.');
+      [name, phone, service].find(f => f.classList.contains('invalid')).focus(); return;
+    }
 
     // Rápido demais para uma pessoa (preenchimento automático de robô): pede para conferir.
     if (!comecouEm || Date.now() - comecouEm < TEMPO_MINIMO_MS) {
@@ -1229,9 +1233,10 @@
       if (/^[0-9a-f]{32}$/.test(c)) return { url: DESTINOS.orcador + '/#/o/' + c, rotulo: 'o seu orçamento' };
       return null;
     };
-    const comEsquema = /^(indycar-patio|indycar-orcador)\.netlify\.app(\/|$)/i.test(s) ? 'https://' + s : s;
+    const comEsquema = /^(indycar-taubate|indycar-patio|indycar-orcador)\.netlify\.app(\/|$)/i.test(s) ? 'https://' + s : s;
     if (/^https?:\/\//i.test(comEsquema)) {
       let u; try { u = new URL(comEsquema); } catch (_) { return null; }
+      if (u.origin === location.origin || u.origin === 'https://indycar-taubate.netlify.app') { const c = u.pathname.split('/').filter(Boolean); return c.length === 2 && 'amo'.includes(c[0]) && c[0].length === 1 ? porCodigo(c[1]) : (c.length === 1 ? porCodigo(c[0]) : null); }
       if (u.protocol !== 'https:') return null;
       if (u.origin === DESTINOS.patio) return porCodigo(u.searchParams.get('t') || u.searchParams.get('c') || '');
       if (u.origin === DESTINOS.orcador) {

@@ -343,3 +343,109 @@ Site ligado ao resto da IndyCar: horários livres da Agenda no site e no formul�
 - O Atendimento/IA pode ler "Placa:" e "Horário:" da mensagem do WhatsApp do formulário (prefixo "Olá! Vim pelo site, quero orçar: …").
 - Pedido ao Orçador: aceitar `&placa=` em `#/cotacao?...` (hoje só `tel` e `nome`).
 - Pedido à Casa/CRM: abrir o lead mostrando a observação "CARRO NO PÁTIO AGORA".
+
+## Rodada 7 (25/10/2026) — X1 Site
+
+Numeração continua (244 em diante). 🔗 = conexão com outro sistema. Teste novo: `scripts/qa-r7.mjs` (+ lotes 2–4), que emula os redirecionamentos do `netlify.toml`.
+
+### Pedido aberto: /s/<serviço> perdia o utm_*
+244. 🔗 `/s/<serviço>` agora mantém `utm_*`, `gclid` e `fbclid` (o destino virou `/#agendar-<serviço>`, sem `?`; a Netlify só repassa a query nesse caso). Conferido num deploy draft real: `/s/freios?utm_source=meta&gclid=1` → `/?utm_source=meta&gclid=1#agendar-freios`.
+245. 🔗 `/agendar` idem (também perdia).
+246. 🔗 `/orcamento` idem.
+247. 🔗 `script.js` entende `#agendar[-serviço]`: abre o formulário com o serviço e o foco no nome, guarda a campanha na sessão e limpa o endereço.
+248. 🔗 `/s/` aceita o nome do cadastro `servicos` (`Troca de Óleo de Câmbio`, `Limpeza de Bicos`, `Revisão de Motor`, `Suspensão`...) e aliases, para Comunicar/Atendimento não precisarem traduzir.
+249. Serviço que não existe no formulário cai no diagnóstico gratuito (nunca formulário vazio).
+250. 🔗 `?h=2026-10-27T10:00` deixa marcado o horário que o Atendimento sugeriu, se ainda estiver livre na Agenda.
+251. 🔗 Se esse horário já foi ocupado, o formulário avisa e não marca nada.
+252. 🔗 O pedido leva `pagina = /s/<serviço>`: o lead mostra por qual atalho a pessoa veio (antes era sempre `/`).
+253. `#agendar` não liga o modo sem `content-visibility` (a página abre leve).
+254. Corrigido o teste que falhava de vez em quando: entrada por `#contato`/`#faq`... é realinhada depois que imagens, fontes e horários mudam a altura (antes parava 20 px acima).
+255. Teste emula as regras de redirecionamento da Netlify no navegador (utm de ponta a ponta).
+256. Teste garante que nenhum redirecionamento interno do `netlify.toml` tem `?` no destino.
+
+### Links curtos e código colado
+257. 🔗 `/a/<código>` → Acompanhar meu carro (Pátio).
+258. 🔗 `/m/<código>` → Minha IndyCar.
+259. 🔗 `/o/<código>` → orçamento no Orçador.
+260. `/rota` → Google Maps com o destino da oficina (para o Atendimento mandar).
+261. 🔗 Código de 36 colado na barra do site (`dominio/<código>`) abre o Acompanhar em vez da 404.
+262. 🔗 Idem 48 → Minha IndyCar (aceita maiúsculas).
+263. 🔗 Idem 32 → orçamento.
+264. Caminhos que não são código (curto, não-hex, `/a/b/c`) continuam 404 sem redirecionar.
+265. `robots.txt`: atalhos novos fora do Google.
+266. 404 com "Como chegar" (/rota) e a dica do código colado.
+
+### Formulário no celular (bug real)
+267. **Corrigido:** o formulário (com horários, placa e mensagem) tinha ~1.600 px num 375×812 e o fundo não rolava: o topo era cortado e o botão "Pedir meu horário" ficava fora da tela. O fundo agora rola e o diálogo só centraliza quando cabe.
+268. Formulário compacto no celular: texto de apresentação oculto, carro e placa lado a lado, 2 dias de horários (1.599 → ~1.100 px).
+269. Teste: topo visível e botão alcançável em 375×667, 375×812 e 1440×700.
+270. Fundo (menu, conteúdo, rodapé, botões flutuantes) fica `inert` com o diálogo aberto.
+271. Rascunho: recarregar a página não perde o digitado (sessão).
+272. O contador de caracteres acompanha o rascunho.
+273. "Lembrar meus dados neste aparelho" (opcional, 180 dias, só localStorage).
+274. "Não sou eu · limpar" apaga os dados lembrados.
+275. 🔗 Sem rede: abre o WhatsApp **e** guarda o pedido; quando a rede volta ele vai ao banco (lead no CRM) uma vez; some em 24 h.
+276. 🔗 Protocolo guardado por 36 h e cartão "Seu pedido XXXXXX está com a equipe" na Área do Cliente, com link para Acompanhar.
+277. 🔗 A confirmação repete o horário pedido na Agenda.
+278. 🔗 Depois de pedir, a próxima abertura consulta a Agenda de novo (o horário ocupado some).
+279. 🔗 Resumo dos horários livres em voz alta para leitor de tela.
+280. 🔗 Hero: "Já é cliente? Acompanhar meu carro · Minha IndyCar".
+281. 🔗 Confirmação do pedido com link para Acompanhar meu carro (além da Minha IndyCar).
+282. 🔗 Chip do hero não diz "Aberto agora" em feriado nacional (mesma lista do Comunicar): "confirme no WhatsApp se abrimos".
+283. 🔗 Dia de feriado nos horários livres vem marcado, com aviso e nome acessível.
+284. Economia de dados (Save-Data ou 2G): efeitos pesados desligados e sem consulta antecipada.
+285. Botão do menu anuncia "Abrir menu"/"Fechar menu".
+
+### Toque (375 px) — alvos de 44 px
+286. Hambúrguer, links do menu e botão "Agendar" ≥ 44 px.
+287. "Agende pelo WhatsApp →" e "★ Avaliações" ≥ 44 px.
+288. Links do rodapé e "Privacidade" ≥ 44 px.
+289. Links do contato (telefone, "Ligar", Instagram) ≥ 44 px.
+290. Link da garantia, "Abrir" do roteador e fechar do aviso ≥ 44 px.
+291. Links do formulário, indicador de rolagem, "Ver horários livres" e botões de horário ≥ 44 px.
+292. "★ ESPECIALIDADE" de 11,5 para 12 px.
+293. Teste: todo link, botão e campo visível ≥ 44×44 em 375 px e nenhum texto visível < 12 px (a auditoria achou ~60 alvos menores).
+294. iPhone: `viewport-fit=cover` e margens seguras no WhatsApp flutuante, menu e diálogos.
+295. Campos com 16 px no celular (o Safari não dá mais zoom ao tocar).
+296. Hero com `100svh`.
+297. `touch-action: manipulation` e cor de toque da marca.
+298. `text-size-adjust` fixo.
+
+### SEO local, peso e acessibilidade
+299. Título: "Oficina Mecânica em Taubaté | Câmbio, Freios e Scanner | IndyCar" (64).
+300. Descrição com endereço, cidade, diálise e horário (159).
+301. `og:title`/`twitter:title` com a cidade.
+302. `hreflang x-default`.
+303. JSON-LD da oficina: nome alternativo, moeda BRL, idioma e especialidades (sem nota nem preço inventados — o teste garante).
+304. Sitemap com imagens da fachada e lastmod de hoje.
+305. Privacidade com metadados sociais e `robots`.
+306. Privacidade explica rascunho, dados lembrados, protocolo e fila.
+307. 🔗 Atalhos do app instalado marcam `utm_source=pwa` (e o redirecionamento mantém).
+308. CSS sem sobra: 55 regras do carrossel de depoimentos removido (-5,4 KB).
+309. `npm run css-morto` e teste que falha se voltar CSS de classe inexistente.
+310. HTML publicado sem comentários/indentação: 103 → 84 KB (brotli ~17,7 → 15,2 KB).
+311. Orçamento de peso no `npm run publicar` (HTML 96, CSS 92, JS 64 KB).
+312. PNG da fachada (483 KB) que nenhuma página chama sai do `dist/`.
+313. `prefers-contrast: more` nos textos e campos novos.
+314. Impressão sem o cartão do pedido, a caixa de lembrar e o link do hero.
+315. `404.js` versionado com `?v=` (cache de um ano não o deixa velho).
+316. 🔗 README com o contrato dos atalhos para os outros sistemas.
+
+317. 🔗 O roteador da Área do Cliente aceita também o link curto do site (`/a/<código>`, `/m/<código>`) colado inteiro.
+318. Envio com campo errado anuncia em voz alta o que conferir ("Confira: nome, telefone com DDD.").
+319. Barra de rolagem do formulário escura e fina.
+320. `npm run publicar` escreve a data do dia no `lastmod` do sitemap (nunca fica velho).
+321. 🔗 `/s` sozinho abre o formulário.
+322. 🔗 `/garantia` leva à garantia (o Atendimento manda quando o cliente pergunta), mantendo a campanha.
+323. 🔗 `/diagnostico` leva ao passo a passo do diagnóstico.
+324. 🔗 `/duvidas` leva ao FAQ.
+
+Total: 81 melhorias (244–324), 29 com 🔗.
+
+### Como verifiquei
+- `npm test`: qa.mjs + qa-r7.mjs (~110 verificações novas), 375/1440 px, fetch falso, nada vai ao banco.
+- Redirecionamentos conferidos num deploy draft real da Netlify com `curl`.
+
+### Pendências
+- Edge Function `site-lead` não foi tocada (não publico função).
+- Pedido ao Orçador: aceitar `&placa=` em `#/cotacao`. Pedido a Atendimento/Comunicar: usar `/s/<serviço>?utm_source=...&h=...`, `/a/`, `/m/`, `/o/`.
