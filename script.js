@@ -1398,18 +1398,12 @@
   })();
 
   /* ================================================================
-     10. PROVA SOCIAL — notificações rotativas (canto inferior esq.)
+     10. AVISO no canto (só o retorno do formulário). Rodada 9: a rotação de "prova social" saiu: ela repetia o que a
+     página já diz (diagnóstico, garantia, horário), cobria o conteúdo no celular e o leitor de tela anunciava cada troca.
      ================================================================ */
   const sp = $('#socialProof');
   const spEmoji = $('#spEmoji'), spName = $('#spName'), spAction = $('#spAction');
   const spClose = $('#spClose');
-
-  const proofs = [
-    ['🔎', 'Diagnóstico digital gratuito', 'Scanner + foto · cerca de 30 minutos'],
-    ['🛠️', 'Garantia de 12 meses', 'Em peças e mão de obra'],
-    ['🕗', 'Segunda a sábado', '8h às 17h30 · agende pelo WhatsApp'],
-  ];
-  let proofIdx = 0, proofDismissed = false, toastActive = false;
 
   // Rodada 7: feriados nacionais 2026–2027 (a mesma lista do Comunicar, dados.js › FERIADOS). A oficina pode ou não abrir
   // nesses dias: o site não promete nada, só avisa e manda confirmar pelo WhatsApp.
@@ -1465,37 +1459,17 @@
     setInterval(pintar, 60000);
   })();
 
-  function showNextProof() {
-    if (proofDismissed || toastActive || document.hidden || reduceMotion) return;
-    // FORA do horário comercial: não mostra "fulano agendou tal coisa"
-    if (!isBusinessHours()) return;
-    const [emoji, name, action] = proofs[proofIdx % proofs.length];
-    spEmoji.textContent = emoji;
-    spName.textContent = name;
-    spAction.textContent = action;
-    sp.classList.add('show');
-    proofIdx++;
-    setTimeout(() => sp.classList.remove('show'), 5000); // some após 5s
-  }
-  // primeiro após 12s, depois a cada 24s (mais lento, só dispara dentro do horário)
-  setTimeout(function loop() {
-    showNextProof();
-    if (!proofDismissed) setTimeout(loop, 24000);
-  }, 12000);
-
-  // fechar é definitivo: a rotação não volta nesta visita
-  spClose.addEventListener('click', () => { proofDismissed = true; sp.classList.remove('show'); });
+  spClose.addEventListener('click', () => { sp.classList.remove('show'); });
 
   /* ================================================================
-     11. TOAST genérico (reaproveita o componente de prova social)
+     11. TOAST genérico (usa o mesmo aviso do canto)
      ================================================================ */
   function showToast(emoji, title, text) {
-    toastActive = true;             // pausa a rotação sem anular o fechamento
     spEmoji.textContent = emoji;
     spName.textContent = title;
     spAction.textContent = text;
     sp.classList.add('show');
-    setTimeout(() => { sp.classList.remove('show'); toastActive = false; }, 5000);
+    setTimeout(() => { sp.classList.remove('show'); }, 5000);
   }
 
   /* ================================================================
