@@ -6,6 +6,7 @@
 // validação do formulário, vocabulário proibido e páginas extras (privacidade, 404).
 // Capturas vão para qa-out/ (fora do git e do deploy).
 import http from 'node:http';
+import { protegerNavegador, relatarBarrados } from './barreira-banco.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -57,6 +58,7 @@ const BASE = (process.env.QA_URL || 'http://127.0.0.1:' + server.address().port)
 fs.mkdirSync(OUT, { recursive: true });
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, protocolTimeout: 240000, args: ['--no-first-run', '--no-default-browser-check'] });
+protegerNavegador(browser); // rodada 8: nenhum envio ao banco de verdade (scripts/barreira-banco.mjs)
 
 async function abrir(largura, altura, url = BASE + '/', antes = null) {
   const page = await browser.newPage();
@@ -677,6 +679,7 @@ for (const f of ['robots.txt', 'sitemap.xml', 'og-indycar.jpg', 'manifest.webman
 const ignorar = fs.readFileSync(path.join(ROOT, '.netlifyignore'), 'utf8');
 ok(['scripts/**', '.publicacao.zip', 'qa-out/**', 'package.json'].every(p => ignorar.includes(p)), '.netlifyignore exclui testes e sobras locais');
 
+relatarBarrados();
 await browser.close();
 server.close();
 console.log(falhas ? `\n${falhas} falha(s).` : '\nTudo certo.');
