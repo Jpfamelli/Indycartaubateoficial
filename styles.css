@@ -1739,6 +1739,16 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
 }
 .sr-only { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 .hero-cliente { margin-top: 14px; font-size: .95rem; color: #d8d8dc; }
+/* Rodada 9: no celular os dois links quebram juntos, sem o "·" sobrando no fim da linha */
+@media (max-width: 480px) { .hero-cliente .hero-sep { display: none; } .hero-cliente a + .hero-sep + a { margin-left: 8px; } }
+/* Rodada 9: o botão principal do topo cabe na primeira tela (375x812, 360x740, 1280x720 e 1440x900) */
+@media (min-width: 900px) { .hero-content { max-width: 1010px; } }
+@media (min-width: 1200px) { .hero-content { max-width: 1120px; } }
+@media (max-width: 480px) { .hero-eyebrow .eb-sep { display: none; } .hero-eyebrow { row-gap: 2px; } }
+@media (min-width: 900px) and (max-height: 780px) { .hero { padding-top: 104px; padding-bottom: 56px; } .hero-title { font-size: clamp(2.4rem, 4.9vw, 4.2rem); margin-bottom: 18px; } .hero-subtitle { margin-bottom: 20px; } .hero-highlights { margin-bottom: 24px; } }
+@media (max-width: 400px) { .hero { padding-top: 88px; } .hero-title { font-size: 2.15rem; } .hero-eyebrow { margin-bottom: 18px; } .hero-highlights { margin-bottom: 24px; } }
+/* Rodada 9: grupo do selo do topo que nunca se parte no meio ("+ / 18 ANOS") */
+.junto { white-space: nowrap; }
 .hero-cliente a { color: #fff; font-weight: 600; text-decoration: underline; text-decoration-color: rgba(229,9,20,.7); text-underline-offset: 4px; display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; }
 .hero-cliente a:hover { color: var(--red); }
 .area-pedido { margin: 18px auto 0; max-width: 640px; padding: 14px 18px; border: 1px solid rgba(229,9,20,.45); border-radius: 12px; background: rgba(229,9,20,.08); color: #e9e9ee; display: grid; gap: 4px; }
