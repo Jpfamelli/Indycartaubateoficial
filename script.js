@@ -1112,12 +1112,13 @@
     const mensagem = (($('#fMsg') || {}).value || '').trim();
     const placa = placaDoForm();
     const horario = horarioEscolhido ? { data: horarioEscolhido.data, hora: horarioEscolhido.hora } : null;
+    const horarioRotulo = horarioEscolhido?.rotulo || '';
     // Código de origem por serviço: o Atendimento lê "(site/formulario-freios)" e marca a UTM do lead.
     const codigoServico = (service.selectedOptions[0] && service.selectedOptions[0].dataset.codigo) || 'servico';
     const servicoWa = 'formulario-' + codigoServico;
     const textoWa = PREFIXO_WA + ', quero orçar: ' + service.value + '.\n' +
       'Nome: ' + name.value.trim() + ' · Telefone: ' + phone.value.trim() +
-      (car ? ' · Carro: ' + car : '') + (placa ? ' · Placa: ' + placa : '') + (horario ? ' · Horário: ' + horarioEscolhido.rotulo : quando ? ' · Quando: ' + quando : '') +
+      (car ? ' · Carro: ' + car : '') + (placa ? ' · Placa: ' + placa : '') + (horario ? ' · Horário: ' + horarioRotulo : quando ? ' · Quando: ' + quando : '') +
       (mensagem ? '\nO carro está: ' + mensagem : '');
 
     estadoEnviando(true);
@@ -1155,9 +1156,9 @@
       window.dispatchEvent(new CustomEvent('indycar:pedido-offline', { detail: { pedido } }));
     }
     sessao.set('indycar_promo', '1');
-    resposta.horarioPedido = horario ? horarioEscolhido.rotulo : '';
+    resposta.horarioPedido = horarioRotulo;
     horariosPromessa = null; horariosEm = 0; // a Agenda mudou: a próxima consulta traz a lista nova
-    window.dispatchEvent(new CustomEvent('indycar:pedido', { detail: { resposta, pedido, horarioRotulo: horario ? horarioEscolhido.rotulo : '' } }));
+    window.dispatchEvent(new CustomEvent('indycar:pedido', { detail: { resposta, pedido, horarioRotulo } }));
     mostrarSucesso(resposta, textoWa, servicoWa);
     form.reset();
     limparHorario();

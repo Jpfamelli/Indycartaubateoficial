@@ -682,6 +682,41 @@ async function pedir(page) {
   await page.waitForSelector('#formOk:not([hidden])', { timeout: 6000 }).catch(() => {});
   await espera(200);
 }
+for (const [largura, altura] of [[375, 812], [1440, 900]]) {
+  definir();
+  const ctx = await browser.createBrowserContext();
+  const { page, erros } = await abrir(ctx, largura, altura, '/');
+  await page.evaluate(() => document.querySelector('[data-open-modal]').click());
+  await page.waitForSelector('#formBackdrop button[data-hora]');
+  await page.type('#fName', 'Teste Horario');
+  await page.type('#fPhone', '12996830272');
+  await page.select('#fService', 'Pneus');
+  await espera(2700);
+  const rotulo = await page.evaluate(() => {
+    const horario = document.querySelector('#formBackdrop button[data-hora]');
+    const enviar = document.querySelector('#fEnviar');
+    const fetch = window.fetch;
+    window.fetch = async (...args) => {
+      if (args[1]?.method === 'POST' && String(args[0]).includes('/site-lead')) {
+        await new Promise(resolve => { window.__soltarPedido = resolve; });
+      }
+      return fetch(...args);
+    };
+    horario.click();
+    enviar.click();
+    enviar.click();
+    horario.click();
+    window.__soltarPedido();
+    return horario.dataset.rotulo;
+  });
+  await page.waitForSelector('#formOk:not([hidden])', { timeout: 3000 }).catch(() => {});
+  const e = await estado(page);
+  ok(e.envios.length === 1, largura + ' px: dois cliques durante o envio geram um POST');
+  const confirmado = await page.$eval('#formOk', el => !el.hidden && el.textContent.trim());
+  ok(Boolean(confirmado && confirmado.includes(rotulo)) && erros.length === 0,
+    largura + ' px: desmarcar o horário enquanto o pedido está em trânsito preserva a confirmação original');
+  await ctx.close();
+}
 {
   definir({ codigo: 'F2RMA' });
   const ctx = await browser.createBrowserContext();
