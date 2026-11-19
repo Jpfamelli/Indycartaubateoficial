@@ -2689,14 +2689,20 @@
       const f = lerFila();
       if (!f.length) { store.del(FILA); return; }
       esvaziando = true;
-      const restantes = [];
+      const processados = [];
       for (const item of f) {
         try {
           const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 9000);
           const r = await fetch(SITE_LEAD_URL, { method: 'POST', mode: 'cors', signal: ctrl.signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify(item.pedido) });
           clearTimeout(t);
-          if (r.status >= 500 || r.status === 429) restantes.push(item); // servidor ocupado: tenta de novo depois
-        } catch (_) { restantes.push(item); }
+          if (r.status < 500 && r.status !== 429) processados.push(JSON.stringify(item));
+        } catch (_) { /* sem resposta: mantém o pedido para tentar de novo */ }
+      }
+      // A fila pode ter recebido pedidos enquanto a rede respondia. Remova só os itens processados.
+      const restantes = lerFila();
+      for (const processado of processados) {
+        const indice = restantes.findIndex(item => JSON.stringify(item) === processado);
+        if (indice !== -1) restantes.splice(indice, 1);
       }
       if (restantes.length) store.set(FILA, JSON.stringify(restantes)); else store.del(FILA);
       esvaziando = false;
