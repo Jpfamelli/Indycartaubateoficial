@@ -355,7 +355,10 @@
   /* ================================================================
      4. CONTADORES ANIMADOS (dispara quando entra na tela)
      ================================================================ */
-  const counters = $$('.counter-num');
+  // Rodada 9: o HTML já traz o número certo (sem JavaScript, leitor de tela e Google leem 4,8 · 1.200 · 18, não 0).
+  // A contagem só roda para quem não pediu menos movimento; ela começa do zero quando o número entra na tela.
+  const counters = reduceMotion ? [] : $$('.counter-num');
+  counters.forEach(c => { c.textContent = '0'; }); // sem ler o layout no carregamento
   const counterIO = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (!e.isIntersecting) return;
