@@ -153,11 +153,12 @@
   to = "https://indycar-patio.netlify.app/minha/#indique"
   status = 302
 
-# Rodada 6: o navegador já começa a baixar CSS e as duas fontes da primeira dobra com a resposta do HTML (dicas de pré-carregamento).
+# Rodada 6: o navegador já começa a baixar a fonte da primeira dobra com a resposta do HTML (dica de pré-carregamento).
+# Rodada 9: a Inter saiu do site (o corpo usa a Archivo), então só a Archivo vem aqui.
 [[headers]]
   for = "/"
   [headers.values]
-    Link = "</fontes/archivo-variavel.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </fontes/inter-variavel.woff2>; rel=preload; as=font; type=font/woff2; crossorigin"
+    Link = "</fontes/archivo-variavel.woff2>; rel=preload; as=font; type=font/woff2; crossorigin"
 
 # Rodada 7: links curtos no domínio da oficina para o Pátio, o Orçador e o Atendimento mandarem no WhatsApp
 # (mais curtos e com a cara da IndyCar). /a/<código> = Acompanhar meu carro; /m/<código> = Minha IndyCar; /o/<código> = orçamento.

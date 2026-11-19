@@ -5,10 +5,12 @@
    ==================================================================== */
 
 /* ===== FONTES NO PRÓPRIO SITE (rodada 4, 14/10/2026) =====
-   Archivo e Inter variáveis + Barlow Condensed, só o subconjunto latino (cobre o português).
+   Archivo variável + Barlow Condensed, só o subconjunto latino (cobre o português).
+   Rodada 9: a Inter saiu; o corpo do texto usa a própria Archivo na largura normal (uma fonte a menos para baixar,
+   48 KB, e um relayout a menos quando ela chegava depois da Archivo; a Inter também é a fonte "de modelo pronto" que o guia veta).
    Sem ir ao Google: a página não espera outro servidor e nada do visitante sai para terceiros. */
 @font-face { font-family: 'Archivo'; font-style: normal; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; src: url('fontes/archivo-variavel.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('fontes/inter-variavel.woff2') format('woff2'); }
+
 /* Barlow (rótulos e botões): font-display optional — se não chegar a tempo na 1ª visita, fica a reserva calibrada e a página
    NÃO refaz o layout inteiro quando a fonte chega (no celular cada relayout custava ~0,5 s); da 2ª visita em diante vem do cache. */
 @font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 600; font-display: optional; src: url('fontes/barlow-condensed-600.woff2') format('woff2'); }
@@ -20,7 +22,7 @@
    no mesmo lugar e o hero não pula quando a fonte troca (CLS). */
 @font-face { font-family: 'Archivo Fallback'; src: local('Arial Black'), local('ArialBlack'), local('Arial-Black'); size-adjust: 117%; }
 @font-face { font-family: 'Archivo Fallback 2'; src: local('Arial Bold'), local('Arial-BoldMT'); size-adjust: 134%; }
-@font-face { font-family: 'Inter Fallback'; src: local('Arial'), local('ArialMT'); size-adjust: 106%; }
+
 @font-face { font-family: 'Archivo Text Fallback'; src: local('Arial'), local('ArialMT'); size-adjust: 99%; }
 @font-face { font-family: 'Barlow Fallback'; src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Narrow'); size-adjust: 91%; }
 @font-face { font-family: 'Barlow Fallback 2'; src: local('Arial Bold'), local('Arial-BoldMT'); size-adjust: 74%; }
@@ -52,9 +54,9 @@ html.cv-off main > section { content-visibility: visible; }
   --gray-2:     #6c6c72;
   --wa:         #25d366;
 
-  --font-display: 'Archivo', 'Archivo Fallback', 'Archivo Fallback 2', 'Inter', sans-serif;
+  --font-display: 'Archivo', 'Archivo Fallback', 'Archivo Fallback 2', sans-serif;
   --font-cond:    'Barlow Condensed', 'Barlow Fallback', 'Barlow Fallback 2', sans-serif;
-  --font-body:    'Inter', 'Inter Fallback', sans-serif;
+  --font-body:    'Archivo', 'Archivo Text Fallback', sans-serif;
 
   /* tema claro (seções .sec-light) */
   --lt-bg:      #fafafa;
@@ -533,7 +535,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .contact-map iframe { width: 100%; height: 100%; min-height: 440px; border: 0; filter: invert(.92) hue-rotate(180deg) saturate(.7) contrast(.95); }
 
 /* hierarquia tipográfica profissional: label caps pequeno com tracking
-   (Barlow Condensed 600) em cima, valor em Inter regular embaixo */
+   (Barlow Condensed 600) em cima, valor em Archivo regular embaixo */
 .contact-list { display: grid; gap: 24px; margin-bottom: 30px; }
 .contact-list li { display: flex; gap: 16px; align-items: flex-start; }
 .ci-ico { flex: none; width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; background: rgba(229,9,20,.1); color: var(--red); border: 1px solid rgba(229,9,20,.2); }

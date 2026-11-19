@@ -659,7 +659,8 @@ for (const w of [375, 1440]) {
   ok(fs.readFileSync(path.join(ROOT, '404.html'), 'utf8').includes('href="/#horarios"'), '404 oferece os horários livres');
   ok(fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8').includes('<lastmod>2026-10-25</lastmod>'), 'sitemap com lastmod de hoje');
   ok(html.includes('<noscript><p class="sem-js">') && html.includes('href="tel:+551236245957"') && html.includes('href="tel:+5512996830272"'), 'sem JavaScript aparece o aviso com WhatsApp e telefone; o celular tem link "Ligar" (tel:)');
-  ok(toml.includes('Link = "</fontes/archivo-variavel.woff2>') && toml.includes('inter-variavel.woff2>; rel=preload'), 'netlify.toml: cabeçalho Link pré-carrega as duas fontes da primeira dobra');
+  // Rodada 9: a Inter saiu; o cabeçalho pré-carrega só a Archivo e nenhum arquivo do site cita mais a fonte que não existe
+  ok(toml.includes('Link = "</fontes/archivo-variavel.woff2>') && !/inter-variavel/.test(toml + fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8') + fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8')) && !fs.existsSync(path.join(ROOT, 'fontes', 'inter-variavel.woff2')), 'netlify.toml: cabeçalho Link pré-carrega a Archivo; a Inter saiu do site (nenhum link para fonte que não existe)');
   const urlsServico = (ld.hasOfferCatalog.itemListElement || []).map(o => o.itemOffered.url);
   ok(urlsServico.length === 12 && urlsServico.every(u => /^https:\/\/indycar-taubate\.netlify\.app\/#svc-[a-z-]+$/.test(u)) && urlsServico.every(u => html.includes('id="' + u.split('#')[1] + '"')), 'JSON-LD: cada um dos 12 serviços tem endereço próprio (#svc-…) que existe na página');
   const robots = fs.readFileSync(path.join(ROOT, 'robots.txt'), 'utf8');
