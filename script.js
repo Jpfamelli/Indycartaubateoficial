@@ -1016,9 +1016,11 @@
   form.addEventListener('input', () => { if (!comecouEm) comecouEm = Date.now(); });
 
   // Máscara leve do telefone: só dígitos, formatados como (12) 99683-0272 enquanto digita.
+  // Rodada 9: o zero na frente do DDD ("012 99683-0272", costume do interurbano) sai; nenhum DDD começa com 0.
+  const digitosDoFone = (v) => String(v || '').replace(/\D/g, '').replace(/^0+/, '').replace(/^55(?=\d{10,11}$)/, '');
   $('#fPhone').addEventListener('input', (e) => {
     const el = e.target;
-    let d = el.value.replace(/\D/g, '').replace(/^55(?=\d{10,11})/, '').slice(0, 11);
+    let d = el.value.replace(/\D/g, '').replace(/^0+/, '').replace(/^55(?=\d{10,11})/, '').slice(0, 11);
     let v = d;
     if (d.length > 2) v = '(' + d.slice(0, 2) + ') ' + d.slice(2);
     if (d.length > 6) v = '(' + d.slice(0, 2) + ') ' + d.slice(2, d.length > 10 ? 7 : 6) + '-' + d.slice(d.length > 10 ? 7 : 6);
@@ -1086,7 +1088,7 @@
 
     // validação simples com feedback visual
     let ok = true;
-    const digitos = phone.value.replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
+    const digitos = digitosDoFone(phone.value);
     const foneOk = (digitos.length === 10 || digitos.length === 11) && !/^(\d)\1+$/.test(digitos) && /^[1-9][1-9]/.test(digitos) && digitos[2] !== '0' && (digitos.length === 10 || digitos[2] === '9'); // mesma regra da Edge Function
     [name, phone, service].forEach(f => {
       const bad = !f.value.trim() || (f === phone && !foneOk) || (f === name && !/[A-Za-zÀ-ÿ]{2}/.test(f.value));
@@ -1094,7 +1096,10 @@
       f.setAttribute('aria-invalid', String(bad));
       if (bad) ok = false;
     });
-    $('#fPhoneErr').hidden = foneOk || !phone.value.trim();
+    // Rodada 9: telefone em branco também diz o porquê (antes só ficava vermelho, sem mensagem)
+    const errFone = $('#fPhoneErr');
+    errFone.textContent = phone.value.trim() ? 'Confira o número com DDD (10 ou 11 dígitos).' : 'Precisamos do seu WhatsApp com DDD para confirmar o horário.';
+    errFone.hidden = foneOk;
     $('#fNameErr').hidden = !name.classList.contains('invalid');
     $('#fServiceErr').hidden = !service.classList.contains('invalid');
     if (!ok) {
