@@ -1080,7 +1080,7 @@
     // Robô preencheu o campo-isca: finge que deu certo e não abre nada.
     if ($('#fEmpresa') && $('#fEmpresa').value.trim()) {
       closeEl(formBackdrop); form.reset(); comecouEm = 0;
-      showToast('✅', 'Pedido enviado!', 'Continue a conversa pelo WhatsApp.');
+      showToast('✓', 'Pedido enviado!', 'Continue a conversa pelo WhatsApp.');
       return;
     }
 
