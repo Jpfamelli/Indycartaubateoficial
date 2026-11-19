@@ -85,7 +85,12 @@ export async function lote2({ abrir, ok, espera, BASE }) {
 
   console.log('\n== fila de reenvio sem rede ==');
   {
-    const { page } = await abrir(375, 812, BASE + '/', { antes: 'window.__fetchFalha = true;' });
+    const { page } = await abrir(375, 812, BASE + '/', { antes: `
+      window.__fetchFalha = true;
+      const agendar = window.setTimeout.bind(window);
+      // Neste cenário, só os eventos online disparam o reenvio.
+      window.setTimeout = (fn, ...args) => fn.name === 'esvaziarFila' ? 0 : agendar(fn, ...args);
+    ` });
     await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); sessionStorage.setItem('indycar_promo', '1'); window.__aberturas = []; window.open = (u) => { window.__aberturas.push(u); return null; }; });
     await abrirForm(page); await espera(400);
     await digitar(page, 'Pedro Sem Rede', '12996830272', 'Gol 2015');
@@ -116,13 +121,13 @@ export async function lote2({ abrir, ok, espera, BASE }) {
     });
     await espera(1200);
     const b = await page.evaluate(() => ({ fila: localStorage.getItem('indycar_fila'), envios: window.__envios.map(e => e.body.nome) }));
-    ok(b.envios.length === 2 && b.envios[1] === 'Pedro Sem Rede', 'rede voltou: o pedido guardado é reenviado uma vez');
+    ok(b.envios.length === a.envios + 1 && b.envios.at(-1) === 'Pedro Sem Rede', 'rede voltou: o pedido guardado é reenviado uma vez');
     const pendentes = JSON.parse(b.fila || '[]');
     ok(pendentes.length === 1 && pendentes[0].pedido.nome === 'Novo durante o reenvio', 'um pedido recebido durante o reenvio continua na fila');
     await page.evaluate(() => window.dispatchEvent(new Event('online')));
     await espera(1200);
     const c = await page.evaluate(() => ({ fila: localStorage.getItem('indycar_fila'), envios: window.__envios.map(e => e.body.nome) }));
-    ok(c.fila === null && c.envios.length === 3 && c.envios[2] === 'Novo durante o reenvio', 'o próximo reenvio entrega o novo pedido e esvazia a fila');
+    ok(c.fila === null && c.envios.length === b.envios.length + 1 && c.envios.at(-1) === 'Novo durante o reenvio', 'o próximo reenvio entrega o novo pedido e esvazia a fila');
     await page.close();
   }
 
