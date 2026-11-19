@@ -1404,7 +1404,11 @@
         msg.textContent = 'Não reconheci esse link ou código. Confira se copiou inteiro, ou peça outro pelo WhatsApp.';
         campo.focus(); return;
       }
-      msg.textContent = 'Abrindo ' + r.rotulo + '…';
+      // Rodada 9: se o navegador barrar a janela nova (bloqueador de pop-up, app do Instagram), fica um link para tocar
+      msg.textContent = 'Abrindo ' + r.rotulo + '. Se não abriu, ';
+      const link = document.createElement('a');
+      link.href = r.url; link.target = '_blank'; link.rel = 'noopener'; link.textContent = 'toque aqui';
+      msg.append(link, '.');
       window.open(r.url, '_blank', 'noopener');
       campo.value = '';
     });

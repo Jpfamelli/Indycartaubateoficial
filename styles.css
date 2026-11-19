@@ -1644,6 +1644,7 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
 .area-cola-linha input:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rgba(229,9,20,.18); }
 .area-cola-msg { color: var(--gray); font-size: .85rem; line-height: 1.4; }
 .area-cola-msg.erro { color: #ff8a8f; }
+.area-cola-msg a { color: #fff; font-weight: 600; text-decoration: underline; text-decoration-color: rgba(229,9,20,.7); text-underline-offset: 3px; }
 @media (max-width: 480px) {
   .horarios-dia, .horarios-form .horarios-dia { grid-template-columns: 1fr; gap: 6px; }
   .horarios-vivo { padding: 20px 16px; }
