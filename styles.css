@@ -444,7 +444,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .service-ico { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 14px; background: rgba(229,9,20,.1); color: var(--red); margin-bottom: 20px; transition: transform .35s var(--ease), background .35s; }
 .service-ico svg { width: 30px; height: 30px; }
 .service-card:hover .service-ico { transform: rotate(-8deg) scale(1.08); background: var(--red); color: #fff; }
-.service-card h3 { font-family: var(--font-cond); font-weight: 700; font-size: 1.4rem; letter-spacing: .01em; margin-bottom: 10px; }
+.service-card h3 { font-family: var(--font-cond); font-weight: 700; font-size: 1.4rem; line-height: 1.2; letter-spacing: .01em; margin-bottom: 10px; }
 .service-card p { color: var(--gray); font-size: .94rem; margin-bottom: 16px; }
 .service-link { font-family: var(--font-cond); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--gold); font-size: .92rem; cursor: pointer; transition: gap .25s, color .25s; display: inline-flex; gap: 4px; }
 .service-link:hover { color: var(--red); gap: 10px; }
@@ -460,6 +460,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* tiles horizontais (2x1, compactos 1x1 e faixa 4x1) */
 .service-card--wide, .service-card--mini, .service-card--strip { display: flex; align-items: center; gap: 18px; }
+/* Rodada 9: nos cards com texto o ícone fica alinhado ao título, não solto no meio da altura do card */
+.service-card--wide, .service-card--mini { align-items: flex-start; }
 .service-card--wide .service-ico, .service-card--mini .service-ico, .service-card--strip .service-ico { margin-bottom: 0; flex: none; }
 .service-body { min-width: 0; }
 .service-card--wide { padding: 26px; }
