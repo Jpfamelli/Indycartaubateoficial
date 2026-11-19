@@ -4,13 +4,17 @@
 //   GET  /saude       → { ok: true }
 //   GET  /horarios    → { ok, dias:[{ data, rotulo, horas:[] }] } próximos horários livres da Agenda (rodada 6)
 //   POST também aceita (rodada 6): placa?, horario? { data, hora } escolhido entre os livres (conferido de novo no servidor)
+//   POST também aceita (rodada 8): rastreio? { codigo?, utm_source…utm_term, gclid, gbraid, wbraid, fbclid, ttclid, msclkid,
+//     pagina, referencia, referencia_tipo }: de onde a pessoa veio (indycar-ferramentas/r8/CONTRATO-RASTREIO.md §6.4).
+//     Depois de criar o lead, a função chama trafego_aplicar_origem(lead, dados, 'formulario'); se o banco ainda não
+//     tiver essa função, o pedido segue igual.
 // O que faz: cria o lead em public.leads (origem organico + utm_source='site', utm_medium='formulario',
 // utm_campaign='formulario-<serviço>'), abre uma tarefa para a equipe (quem cuida do cliente; sem ninguém, avisa os
 // gestores) e guarda o rastro em public.site_pedidos (IP só em hash). Sem login (verify_jwt false): quem protege é o
 // freio por IP/telefone, o campo-isca, o tempo mínimo de preenchimento e a validação de cada campo.
 // Nunca devolve dado interno (nem o id do lead): só um protocolo curto para a pessoa.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.117.2';
-import { agoraSP, dataValida, extrairPlaca, horarioLivre, linksDaEquipe, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, NOME_NO_CATALOGO, venceEm, semControle, type Agendamento } from './logica.ts';
+import { agoraSP, aplicarOrigem, dataValida, extrairPlaca, horarioLivre, linksDaEquipe, origemDoPedido, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, NOME_NO_CATALOGO, venceEm, semControle, type Agendamento } from './logica.ts';
 
 /** Agenda: capacidade (consultores ativos) e agendamentos dos próximos dias. Só leitura. */
 async function lerAgenda(sb: SupabaseClient, dias = 16) {
@@ -102,6 +106,8 @@ interface Pedido {
   nome: string; tel: string; servico: string; codigo: string; carro: string | null; preferencia: string | null;
   mensagem: string | null; pagina: string | null; utm: Record<string, string>;
   placa: string | null; horario: { data: string; hora: string } | null;
+  /** Rodada 8: de onde a pessoa veio, já limpo (campos do contrato de rastreio), para trafego_aplicar_origem. */
+  origem: Record<string, string>;
 }
 
 function lerPedido(corpo: Record<string, unknown>): Pedido {
@@ -122,11 +128,13 @@ function lerPedido(corpo: Record<string, unknown>): Pedido {
   const carro = txt(corpo.carro, 100);
   const h = corpo.horario as Record<string, unknown> | null | undefined;
   const horario = h && typeof h === 'object' && dataValida(h.data) && /^\d{2}:\d{2}$/.test(String(h.hora)) ? { data: String(h.data), hora: String(h.hora) } : null;
+  const pagina = (() => { const p = txt(corpo.pagina, 200); return p && p.startsWith('/') ? p : null; })();
   return {
     nome, tel, servico, codigo,
     carro, preferencia: txt(corpo.preferencia, 60), mensagem: linhas(corpo.mensagem, 500),
-    pagina: (() => { const p = txt(corpo.pagina, 200); return p && p.startsWith('/') ? p : null; })(), utm,
+    pagina, utm,
     placa: placaDoCampo(corpo.placa) ?? extrairPlaca(carro), horario,
+    origem: origemDoPedido({ rastreio: corpo.rastreio, utm, pagina, servico: codigo }),
   };
 }
 
@@ -240,6 +248,10 @@ async function tratar(req: Request): Promise<Response> {
     utm_source: 'site', utm_medium: 'formulario', utm_campaign: campanha, observacoes,
   }).select('id,cliente_id,responsavel_id').single();
   if (eLead || !lead) throw new Error(eLead?.message ?? 'lead');
+  // Rodada 8: de qual anúncio veio o contato. A regra única mora no banco (trafego_aplicar_origem); se a função ainda não
+  // existir (a migração pode ser aplicada depois desta função), demorar ou falhar, o pedido segue igual. Roda enquanto a
+  // tarefa e os avisos são criados (aplicarOrigem nunca rejeita) e é esperada antes da resposta.
+  const origemGravada = aplicarOrigem(sb, lead.id, pedido.origem);
 
   // Tarefa para quem cuida do cliente (o gatilho do banco já herdou o responsável da conversa); sem ninguém, avisa os gestores.
   const nome = primeiroNome(pedido.nome);
@@ -273,6 +285,7 @@ async function tratar(req: Request): Promise<Response> {
       if (error) console.error('notificar', error.message);
     }
   }
+  await origemGravada;
   await registrar(sb, {
     ...base, resultado: 'lead', telefone: pedido.tel, nome: pedido.nome, codigo: pedido.codigo, servico: pedido.servico, carro: pedido.carro,
     preferencia: pedido.preferencia, mensagem: pedido.mensagem, utm: pedido.utm, lead_id: lead.id, tarefa_id: tarefa?.id ?? null,

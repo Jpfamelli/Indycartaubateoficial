@@ -153,3 +153,76 @@ export function semControle(s: string, quebras = false): string {
   const limpo = s.normalize('NFC').replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, (c) => (quebras && (c === '\n' || c === '\t') ? c : ' '));
   return quebras ? limpo.replace(/[ \t]+/g, ' ').replace(/\n[ \t]*/g, '\n').replace(/\n{3,}/g, '\n\n').trim() : limpo.replace(/\s+/g, ' ').trim();
 }
+
+/* ---------------- Rodada 8: de qual anúncio veio o contato (indycar-ferramentas/r8/CONTRATO-RASTREIO.md §6.1 e §6.4) ---------------- */
+
+/** Código que o banco devolve quando o site registra a visita: 5 caracteres de ABCDEFGHJKMNPQRSTUVWXYZ23456789. */
+export const CODIGO_RASTREIO = /^[A-HJKMNP-Z2-9]{5}$/;
+const UTMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
+/** Identificadores de clique das plataformas. Maiúscula e minúscula importam: passam como chegaram ou não passam. */
+const CLIQUES = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'ttclid', 'msclkid'] as const;
+export const TIPOS_DE_REFERENCIA: readonly string[] = ['anuncio', 'busca', 'instagram', 'facebook', 'whatsapp', 'outro_site', 'direto'];
+
+/**
+ * Origem do pedido do formulário, pronta para `trafego_aplicar_origem(lead, dados, 'formulario')`.
+ * `rastreio` é o que o site mandou (rodada 8) e não é de confiança: só passam os campos do contrato, cada um no seu
+ * formato e tamanho; o que vier fora disso é ignorado. Site ainda na versão antiga (sem `rastreio`): aproveita o `utm`
+ * da rodada 5 (source, medium, campaign, content, term, gclid, fbclid, já limpos por lerPedido).
+ * Nunca leva nome, telefone nem e-mail. `servico` é o código do site (`formulario-<serviço>`).
+ */
+export function origemDoPedido(o: { rastreio?: unknown; utm?: Record<string, unknown> | null; pagina?: string | null; servico?: string | null }): Record<string, string> {
+  const r = (o.rastreio && typeof o.rastreio === 'object' && !Array.isArray(o.rastreio) ? o.rastreio : null) as Record<string, unknown> | null;
+  const antigo = o.utm ?? {};
+  const texto = (v: unknown, max: number) => (typeof v === 'string' ? semControle(v).slice(0, max) : '');
+  const d: Record<string, string> = {};
+  for (const k of UTMS) {
+    const v = texto(r ? r[k] : antigo[k.slice(4)], 100);
+    if (v) d[k] = v;
+  }
+  for (const k of CLIQUES) {
+    const v = r ? r[k] : antigo[k];
+    // No formato antigo o identificador vinha cortado em 80: se bateu no limite, está incompleto e não serve para nada.
+    if (typeof v === 'string' && /^[\w.~-]{1,255}$/.test(v) && (r || v.length < 80)) d[k] = v;
+  }
+  const pagina = texto(r && typeof r.pagina === 'string' ? r.pagina : o.pagina, 200).split(/[?#]/)[0].slice(0, 120);
+  if (pagina.startsWith('/')) d.pagina = pagina;
+  if (r) {
+    const referencia = texto(r.referencia, 80).toLowerCase();
+    if (/^[a-z0-9.-]{1,80}$/.test(referencia)) d.referencia = referencia;
+    const tipo = texto(r.referencia_tipo, 12);
+    if (TIPOS_DE_REFERENCIA.includes(tipo)) d.referencia_tipo = tipo;
+    const codigo = texto(r.codigo, 8).toUpperCase();
+    if (CODIGO_RASTREIO.test(codigo)) d.codigo = codigo;
+  }
+  if (o.servico && /^[a-z0-9_-]{1,40}$/.test(o.servico)) d.servico = o.servico;
+  return d;
+}
+
+/** Nome e parâmetros da função do banco num lugar só (contrato r8 §1.3: trafego_aplicar_origem(p_lead uuid, p jsonb, p_como text)). */
+export const RPC_ORIGEM = 'trafego_aplicar_origem';
+
+/**
+ * Grava de qual anúncio veio o contato. A regra única mora no banco (força da evidência, plataforma pelo clique,
+ * campanha). Se a função ainda não existir (a migração pode ser aplicada depois desta função), demorar mais que
+ * `limiteMs` ou falhar, devolve `false` e NUNCA rejeita: isto não pode derrubar o envio do pedido.
+ * Os dados não vão para o log (identificador de clique ligado a um contato é dado pessoal).
+ * `sb` é o cliente do Supabase; em teste entra um dublê com `rpc(nome, args).abortSignal(sinal)`.
+ */
+// deno-lint-ignore no-explicit-any
+export async function aplicarOrigem(sb: { rpc: (...a: any[]) => any }, leadId: string, dados: Record<string, string>, limiteMs = 4000): Promise<boolean> {
+  let relogio: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const chamada = sb.rpc(RPC_ORIGEM, { p_lead: leadId, p: dados, p_como: 'formulario' }).abortSignal(AbortSignal.timeout(limiteMs));
+    const demorou = new Promise<{ error: { code?: string; message: string } }>((resolver) => {
+      relogio = setTimeout(() => resolver({ error: { code: 'tempo', message: `sem resposta em ${limiteMs} ms` } }), limiteMs + 50);
+    });
+    const { error } = (await Promise.race([chamada, demorou])) as { error: { code?: string; message?: string } | null };
+    if (error) { console.error(RPC_ORIGEM, error.code ?? '', error.message ?? ''); return false; }
+    return true;
+  } catch (e) {
+    console.error(RPC_ORIGEM, e instanceof Error ? e.name : 'erro');
+    return false;
+  } finally {
+    clearTimeout(relogio);
+  }
+}
