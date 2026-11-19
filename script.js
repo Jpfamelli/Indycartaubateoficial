@@ -1465,10 +1465,10 @@
      11. TOAST genérico (usa o mesmo aviso do canto)
      ================================================================ */
   function showToast(emoji, title, text) {
+    sp.classList.add('show'); // visível antes do texto: o leitor de tela anuncia a troca
     spEmoji.textContent = emoji;
     spName.textContent = title;
     spAction.textContent = text;
-    sp.classList.add('show');
     setTimeout(() => { sp.classList.remove('show'); }, 5000);
   }
 
