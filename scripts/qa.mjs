@@ -194,8 +194,20 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     const status = await page.evaluate(() => { const c = document.getElementById('statusAberto'); return { hidden: c.hidden, txt: c.innerText.replace(/\s+/g, ' ') }; });
     ok(!status.hidden && /^(Aberto agora|Fechado agora) /.test(status.txt), 'chip "Aberto agora / Fechado agora" calculado no fuso de Taubaté: ' + status.txt);
     ok(await page.$eval('meta[name="color-scheme"]', m => m.content) === 'dark', 'meta color-scheme=dark (campos nativos no tema do site)');
-    const marcados = await page.evaluate(() => document.querySelectorAll('[data-num]').length);
-    ok(marcados >= 14 && await page.evaluate(() => document.body.dataset.nota === '4,8' && document.body.dataset.avaliacoes === '1.200' && document.body.dataset.anos === '18'), `números da oficina (4,8 · +1.200 · +18) marcados em ${marcados} pontos e no <body>, trocáveis em scripts/dados-oficina.mjs`);
+    // Rodada 9: a página repete menos os números (saíram a rotação do canto, o popover e a lista repetida), então em vez de
+    // contar um mínimo de marcas a conferência agora é: nenhum 4,8 / 1.200 / 18 visível fica fora de uma marca data-num
+    // (ou do contador animado, que o gerar-numeros também reescreve).
+    const nums = await page.evaluate(() => {
+      const soltos = [];
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = w.nextNode(); n; n = w.nextNode()) {
+        if (!/(^|[^\d,.])(4,8|1\.200|18)(?![\d,.]*\d)/.test(n.nodeValue)) continue;
+        if (n.parentElement.closest('[data-num], .counter-num, script, style, noscript')) continue;
+        soltos.push(n.nodeValue.trim().slice(0, 60));
+      }
+      return { marcados: document.querySelectorAll('[data-num]').length, soltos };
+    });
+    ok(nums.marcados >= 10 && !nums.soltos.length && await page.evaluate(() => document.body.dataset.nota === '4,8' && document.body.dataset.avaliacoes === '1.200' && document.body.dataset.anos === '18'), `números da oficina (4,8 · +1.200 · +18) marcados em ${nums.marcados} pontos, nenhum solto fora da marca, e no <body>: trocáveis em scripts/dados-oficina.mjs` + (nums.soltos.length ? ' ' + JSON.stringify(nums.soltos) : ''));
     ok(await page.$$eval('.service-card[id^="svc-"]', cs => cs.length) === 12, 'os 12 cards de serviço têm id estável (#svc-cambio, #svc-freios…) para links de anúncio');
 
     // formulário: telefone curto é barrado com mensagem (o fetch da Edge Function é falso: nada vai para o banco)
@@ -567,6 +579,8 @@ for (const w of [375, 1440]) {
   // Convite de 8 s mostra o próximo horário livre; tocar leva ao formulário com ele marcado
   const page = await browser.newPage();
   await page.evaluateOnNewDocument(FETCH_FALSO);
+  // rodada 9: o convite não aparece para quem mandou pedido nas últimas 36 h, e um teste anterior deste mesmo navegador mandou
+  await page.evaluateOnNewDocument(() => { try { localStorage.removeItem('indycar_pedido'); } catch (_) {} });
   await page.setViewport({ width: 375, height: 812, isMobile: true, hasTouch: true });
   await page.goto(BASE + '/', { waitUntil: 'networkidle2', timeout: 45000 });
   await page.waitForSelector('#promoBackdrop.open', { timeout: 15000 }).catch(() => {});
