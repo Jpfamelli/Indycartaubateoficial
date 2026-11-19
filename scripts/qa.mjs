@@ -58,7 +58,7 @@ fs.mkdirSync(OUT, { recursive: true });
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, protocolTimeout: 240000, args: ['--no-first-run', '--no-default-browser-check'] });
 
-async function abrir(largura, altura, url = BASE + '/') {
+async function abrir(largura, altura, url = BASE + '/', antes = null) {
   const page = await browser.newPage();
   const erros = [];
   page.on('console', m => { if (m.type() === 'error') erros.push(m.text()); });
@@ -73,6 +73,7 @@ async function abrir(largura, altura, url = BASE + '/') {
       new PerformanceObserver(l => { const e = l.getEntries().pop(); if (e) window.__lcp = e.startTime; }).observe({ type: 'largest-contentful-paint', buffered: true });
     } catch (_) {}
   });
+  if (antes) await page.evaluateOnNewDocument(antes);
   await page.setViewport({ width: largura, height: altura, isMobile: largura < 768, hasTouch: largura < 768 });
   await page.goto(url, { waitUntil: 'networkidle2', timeout: 45000 });
   return { page, erros };
@@ -84,6 +85,24 @@ async function rolarTudo(page) {
     for (let y = 0; y < document.documentElement.scrollHeight; y += passo) { scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); }
     scrollTo(0, 0);
   });
+}
+
+if (!process.env.QA_URL) {
+  const { page, erros } = await abrir(1440, 900, BASE + '/', () => {
+    const agendar = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = callback => agendar(tempo => {
+      if (callback.name !== 'passo' || window.__cliqueNaForja) return callback(tempo);
+      window.__cliqueNaForja = true;
+      window.dispatchEvent(new PointerEvent('pointerdown', { clientX: 600, clientY: 700 }));
+      callback(tempo - 100);
+      window.__quadroDaForja = true;
+    });
+  });
+  await page.keyboard.press('Shift');
+  await page.waitForFunction(() => window.__cliqueNaForja);
+  ok(await page.evaluate(() => window.__quadroDaForja === true) && erros.length === 0,
+    'efeito da forja desenha mesmo quando o clique é mais recente que o quadro' + (erros.length ? ': ' + erros.join(' | ') : ''));
+  await page.close();
 }
 
 for (const [w, h] of [[375, 812], [1440, 900]]) {

@@ -678,7 +678,7 @@
         }
         /* coroa de fagulhas do splash */
         for (var bi = borrifos.length - 1; bi >= 0; bi--) {
-          var b = borrifos[bi], pb = (now - b.t) / 900;
+          var b = borrifos[bi], pb = Math.max(0, now - b.t) / 900;
           if (pb >= 1) { borrifos.splice(bi, 1); continue; }
           var bx = b.x + b.vx * pb, by = b.y + b.vy * pb + 260 * pb * pb;
           var ab = (1 - pb) * (1 - pb) * 0.8;
@@ -752,7 +752,8 @@
       }
       /* aneis do splash avancam e esmaecem */
       for (var i = ondas.length - 1; i >= 0; i--) {
-        var od = ondas[i], p = (now - od.t) / SPLASH_MS;
+        // O clique pode ter chegado depois do timestamp do quadro já agendado.
+        var od = ondas[i], p = Math.max(0, now - od.t) / SPLASH_MS;
         if (p >= 1) { ondas.splice(i, 1); continue; }
         var ease = 1 - (1 - p) * (1 - p);
         od.R = 36 + (SPLASH_R - 36) * ease;
