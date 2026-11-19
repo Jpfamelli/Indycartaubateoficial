@@ -993,7 +993,7 @@
   if (!sessao.get('indycar_promo')) {
     setTimeout(() => {
       if (sessao.get('indycar_promo')) return;
-      const algoAberto = formBackdrop.classList.contains('open') || ($('#revPop') && !$('#revPop').hidden);
+      const algoAberto = formBackdrop.classList.contains('open');
       if (!algoAberto) openEl(promoBackdrop);
       sessao.set('indycar_promo', '1');
     }, 8000);
@@ -2404,7 +2404,7 @@
     }
     if (hasFinePointer) {
       document.addEventListener('pointerover', e => {
-        const light = !!(e.target.closest && e.target.closest('.sec-light, .rev-pop-card'));
+        const light = !!(e.target.closest && e.target.closest('.sec-light'));
         document.body.classList.toggle('tc-light', light);
       });
     }
@@ -2453,72 +2453,7 @@
     frame();
   });
 
-  /* ================================================================
-     37. AVALIAÇÕES POR SERVIÇO — popover acessível.
-         REGRA INEGOCIÁVEL: nada é inventado. A fonte é o próprio
-         carrossel de depoimentos REAIS do site; o mapeamento liga
-         cada serviço apenas a quem citou aquele assunto. Serviço sem
-         depoimento correspondente mostra a nota agregada REAL (4,8 ·
-         +1.200 avaliações no Google) + convite para ver no Google ou
-         contar a experiência pelo WhatsApp.
-     ================================================================ */
-  (function serviceReviews() {
-    const pop = $('#revPop');
-    if (!pop) return;
-    const body = $('#revPopBody');
-    const title = $('#revPopTitle');
-    const waLink = $('#revPopWa');
-    const closeBtn = $('#revPopClose');
-    let trigger = null;
-
-    function render(key, serviceName) {
-      title.textContent = 'Avaliações — ' + serviceName;
-      ligarWhatsApp(waLink, 'Olá! Vim pelo site. Já fiz ' + serviceName + ' na IndyCar e quero contar como foi.', 'avaliacao-' + (key || 'servico'));
-      body.textContent = '';
-      const box = document.createElement('div');
-      box.className = 'rev-pop-empty';
-      const big = document.createElement('span');
-      big.className = 'rp-big';
-      big.textContent = document.body.dataset.nota || '4,8'; const de5 = document.createElement('small'); de5.textContent = ' / 5'; big.appendChild(de5);
-      const p = document.createElement('p');
-      p.textContent = 'Nossa nota no Google é ' + (document.body.dataset.nota || '4,8') + ', com mais de ' + (document.body.dataset.avaliacoes || '1.200') + ' avaliações. Não publicamos depoimento por serviço aqui: leia as avaliações reais direto no Google.';
-      box.append(big, p);
-      body.appendChild(box);
-    }
-
-    function openPop(btn) {
-      trigger = btn;
-      render(btn.dataset.reviews, btn.dataset.serviceName || 'este serviço');
-      pop.hidden = false;
-      document.body.style.overflow = 'hidden';
-      btn.setAttribute('aria-expanded', 'true');
-      closeBtn.focus();
-    }
-    function closePop() {
-      if (pop.hidden) return;
-      pop.hidden = true;
-      if (!promoBackdrop.classList.contains('open') && !formBackdrop.classList.contains('open'))
-        document.body.style.overflow = '';
-      if (trigger) {
-        trigger.setAttribute('aria-expanded', 'false');
-        if (document.contains(trigger)) trigger.focus();
-        trigger = null;
-      }
-    }
-
-    $$('.svc-rev').forEach(b => b.addEventListener('click', () => openPop(b)));
-    closeBtn.addEventListener('click', closePop);
-    pop.addEventListener('click', e => { if (e.target === pop) closePop(); });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { closePop(); return; }
-      if (e.key !== 'Tab' || pop.hidden) return;
-      const f = $$('button, [href]', pop).filter(x => !x.disabled);
-      if (!f.length) return;
-      const first = f[0], last = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    });
-  })();
+  /* 37. (popover de avaliações por serviço removido na rodada 9: a nota e o caminho para o Google ficam na seção #avaliacoes) */
 
   /* ================================================================
      40. MAPA SOB DEMANDA — nada do Google carrega antes do clique.

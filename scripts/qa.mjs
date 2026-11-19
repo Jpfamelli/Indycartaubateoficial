@@ -290,12 +290,9 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     ok(a11y.h1 === 1 && a11y.lang === 'pt-BR' && a11y.pular, 'um h1, lang pt-BR e atalho para pular ao conteúdo');
     ok(a11y.semNome.length === 0, 'todo botão/link tem nome acessível' + (a11y.semNome.length ? ': ' + a11y.semNome.slice(0, 3).join(' | ') : ''));
     ok(a11y.semRotulo.length === 0, 'todo campo tem rótulo' + (a11y.semRotulo.length ? ': ' + a11y.semRotulo.join(', ') : ''));
-    await page.evaluate(() => document.querySelector('.svc-rev').click());
-    const pop = await page.evaluate(() => ({ vis: !document.getElementById('revPop').hidden, wa: document.getElementById('revPopWa').href, txt: document.getElementById('revPopBody').innerText }));
-    ok(pop.vis && decodeURIComponent(pop.wa).includes('(site/avaliacao-') && !/Local Guide/.test(pop.txt), 'popover de avaliações abre sem depoimento inventado e com WhatsApp rastreável');
-    await page.keyboard.press('Escape');
-    ok(await page.evaluate(() => document.getElementById('revPop').hidden), 'popover fecha com Esc');
-    await page.keyboard.press('Escape');
+    // Rodada 9: o popover "Avaliações" de cada card saiu (repetia a seção #avaliacoes); a seção segue com o Google e o WhatsApp.
+    const aval = await page.evaluate(() => ({ botoes: document.querySelectorAll('.svc-rev, #revPop').length, google: !!document.querySelector('#avaliacoes a[href^="https://www.google.com/maps/"]'), wa: (document.querySelector('#avaliacoes a[href*="wa.me"]') || {}).href || '', txt: document.getElementById('avaliacoes').innerText }));
+    ok(aval.botoes === 0 && aval.google && decodeURIComponent(aval.wa).includes('(site/avaliacao)') && !/Local Guide/.test(aval.txt), 'avaliações: cards sem popover repetido; a seção leva ao Google e ao WhatsApp rastreável, sem depoimento inventado');
   }
 
   // ---- Rodada 4 (14/10/2026) ----
