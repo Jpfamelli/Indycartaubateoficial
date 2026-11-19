@@ -83,7 +83,7 @@ export async function lote3({ abrir, ok, espera, BASE, aplicarRedirect, ROOT, br
     const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
     ok(sitemap.includes('xmlns:image') && (sitemap.match(/<image:loc>/g) || []).length === 2 && sitemap.includes('Fachada da IndyCar'), 'sitemap com as imagens da fachada e da divulgação (Google Imagens local)');
     const priv = fs.readFileSync(path.join(ROOT, 'privacidade.html'), 'utf8');
-    ok(/og:title/.test(priv) && /name="robots"/.test(priv) && /Lembrar meus dados/.test(priv) && /180 dias/.test(priv) && /25\/10\/2026/.test(priv), 'privacidade: metadados sociais e o texto novo (dados lembrados só com a sua marcação, fila de 24 h, protocolo de 36 h)');
+    ok(/og:title/.test(priv) && /name="robots"/.test(priv) && /Lembrar meus dados/.test(priv) && /180 dias/.test(priv) && /Atualizada em [0-3][0-9]\/[01][0-9]\/20[0-9][0-9]\./.test(priv), 'privacidade: metadados sociais e o texto novo (dados lembrados só com a sua marcação, fila de 24 h, protocolo de 36 h) e data da última mudança'); // rodada 8: a data deixou de ser fixa no teste (a página mudou em 19/11/2026)
     const man = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
     ok(man.shortcuts[0].url.startsWith('/agendar?utm_source=pwa') && man.shortcuts[1].url.startsWith('/horarios?utm_source=pwa'), 'atalhos do app instalado marcam utm_source=pwa (e o redirecionamento mantém)');
   }

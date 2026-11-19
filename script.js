@@ -62,8 +62,14 @@
     get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
     set(k, v) { try { sessionStorage.setItem(k, v); } catch (_) {} }
   };
-  // Rodada 5: a campanha que trouxe a pessoa (utm_*, gclid, fbclid) fica guardada na sessão e vai junto no pedido
-  // do formulário e no código dos links de WhatsApp — o CRM enxerga "site" e, se houver, o anúncio de origem.
+  // O mesmo para o que fica no aparelho (modo privado ou armazenamento bloqueado não derrubam a página).
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (_) {} },
+  };
+  // Rodada 5: a campanha que trouxe a pessoa (utm_*, gclid, fbclid) vai junto no pedido do formulário e no código dos
+  // links de WhatsApp — o CRM enxerga "site" e, se houver, o anúncio de origem. Rodada 8: ver "rastreio" logo abaixo.
   const PARAMS = new URLSearchParams(location.search);
   // Rodada 7: /s/<serviço>, /agendar e /orcamento (netlify.toml) chegam como /#agendar[-serviço] com a query intacta
   // (utm_*, gclid, fbclid): abrem o formulário já com o serviço, sem rolar para lugar nenhum.
@@ -80,46 +86,159 @@
   // Horário que o Atendimento sugeriu: /s/freios?h=2026-10-27T10:00 (só data e hora, nada de pessoa)
   let slotPedido = null, avisoSlot = '';
   { const m = /^(\d{4}-\d{2}-\d{2})[T_ ](\d{2}:\d{2})$/.exec(PARAMS.get('h') || ''); if (m) slotPedido = { data: m[1], hora: m[2] }; }
-  const UTM = (() => {
-    const u = {};
-    for (const k of ['source', 'medium', 'campaign', 'content', 'term']) { const v = PARAMS.get('utm_' + k); if (v) u[k] = v.slice(0, 80); }
-    for (const k of ['gclid', 'fbclid']) { const v = PARAMS.get(k); if (v) u[k] = v.slice(0, 80); }
-    if (Object.keys(u).length) { sessao.set('indycar_utm', JSON.stringify(u)); return u; }
-    try { return JSON.parse(sessao.get('indycar_utm') || '{}') || {}; } catch (_) { return {}; }
-  })();
-  const slug = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  // Código de origem com a campanha paga anexada: "(site/cambio--meta)" (o gatilho do banco aceita [a-z0-9_-]{1,40}).
-  function codigoComCampanha(codigo) {
-    if (!UTM.source) return codigo;
-    return (codigo + '--' + slug(UTM.source)).slice(0, 40).replace(/-+$/, '');
-  }
-  if (UTM.source) {
-    $$('a[href*="wa.me"]').forEach(a => {
-      try {
-        const u = new URL(a.href);
-        const c = u.searchParams.get('utm_campaign');
-        const t = u.searchParams.get('text') || '';
-        if (!c || !t.endsWith('(site/' + c + ')')) return;
-        const novo = codigoComCampanha(c);
-        u.searchParams.set('text', t.slice(0, -(c.length + 7)) + '(site/' + novo + ')');
-        u.searchParams.set('utm_campaign', novo);
-        a.href = u.toString();
-      } catch (_) {}
+  /* ================================================================
+     RODADA 8 — rastreio do anúncio até o WhatsApp (indycar-ferramentas/r8/CONTRATO-RASTREIO.md)
+     O site guarda por 30 dias, neste aparelho, por qual anúncio ou link a pessoa chegou; registra a visita no banco da
+     oficina (sem nome, telefone nem e-mail) e recebe um código de 5 letras, que vai no fim da mensagem do WhatsApp e
+     no pedido do formulário. Sem armazenamento, sem rede ou sem chave, tudo segue como antes.
+     ================================================================ */
+  // Endereço e chave pública do banco: SÓ aqui. A chave é a "publishable/anon" do Supabase (feita para ficar à vista
+  // no site; quem protege é o banco). Vazia = o site não registra nada e as mensagens saem no formato antigo.
+  const RASTREIO_URL = 'https://nppfqhavqahapmugnyng.supabase.co/rest/v1/rpc/trafego_rastreio_registrar';
+  const RASTREIO_CHAVE = '';
+  const RASTREIO = 'indycar_rastreio';
+  const MARCAS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'gbraid', 'wbraid', 'fbclid', 'ttclid', 'msclkid'];
+  const CODIGO_RE = /^[A-HJKMNP-Z2-9]{5}$/; // 5 caracteres de ABCDEFGHJKMNPQRSTUVWXYZ23456789
+  // Só os campos do contrato, só texto e com tamanho máximo: o que vem do endereço ou do aparelho não é de confiança.
+  // (Identificador de clique vai inteiro, até 255 caracteres: cortado ele não serve para nada.)
+  function limparOrigem(o) {
+    const d = {};
+    MARCAS.concat('pagina', 'referencia', 'referencia_tipo').forEach((k, i) => {
+      const v = o && o[k];
+      if (v && typeof v === 'string') d[k] = v.slice(0, i < 5 ? 100 : i < 11 ? 255 : i < 12 ? 120 : 80);
     });
+    return d;
+  }
+  // Formato da rodada 5 (source, medium…, gclid, fbclid, até 80 caracteres): continua na sessão e no pedido do formulário.
+  const ANTIGAS = MARCAS.filter(k => !/braid|ttclid|msclkid/.test(k));
+  const paraAntigo = (d) => { const u = {}; ANTIGAS.forEach(k => { if (d[k]) u[k.replace('utm_', '')] = d[k].slice(0, 80); }); return u; };
+  // Quanto a chegada diz de onde veio: 2 = link marcado (anúncio ou utm), 1 = só o site de onde veio, 0 = nada (direto).
+  const forcaDaOrigem = (d) => (MARCAS.some(k => d[k]) ? 2 : d.referencia ? 1 : 0);
+  const marcaDaOrigem = (d) => MARCAS.concat('referencia').map(k => d[k] || '').join('\n');
+  // R = o que vale agora: { dados (campos do contrato §6.1), codigo (do registro no banco), quando (a chegada) }.
+  let R = null, rastreioNovo = false;
+  try {
+    const g = JSON.parse(store.get(RASTREIO));
+    const idade = g ? Date.now() - g.quando : -1;
+    if (idade >= 0 && idade < 2592e6) R = { dados: limparOrigem(g.dados), codigo: typeof g.codigo === 'string' && CODIGO_RE.test(g.codigo) ? g.codigo : '', quando: +g.quando }; // 30 dias
+  } catch (_) {}
+  const salvarRastreio = () => store.set(RASTREIO, JSON.stringify(R));
+  {
+    const bruto = {};
+    MARCAS.forEach(k => { bruto[k] = PARAMS.get(k); });
+    const veioMarcada = MARCAS.some(k => bruto[k]);
+    // Sem nada guardado (página aberta desde a versão antiga, ou aparelho sem armazenamento): vale a campanha desta sessão.
+    if (!veioMarcada && !R) { try { const u = JSON.parse(sessao.get('indycar_utm')) || {}; ANTIGAS.forEach(k => { bruto[k] = u[k.replace('utm_', '')]; }); } catch (_) {} }
+    const d = limparOrigem(bruto);
+    if (veioMarcada) sessao.set('indycar_utm', JSON.stringify(paraAntigo(d)));
+    let ref = '';
+    try { ref = new URL(document.referrer).hostname.replace(/^www\./, ''); } catch (_) {}
+    if (ref === location.hostname.replace(/^www\./, '')) ref = ''; // andar dentro do próprio site não é chegada
+    if (ref) d.referencia = ref.slice(0, 80);
+    d.pagina = location.pathname.slice(0, 120);
+    const de = (ref || d.utm_source || '').toLowerCase();
+    // "comunicar" e "atendimento" são os links que a própria oficina manda pelo WhatsApp (réguas e conversa).
+    d.referencia_tipo = MARCAS.slice(5).some(k => d[k]) || /cpc|ppc|cpm|cpv|paid|pago|pmax|display|remarket|retarget|anunc|^ads?$/i.test(d.utm_medium || '') ? 'anuncio'
+      : /instagram|^ig$/.test(de) ? 'instagram' : /facebook|^fb\b|^meta$/.test(de) ? 'facebook' : /whatsapp|^wa\b|^zap|wl\.co$|^comunicar$|^atendimento$/.test(de) ? 'whatsapp'
+        : /google|\bbing\b|yahoo|duckduckgo|ecosia|yandex|baidu|\bbrave\b/.test(de) ? 'busca' : de && de !== 'pwa' ? 'outro_site' : 'direto';
+    // Regra de troca: link marcado (anúncio ou utm) substitui o que estava guardado; chegada sem marca não apaga um link
+    // marcado (quem clicou no anúncio ontem e voltou hoje direto, ou pela busca, continua sendo do anúncio); chegada
+    // direta não apaga nada; a mesma chegada de novo (recarregar a página) não conta como outra. O atalho do app
+    // instalado (utm_source=pwa) vale como chegada direta: não apaga o anúncio de quem instalou o site.
+    const f = d.utm_source === 'pwa' ? 0 : forcaDaOrigem(d);
+    if (!R || (f && f >= forcaDaOrigem(R.dados) && marcaDaOrigem(d) !== marcaDaOrigem(R.dados))) {
+      R = { dados: d, codigo: '', quando: Date.now() };
+      rastreioNovo = true;
+      salvarRastreio();
+    }
+  }
+  const UTM = paraAntigo(R.dados);
+  const slug = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  // O que vai dentro de "(site/…)" no fim da mensagem (o banco lê da primeira mensagem; só [a-z0-9_-], no máximo 40).
+  // Com código do rastreio: "<serviço>--<fonte>--r-<código>", em minúsculas (fonte = utm_source ou "direto", só
+  // [a-z0-9_], até 20; se não couber, corta o serviço). Sem código, como sempre foi: "<serviço>" ou "<serviço>--<fonte>".
+  function codigoDeOrigem(servico) {
+    if (!R.codigo) return UTM.source ? (servico + '--' + slug(UTM.source)).slice(0, 40).replace(/-+$/, '') : servico;
+    const cauda = '--' + (slug(UTM.source || '').replace(/-/g, '_').slice(0, 20).replace(/_+$/, '') || 'direto') + '--r-' + R.codigo.toLowerCase();
+    return servico.slice(0, 40 - cauda.length).replace(/-+$/, '') + cauda;
   }
   // Mensagem padrão ao atendimento. O prefixo é o contrato com a IA do Atendimento (identifica o serviço por "quero orçar:").
   const PREFIXO_WA = 'Olá! Vim pelo site';
-  function linkWhatsApp(texto, codigo) {
+  function linkWhatsApp(texto, servico) {
+    const codigo = codigoDeOrigem(servico);
     return 'https://wa.me/5512996830272?text=' + encodeURIComponent(texto + ' (site/' + codigo + ')') +
       '&utm_source=site&utm_medium=whatsapp&utm_campaign=' + encodeURIComponent(codigo);
   }
+  // Todo link de WhatsApp montado ou remarcado pelo script passa por aqui; o serviço inteiro do botão fica lembrado
+  // (no texto ele pode sair cortado) para o registro do clique.
+  const servicoDoLink = new WeakMap();
+  function ligarWhatsApp(a, texto, servico) { servicoDoLink.set(a, servico); a.href = linkWhatsApp(texto, servico); }
+  function marcarLinks() {
+    $$('a[href*="wa.me"]').forEach(a => {
+      try {
+        const t = new URL(a.href).searchParams.get('text') || '';
+        const m = /\s*\(site\/([a-z0-9_-]+)\)$/.exec(t);
+        if (m) ligarWhatsApp(a, t.slice(0, m.index), servicoDoLink.get(a) || m[1].split('--')[0]);
+      } catch (_) {}
+    });
+  }
+  if (R.codigo || UTM.source) marcarLinks();
+  // Registro no banco (contrato §6.2 e §6.3). Nunca segura nada: quem chama não espera a resposta.
+  const enviarRastreio = (dados, aoSair) => fetch(RASTREIO_URL, {
+    method: 'POST', keepalive: !!aoSair,
+    headers: { apikey: RASTREIO_CHAVE, Authorization: 'Bearer ' + RASTREIO_CHAVE, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_dados: dados }),
+  });
+  // Uma vez por sessão (e por chegada), na primeira interação da pessoa ou depois de 4 s com a página à vista: robô que
+  // só baixa a página não gera registro, e navegador comandado por programa (teste, Lighthouse) também não.
+  if (RASTREIO_CHAVE && !navigator.webdriver && sessao.get(RASTREIO) !== String(R.quando)) {
+    const sinais = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
+    let relogio;
+    const registrar = () => {
+      sinais.forEach(s => removeEventListener(s, registrar, true));
+      document.removeEventListener('visibilitychange', armar);
+      clearTimeout(relogio);
+      sessao.set(RASTREIO, String(R.quando));
+      try {
+        enviarRastreio(Object.assign({ evento: 'visita' }, R.dados)).then(r => r.json()).then((j) => {
+          const c = String((j && j.codigo) || '').toUpperCase();
+          if (!CODIGO_RE.test(c)) return; // sem código válido, o site segue no formato antigo
+          R.codigo = c;
+          salvarRastreio();
+          marcarLinks();
+        }).catch(() => {});
+      } catch (_) {}
+    };
+    const armar = () => { clearTimeout(relogio); if (!document.hidden) relogio = setTimeout(registrar, 4000); };
+    sinais.forEach(s => addEventListener(s, registrar, { capture: true, passive: true }));
+    document.addEventListener('visibilitychange', armar);
+    armar();
+  }
+  // Clique num botão de WhatsApp: segundo registro (evento "clique"), com keepalive. Não espera resposta, não cancela
+  // nem atrasa a abertura do WhatsApp.
+  function rastrearClique(servico) {
+    if (!R.codigo || !RASTREIO_CHAVE) return;
+    try { enviarRastreio({ codigo: R.codigo, evento: 'clique', servico }, true).catch(() => {}); } catch (_) {}
+  }
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('a[href*="wa.me"]');
+    if (a) rastrearClique(servicoDoLink.get(a) || '');
+  }, true);
   // As seções abaixo da dobra usam content-visibility (styles.css). Antes de pular para uma âncora, todas ganham o
   // tamanho real (html.cv-off), senão o pulo cairia no lugar errado. Com âncora já no endereço, vale desde o início.
   const semAtalhoDeLayout = () => document.documentElement.classList.add('cv-off');
   if (location.hash.length > 1 && !ATALHO_RE.test(location.hash)) semAtalhoDeLayout();
+  // Rodada 8: o pulo lembra o alvo por 4 s. Se a caixa de horários mudar de altura no meio do caminho (semana de
+  // feriado: o aviso deixa a lista 82 px maior que o espaço reservado; Agenda fora do ar: a caixa some), o pulo é
+  // refeito e a pessoa cai no título certo. Qualquer toque, tecla ou roda do mouse depois do clique cancela.
+  let puloAlvo = null, puloEm = 0;
+  const retomarPulo = () => { if (puloAlvo && Date.now() - puloEm < 4000) puloAlvo.scrollIntoView({ block: 'start' }); };
+  ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(ev => addEventListener(ev, () => { puloAlvo = null; }, { capture: true, passive: true }));
   document.addEventListener('click', (e) => {
     const a = e.target.closest && e.target.closest('a[href^="#"]');
-    if (a && a.getAttribute('href').length > 1) semAtalhoDeLayout();
+    if (!a || a.getAttribute('href').length < 2) return;
+    semAtalhoDeLayout();
+    try { puloAlvo = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1))); puloEm = Date.now(); } catch (_) {}
   }, true);
   window.addEventListener('hashchange', semAtalhoDeLayout);
 
@@ -815,7 +934,12 @@
       }
     } else if (atalho) escolherServico('diagnostico');
     // o CRM fica sabendo por qual atalho a pessoa chegou (ex.: /s/freios mandado pelo Atendimento ou pelo Comunicar)
-    if (atalho) sessao.set('indycar_entrada', servico && /^[a-z0-9-]{1,30}$/.test(servico) ? '/s/' + servico : '/agendar');
+    if (atalho) {
+      const entrada = servico && /^[a-z0-9-]{1,30}$/.test(servico) ? '/s/' + servico : '/agendar';
+      sessao.set('indycar_entrada', entrada);
+      // rodada 8: o rastreio desta chegada também mostra o atalho (a Netlify entrega /s/freios como /#agendar-freios)
+      if (rastreioNovo) { R.dados.pagina = entrada; salvarRastreio(); }
+    }
     if (slotPedido) setTimeout(() => montarHorarios(), 400);
     if (atalho || PARAMS.get('abrir') === 'form') setTimeout(() => openEl(formBackdrop), atalho ? 300 : 600);
     if (servico || atalho || PARAMS.has('abrir')) {
@@ -824,6 +948,7 @@
     }
   }
   entradaPorEndereco();
+  rastreioNovo = false; // daqui em diante (âncora trocada com a página aberta) a página de chegada do rastreio não muda mais
   window.addEventListener('hashchange', () => { if (ATALHO_RE.test(location.hash)) entradaPorEndereco(); });
   // Rodada 7: quem chega por #contato, #faq... cai no lugar certo mesmo quando imagens, fontes e horários mudam a altura
   // da página depois da primeira pintura (antes o #contato podia parar 20 px acima do título no celular).
@@ -874,7 +999,6 @@
      9. FORMULÁRIO → monta mensagem e envia para o WhatsApp
      ================================================================ */
   const form = $('#leadForm');
-  const WPHONE = '5512996830272';
   // Rodada 5: o pedido vai para o banco da oficina pela Edge Function site-lead (lead no CRM + tarefa para a equipe).
   // Se a rede falhar, o caminho antigo continua valendo: abre o WhatsApp com a mesma mensagem — nada se perde.
   const SITE_LEAD_URL = 'https://nppfqhavqahapmugnyng.supabase.co/functions/v1/site-lead';
@@ -910,7 +1034,7 @@
     if (on) { b.dataset.rotulo = b.dataset.rotulo || b.textContent.trim(); b.lastChild.textContent = ' Enviando…'; }
     else if (b.dataset.rotulo) b.lastChild.textContent = ' ' + b.dataset.rotulo;
   }
-  function mostrarSucesso(resposta, waHref) {
+  function mostrarSucesso(resposta, textoWa, servicoWa) {
     if (!formOk) return;
     form.hidden = true;
     if (formHead) formHead.hidden = true;
@@ -921,7 +1045,7 @@
     const copiar = $('#formOkCopiar');
     if (copiar) { copiar.hidden = !resposta.protocolo; copiar.textContent = 'Copiar protocolo'; }
     const wa = $('#formOkWa');
-    if (wa) { wa.href = waHref; wa.textContent = resposta.direto ? 'Abrir no WhatsApp' : 'Quer adiantar? Abrir no WhatsApp'; }
+    if (wa) { ligarWhatsApp(wa, textoWa, servicoWa); wa.textContent = resposta.direto ? 'Abrir no WhatsApp' : 'Quer adiantar? Abrir no WhatsApp'; }
     formOk.hidden = false;
     formOk.focus?.();
     $('.form-ok-fechar', formOk)?.focus();
@@ -990,19 +1114,21 @@
     const horario = horarioEscolhido ? { data: horarioEscolhido.data, hora: horarioEscolhido.hora } : null;
     // Código de origem por serviço: o Atendimento lê "(site/formulario-freios)" e marca a UTM do lead.
     const codigoServico = (service.selectedOptions[0] && service.selectedOptions[0].dataset.codigo) || 'servico';
-    const codigo = codigoComCampanha('formulario-' + codigoServico);
+    const servicoWa = 'formulario-' + codigoServico;
     const textoWa = PREFIXO_WA + ', quero orçar: ' + service.value + '.\n' +
       'Nome: ' + name.value.trim() + ' · Telefone: ' + phone.value.trim() +
       (car ? ' · Carro: ' + car : '') + (placa ? ' · Placa: ' + placa : '') + (horario ? ' · Horário: ' + horarioEscolhido.rotulo : quando ? ' · Quando: ' + quando : '') +
       (mensagem ? '\nO carro está: ' + mensagem : '');
-    const waHref = linkWhatsApp(textoWa, codigo);
 
     estadoEnviando(true);
     let resposta = null;
+    // Rodada 8: "rastreio" leva de onde a pessoa veio (campos do contrato §6.1) e o código do registro, quando existe.
+    // O campo "codigo" do pedido continua sendo o código do SERVIÇO; "utm" é o formato antigo, mantido para a função publicada.
     const pedido = {
       nome: name.value.trim(), telefone: digitos, servico: service.value, codigo: codigoServico, carro: car || null,
       preferencia: quando || null, placa, horario, mensagem: mensagem || null, pagina: (sessao.get('indycar_entrada') || (location.pathname + location.search)).slice(0, 200),
-      utm: UTM, decorrido: Date.now() - comecouEm, empresa: ($('#fEmpresa') || {}).value || '',
+      utm: UTM, rastreio: R.codigo ? Object.assign({ codigo: R.codigo }, R.dados) : R.dados,
+      decorrido: Date.now() - comecouEm, empresa: ($('#fEmpresa') || {}).value || '',
     };
     try {
       const ctrl = new AbortController();
@@ -1022,7 +1148,8 @@
     launchConfetti();                 // 🎉 bandeira quadriculada
     if (!resposta) {
       // O banco não respondeu: abre o WhatsApp com a mesma mensagem (comportamento das rodadas anteriores).
-      window.open(waHref, '_blank', 'noopener');
+      window.open(linkWhatsApp(textoWa, servicoWa), '_blank', 'noopener');
+      rastrearClique(servicoWa);
       resposta = { ok: true, direto: true, mensagem: 'Seu pedido abriu no WhatsApp da oficina. Se a janela não apareceu, toque no botão abaixo.' };
       // Rodada 7: o pedido também fica numa fila no aparelho e é reenviado ao banco quando a rede volta (nada se perde)
       window.dispatchEvent(new CustomEvent('indycar:pedido-offline', { detail: { pedido } }));
@@ -1031,7 +1158,7 @@
     resposta.horarioPedido = horario ? horarioEscolhido.rotulo : '';
     horariosPromessa = null; horariosEm = 0; // a Agenda mudou: a próxima consulta traz a lista nova
     window.dispatchEvent(new CustomEvent('indycar:pedido', { detail: { resposta, pedido, horarioRotulo: horario ? horarioEscolhido.rotulo : '' } }));
-    mostrarSucesso(resposta, waHref);
+    mostrarSucesso(resposta, textoWa, servicoWa);
     form.reset();
     limparHorario();
     comecouEm = 0;
@@ -1112,17 +1239,17 @@
   async function montarHorarios() {
     const corpo = await carregarHorarios();
     const caixa = $('#horarios');
-    if (!corpo) { if (caixa) caixa.hidden = true; $$('[data-so-horarios]').forEach(e => { e.hidden = true; }); return; } // Agenda não respondeu: a caixa some, o formulário segue igual
+    if (!corpo) { if (caixa) caixa.hidden = true; $$('[data-so-horarios]').forEach(e => { e.hidden = true; }); retomarPulo(); return; } // Agenda não respondeu: a caixa some, o formulário segue igual
     if (caixa && !corpo.dias.length) {
       const l = $('#horariosLista'); l.textContent = '';
       const p = document.createElement('p'); p.className = 'horarios-carregando';
       p.textContent = 'A agenda está cheia nos próximos dias. Chame a gente no WhatsApp que a equipe encaixa o seu carro.';
-      l.appendChild(p); caixa.hidden = false; caixa.removeAttribute('aria-busy');
+      l.appendChild(p); caixa.hidden = false; caixa.removeAttribute('aria-busy'); retomarPulo();
     } else if (caixa && corpo.atualizado_em !== horariosPintados) {
       pintarHorarios($('#horariosLista'), corpo, 'secao');
       const hh = new Date(corpo.atualizado_em);
       if (!isNaN(hh)) $('#horariosAtualizado').textContent = 'Atualizado às ' + hh.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) + '.';
-      caixa.hidden = false; caixa.removeAttribute('aria-busy');
+      caixa.hidden = false; caixa.removeAttribute('aria-busy'); retomarPulo(); // a altura da caixa pode ter mudado: quem estava a caminho de uma âncora cai no lugar certo
     }
     const f = $('#fHorarios');
     if (f && corpo.dias.length && corpo.atualizado_em !== horariosPintados) { pintarHorarios($('#fHorariosLista'), corpo, 'form'); f.hidden = false; }
@@ -2367,10 +2494,7 @@
 
     function render(key, serviceName) {
       title.textContent = 'Avaliações — ' + serviceName;
-      const slug = 'avaliacao-' + (key || 'servico');
-      waLink.href = 'https://wa.me/' + WPHONE + '?text=' +
-        encodeURIComponent('Olá! Vim pelo site. Já fiz ' + serviceName + ' na IndyCar e quero contar como foi. (site/' + slug + ')') +
-        '&utm_source=site&utm_medium=whatsapp&utm_campaign=' + slug;
+      ligarWhatsApp(waLink, 'Olá! Vim pelo site. Já fiz ' + serviceName + ' na IndyCar e quero contar como foi.', 'avaliacao-' + (key || 'servico'));
       body.textContent = '';
       const box = document.createElement('div');
       box.className = 'rev-pop-empty';
@@ -2470,11 +2594,6 @@
          fila de reenvio sem rede, pedido recente e economia de dados
      ================================================================ */
   (function rodada7() {
-    const store = {
-      get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
-      set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
-      del(k) { try { localStorage.removeItem(k); } catch (_) {} },
-    };
     const lerJson = (txt) => { try { return JSON.parse(txt || 'null'); } catch (_) { return null; } };
     const DIA = 86400000;
     const CAMPOS = { nome: '#fName', tel: '#fPhone', carro: '#fCar', placa: '#fPlaca', msg: '#fMsg' };
