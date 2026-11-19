@@ -875,6 +875,7 @@
     $$('#navbar, main, footer, aside[aria-label="Atalhos de contato"]').forEach(e => { if (aberto) e.setAttribute('inert', ''); else e.removeAttribute('inert'); });
   }
   const openEl = (el) => {
+    if (el === formBackdrop) sessao.set('indycar_promo', '1'); // rodada 9: quem já abriu o formulário não recebe o convite
     if (!el.classList.contains('open')) lastFocus = document.activeElement;
     el.classList.add('open');
     fundoInerte();
@@ -990,11 +991,18 @@
   document.addEventListener('click', e => {
     if (e.target.closest && e.target.closest('a[href*="wa.me"]')) sessao.set('indycar_promo', '1');
   });
-  if (!sessao.get('indycar_promo')) {
-    setTimeout(() => {
-      if (sessao.get('indycar_promo')) return;
-      const algoAberto = formBackdrop.classList.contains('open');
-      if (!algoAberto) openEl(promoBackdrop);
+  // Rodada 9: o convite não interrompe quem está digitando (antes roubava o foco do campo no meio da palavra), nem
+  // quem está com o menu aberto: espera mais 6 s (até 3 vezes) e desiste. Também não aparece para quem já abriu o
+  // formulário nesta visita ou mandou um pedido nas últimas 36 h neste aparelho (o protocolo está guardado).
+  const pedidoRecente = () => { try { const p = JSON.parse(store.get('indycar_pedido') || 'null'); return !!(p && p.protocolo && Date.now() - p.em < 36 * 3600000); } catch (_) { return false; } };
+  const ocupado = () => formBackdrop.classList.contains('open') || hamburger.classList.contains('open') ||
+    !!(document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+  if (!sessao.get('indycar_promo') && !pedidoRecente()) {
+    let tentativas = 0;
+    setTimeout(function convidar() {
+      if (sessao.get('indycar_promo') || pedidoRecente()) return;
+      if (ocupado()) { if (++tentativas <= 3) setTimeout(convidar, 6000); return; }
+      openEl(promoBackdrop);
       sessao.set('indycar_promo', '1');
     }, 8000);
   }
