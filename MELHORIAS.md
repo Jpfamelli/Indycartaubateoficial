@@ -449,3 +449,46 @@ Total: 81 melhorias (244–324), 29 com 🔗.
 ### Pendências
 - Edge Function `site-lead` não foi tocada (não publico função).
 - Pedido ao Orçador: aceitar `&placa=` em `#/cotacao`. Pedido a Atendimento/Comunicar: usar `/s/<serviço>?utm_source=...&h=...`, `/a/`, `/m/`, `/o/`.
+
+## Rodada 8 (19/11/2026): T4 Site, de qual anúncio veio o contato
+
+Numeração continua (325 em diante). 🔗 = conexão com outro sistema. Especificação: `indycar-ferramentas/r8/CONTRATO-RASTREIO.md`. Teste novo: `scripts/qa-r8.mjs` (143 conferências), último passo do `npm test`.
+
+### Chegada e guarda no aparelho
+325. 🔗 Na chegada o site lê os 11 marcadores do contrato (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `gclid`, `gbraid`, `wbraid`, `fbclid`, `ttclid`, `msclkid`), a página de chegada, o domínio de onde a pessoa veio e o tipo (`anuncio`, `busca`, `instagram`, `facebook`, `whatsapp`, `outro_site`, `direto`).
+326. Guarda em `localStorage['indycar_rastreio']` por 30 dias (`{ dados, codigo, quando }`); vencido, some.
+327. Regra de troca: link marcado substitui o guardado; chegada direta, pela busca ou só com site de origem não apaga um anúncio; recarregar não conta como chegada nova; `utm_source=pwa` (atalho do app instalado) vale como direta.
+328. Sem armazenamento (modo privado, bloqueado) tudo funciona com a memória da página; todo acesso a armazenamento e à rede fica em `try/catch`.
+329. O `sessionStorage['indycar_utm']` das rodadas 5 a 7 continua gravado e lido (quem estava com a página aberta não perde a campanha).
+330. Tudo que vem do endereço ou do aparelho passa por limpeza: só os campos do contrato, só texto, tamanho máximo (utm 100, identificador de clique 255, página 120, referência 80). Dado estragado no aparelho não derruba a página.
+331. 🔗 Pelos atalhos (`/s/<serviço>`, `/agendar`) a página de chegada fica `/s/<serviço>` ou `/agendar`, não `/`.
+
+### Registro no banco e código
+332. 🔗 Registro da visita em `trafego_rastreio_registrar` uma vez por sessão e por chegada, na primeira interação ou depois de 4 s com a página à vista (aba no fundo não conta).
+333. Navegador comandado por programa (`navigator.webdriver`: suítes antigas e Lighthouse) não registra nada.
+334. Só aceita código no formato do contrato (5 caracteres de `ABCDEFGHJKMNPQRSTUVWXYZ23456789`); erro 500, 404, resposta torta ou rede caída deixam o site no formato antigo, sem erro na página e sem segunda tentativa.
+335. Endereço e chave pública do banco num lugar só (`RASTREIO_URL` e `RASTREIO_CHAVE`, topo do `script.js`). Chave vazia = nada é registrado e tudo sai como antes. O `npm test` reprova chave que não seja a pública.
+
+### WhatsApp e formulário
+336. 🔗 Com código, os 30 botões de WhatsApp da página, o da janela de avaliações e o da confirmação do formulário terminam com `(site/<serviço>--<fonte>--r-<código>)`; sem código, como era.
+337. Limite de 40 caracteres dentro de `(site/…)`: quem é cortado é o serviço, nunca a fonte nem o código; a fonte vira só `[a-z0-9_]`, até 20.
+338. 🔗 No clique, segundo registro (`evento: "clique"`) com `keepalive`, sem esperar resposta e sem atrasar a abertura do WhatsApp; leva o serviço inteiro mesmo quando o texto foi cortado.
+339. Clique antes da resposta do registro sai no formato antigo; quando o código chega, os botões são remarcados.
+340. 🔗 O pedido do formulário leva `rastreio: { codigo?, ...campos }`; o `utm` antigo continua indo.
+341. 🔗 Função `site-lead`: `origemDoPedido` limpa o que chegou e `aplicarOrigem` chama `trafego_aplicar_origem(lead, dados, 'formulario')` com prazo de 4 s; sem a função no banco, lenta ou com erro, o pedido segue igual.
+
+### Privacidade e acabamento
+342. Privacidade: um item novo ("Guardamos por qual anúncio ou link você chegou ao site...") e um parágrafo sobre os 30 dias no aparelho; "sem cookie de rastreio" virou "sem cookie de publicidade" (o anterior deixaria de ser exato). Data da página: 19/11/2026.
+343. Pulo do menu no celular: refeito se a caixa de horários mudar de altura no caminho (semana de feriado deixa a lista 82 px mais alta) e cancelado se a pessoa tocar, teclar ou rolar. Consertou 3 falhas do `qa.mjs` em 375 px (`#contato`, `#faq`, `#garantia` paravam em 162 px) que já existiam no commit `9ac92c0` e só apareciam em semana de feriado.
+344. Teste da privacidade (`qa-r7-lote3.mjs`) confere que há data, não uma data fixa.
+
+### Como verifiquei
+- `scripts/qa-r8.mjs`: banco de mentira em 127.0.0.1, `script.js` servido com endereço e chave trocados, Chrome sem resolução de nomes (nada sai da máquina) e sem a marca de navegador comandado; um contexto novo por cenário. Cobre gclid, fbclid (375 px), utm de anúncio, chegada direta depois de anúncio, sem armazenamento, registro que falha (8 jeitos), registro que demora, limite de 40, formulário, 30 dias, dados estragados, 4 s à vista, pulo do menu com feriado.
+- Ensaio com estragos: 14 defeitos plantados numa cópia do site (pasta temporária, nunca na árvore), em 3 lotes; a suíte reprovou todos (15, 26 e 17 falhas).
+- `node --test scripts/logica-site-lead.test.mjs`: 21 testes da função (origem limpa, função do banco ausente, lenta ou com erro).
+- Peso do `script.js` minificado: 59.068 → 62.291 bytes (gzip +1.143, brotli +1.125; orçamento 64 KB).
+- `npm test` inteiro: 21 + 197 + 114 + 143, nenhuma falha. Lighthouse (`npm run vitais`, máquina dividida com outras frentes): celular 79 → 81 de desempenho, computador 100 → 99; acessibilidade, boas práticas e SEO 100 nos dois, antes e depois.
+
+### Pendências
+- `RASTREIO_CHAVE` vazia até a migração do banco ser aplicada (o orquestrador preenche e publica).
+- Função `site-lead` não publicada (só o orquestrador publica).
