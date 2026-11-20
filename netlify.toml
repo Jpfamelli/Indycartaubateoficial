@@ -1,5 +1,8 @@
+# Rodada 10: a pasta publicada é dist/ (o que o `npm run publicar` monta: só as páginas, imagens e fontes). Antes era ".":
+# um `netlify deploy` sem `--dir dist` (ou um build ligado ao repositório) punha no ar a pasta inteira, com scripts de teste,
+# o código da função do banco, os .sql e o MELHORIAS.md.
 [build]
-  publish = "."
+  publish = "dist"
 
 # Segurança (rodada 3, 13/10/2026). O deploy é `npm run publicar` (pasta dist/);
 # o netlify-cli lê estes cabeçalhos daqui mesmo assim. O teste (`npm test`) aplica
