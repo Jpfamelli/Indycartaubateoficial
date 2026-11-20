@@ -613,6 +613,16 @@ for (const w of [375, 1440]) {
   await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 45000 });
   const nj = await page.evaluate(() => ({ aviso: !!document.querySelector('noscript') && document.body.innerText.includes('precisa de JavaScript'), caixa: getComputedStyle(document.getElementById('horarios')).display, sw: document.documentElement.scrollWidth <= innerWidth }));
   ok(nj.aviso && nj.caixa === 'none' && nj.sw, 'sem JavaScript: aviso com WhatsApp e telefone, caixa de horários escondida e sem rolagem horizontal');
+  // Rodada 9: sem JavaScript as seções que surgem ao rolar ficavam com opacidade 0 (só o título do topo aparecia), o aviso ficava
+  // atrás do menu fixo e o botão do menu não abria nada
+  const nj2 = await page.evaluate(() => {
+    const opac = (e) => { let o = 1; for (let n = e; n && n !== document.body; n = n.parentElement) o *= parseFloat(getComputedStyle(n).opacity); return o; };
+    const tit = [...document.querySelectorAll('h1, h2')].filter(h => !h.closest('[hidden]'));
+    const av = document.querySelector('.sem-js').getBoundingClientRect();
+    const topo = document.elementFromPoint(av.left + av.width / 2, av.top + 12);
+    return { visiveis: tit.filter(h => opac(h) > 0.9).length, total: tit.length, avisoNaFrente: !!(topo && topo.closest('.sem-js')), menu: getComputedStyle(document.querySelector('.hamburger')).display };
+  });
+  ok(nj2.visiveis === nj2.total && nj2.total >= 8 && nj2.avisoNaFrente && nj2.menu === 'none', 'sem JavaScript: todos os títulos aparecem (' + nj2.visiveis + '/' + nj2.total + '), o aviso fica na frente do menu fixo e o botão do menu, que não abriria, some');
   await page.close();
 }
 {
