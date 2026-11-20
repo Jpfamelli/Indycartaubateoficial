@@ -327,12 +327,14 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     const secao = document.getElementById('servicos').innerText;
     return {
       links: links.length,
-      comServico: links.filter(a => /— .+ \(abre o WhatsApp\)/.test(a.textContent)).length,
+      // rodada 9: o nome lido é "Agende pelo WhatsApp: troca de óleo de câmbio (abre o WhatsApp)", sem travessão e sem a seta
+      comServico: links.filter(a => { const c = a.cloneNode(true); c.querySelectorAll('[aria-hidden="true"]').forEach(e => e.remove()); return /^Agende pelo WhatsApp: [a-zà-ú].+ \(abre o WhatsApp\)$/.test(c.textContent.trim()); }).length,
+      setasLidas: [...document.querySelectorAll('a, button')].filter(a => { const c = a.cloneNode(true); c.querySelectorAll('[aria-hidden="true"]').forEach(e => e.remove()); return /[→←]/.test(c.textContent); }).length,
       passos: document.querySelectorAll('.svc-passos li').length,
       precoOuPrazo: /R\$|\bprazo\b|\bem \d+ (min|minutos|horas|dias)\b/i.test(secao),
     };
   });
-  ok(servicos.links >= 12 && servicos.comServico === servicos.links, `link de cada serviço diz qual é e que abre o WhatsApp (${servicos.comServico}/${servicos.links})`);
+  ok(servicos.links >= 12 && servicos.comServico === servicos.links && servicos.setasLidas === 0, `link de cada serviço diz qual é e que abre o WhatsApp (${servicos.comServico}/${servicos.links}); nenhuma seta → lida em voz alta (${servicos.setasLidas})`);
   ok(servicos.passos === 3 && !servicos.precoOuPrazo, 'serviços: "como funciona" em 3 passos e nenhum preço ou prazo na seção');
   await page.evaluate(() => document.documentElement.classList.remove('cv-off'));
 
