@@ -1477,6 +1477,18 @@
     pintar();
     setInterval(pintar, 60000);
   })();
+  // Rodada 9: em feriado o "Hoje" do "Quando prefere?" avisa, e na véspera o "Amanhã" também (a oficina pode não abrir e a
+  // equipe confirma pelo WhatsApp), como o chip do topo e os horários livres já faziam. O valor enviado continua o mesmo.
+  (function quandoEmFeriado() {
+    const q = $('#fQuando'); if (!q) return;
+    const { data } = agoraSP();
+    const [a, m, d] = data.split('-').map(Number);
+    const amanha = new Date(Date.UTC(a, m - 1, d + 1)).toISOString().slice(0, 10);
+    for (const [txt, dia] of [['Hoje', data], ['Amanhã', amanha]]) {
+      const o = $$('option', q).find(x => x.textContent.trim() === txt);
+      if (o && FERIADOS[dia]) { o.value = txt; o.textContent = txt + ' (feriado: a equipe confirma)'; }
+    }
+  })();
 
   spClose.addEventListener('click', () => { sp.classList.remove('show'); });
 
