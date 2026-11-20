@@ -345,6 +345,14 @@ try {
     await fechar(page);
   }
 
+  titulo('app instalado (manifest)');
+  {
+    const man = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
+    const toml = fs.readFileSync(path.join(ROOT, 'netlify.toml'), 'utf8');
+    const fora = man.shortcuts.filter(s => !s.url.startsWith('/') || !toml.includes('from = "' + s.url.split('?')[0] + '"'));
+    ok(man.shortcuts.length >= 4 && !fora.length, 'atalhos do app instalado ficam no próprio site (fora do escopo o navegador ignora) e cada um tem o seu redirecionamento' + (fora.length ? ': ' + fora.map(s => s.url).join(', ') : ''));
+  }
+
   titulo('fim');
   ok(!errosDePagina.length, 'nenhum erro de JavaScript nas páginas abertas' + (errosDePagina.length ? ': ' + [...new Set(errosDePagina)].slice(0, 3).join(' | ') : ''));
   console.log(`  info ${barrados.length} envio(s) ao banco respondido(s) dentro do teste; nada saiu da máquina`);
