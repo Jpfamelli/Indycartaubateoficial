@@ -408,8 +408,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
 .about-lead { font-size: 1.18rem; color: #d8d8dc; margin-bottom: 18px; line-height: 1.6; }
 .about-lead strong { color: #fff; font-weight: 700; }
-.about-text { color: var(--gray); margin-bottom: 26px; line-height: 1.6; }
-.about-text strong { color: var(--white); }
 .about-pillars { display: grid; gap: 18px; }
 .about-pillar { display: flex; gap: 18px; padding: 22px; border-radius: var(--radius); background: linear-gradient(160deg, var(--card), var(--graphite)); border: 1px solid var(--line); transition: transform .35s var(--ease), border-color .35s, box-shadow .35s; }
 .about-pillar:hover { transform: translateX(6px); border-color: rgba(229,9,20,.5); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
@@ -1106,8 +1104,6 @@ body.perf-lite .cta-embers { display: none; }
 /* SOBRE em claro */
 .sec-light .about-lead { color: #33353d; }
 .sec-light .about-lead strong { color: var(--lt-ink); }
-.sec-light .about-text { color: var(--lt-ink-2); }
-.sec-light .about-text strong { color: var(--lt-ink); }
 .sec-light .about-pillar {
   background: var(--lt-card); border-color: var(--lt-line);
   box-shadow: 0 10px 30px rgba(23,24,28,.06);
