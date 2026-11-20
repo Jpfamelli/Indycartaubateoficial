@@ -1707,6 +1707,10 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
   /* rodada 9: links no meio da frase seguem na linha (o inline-flex de 44 px abria vãos de ~20 px entre as linhas);
      o preenchimento de 15 px em cima e embaixo mantém a área de toque de 44 px sem mexer na altura da linha */
   .form-mini a, .form-ok-dica a { display: inline; padding: 15px 0; }
+  /* rodada 9: o mesmo nos links do meio das respostas do FAQ e das notas da área do cliente (tinham 17 px de altura
+     quando cabiam numa linha só); o botão do formulário no FAQ ganha a área sem empurrar as linhas (margem negativa) */
+  .faq-a p a, .area-nota a { display: inline; padding: 14px 0; }
+  .faq-a p .faq-form { padding: 9px 0; margin: -9px 0; }
 }
 /* Rodada 9: no computador (mouse) os links soltos têm pelo menos 24 px de altura, o mínimo da WCAG 2.2 (2.5.8):
    antes "Privacidade" do rodapé tinha 15 px, "Tirar dúvida sobre a garantia" 17 px, os "Agende pelo WhatsApp" 21 px
