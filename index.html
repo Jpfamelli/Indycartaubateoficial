@@ -1370,12 +1370,12 @@
       <form id="leadForm" novalidate>
         <div class="field">
           <label for="fName">Seu nome</label>
-          <input type="text" id="fName" name="name" autocomplete="name" maxlength="80" placeholder="Ex: João da Silva" required aria-describedby="fNameErr" />
+          <input type="text" id="fName" name="name" autocomplete="name" autocapitalize="words" enterkeyhint="next" maxlength="80" placeholder="Ex: João da Silva" required aria-describedby="fNameErr" />
           <small class="field-err" id="fNameErr" hidden>Conta pra gente o seu nome (pelo menos 2 letras).</small>
         </div>
         <div class="field">
           <label for="fPhone">Seu WhatsApp com DDD</label>
-          <input type="tel" id="fPhone" name="phone" autocomplete="tel-national" inputmode="tel" maxlength="16" placeholder="(12) 9 9999-9999" required aria-describedby="fPhoneErr" />
+          <input type="tel" id="fPhone" name="phone" autocomplete="tel-national" inputmode="tel" enterkeyhint="next" maxlength="16" placeholder="(12) 9 9999-9999" required aria-describedby="fPhoneErr" />
           <small class="field-err" id="fPhoneErr" hidden>Confira o número com DDD (10 ou 11 dígitos).</small>
         </div>
         <div class="field">

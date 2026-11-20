@@ -1189,6 +1189,17 @@
     comecouEm = 0;
   });
 
+  // Rodada 9: o teclado do celular mostra "próximo" (enterkeyhint) no nome, no WhatsApp, no carro e na placa, mas o Enter
+  // enviava o formulário pela metade (sem o "quando" e sem a mensagem). Agora o Enter nesses campos leva ao próximo campo.
+  form.addEventListener('keydown', (e) => {
+    const alvo = e.target;
+    if (e.key !== 'Enter' || e.isComposing || !alvo.matches('input[type=text], input[type=tel]')) return;
+    const campos = $$('input:not([type=hidden]):not([type=checkbox]), select, textarea', form)
+      .filter(c => !c.disabled && !c.closest('.campo-isca, [hidden]'));
+    const prox = campos[campos.indexOf(alvo) + 1];
+    if (prox) { e.preventDefault(); prox.focus(); }
+  });
+
   // limpa o estado inválido ao digitar
   $$('#leadForm input, #leadForm select, #leadForm textarea').forEach(f =>
     f.addEventListener('input', () => {
