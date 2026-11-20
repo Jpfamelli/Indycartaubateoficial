@@ -587,3 +587,5 @@ mudança anterior da própria rodada (02e878b, 8f0612c, 8e2f02b, 786808d) não c
 - **R9-SITE-087** · teste · O teste do chip do topo no qa.mjs aceita o aviso de feriado: em 20/11 (Consciência Negra) o npm test falhava sem defeito no site · `d803e35`
 - **R9-SITE-088** · conserto · A nota do rodapé e o ícone do Google Maps levam ao perfil da oficina com as avaliações (o ícone buscava só o endereço; a nota era texto) · `5b31d95`
 - **R9-SITE-089** · acessibilidade · Sem rede, o foco vai para "Abrir no WhatsApp" (o que falta fazer), não para "Fechar"; com o pedido entregue continua no "Fechar" · `97ea26f`
+- **R9-SITE-090** · conserto · Com o mapa do Google aberto, o "Traçar rota" continua à mão, por cima do mapa (sumia junto com a capa) · `5818bb7`
+- **R9-SITE-091** · tela · Rodapé de contato com o telefone fixo (12) 3624-5957 e "Traçar rota" embaixo do endereço · `675dec7`
