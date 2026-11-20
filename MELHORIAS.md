@@ -589,3 +589,5 @@ mudança anterior da própria rodada (02e878b, 8f0612c, 8e2f02b, 786808d) não c
 - **R9-SITE-089** · acessibilidade · Sem rede, o foco vai para "Abrir no WhatsApp" (o que falta fazer), não para "Fechar"; com o pedido entregue continua no "Fechar" · `97ea26f`
 - **R9-SITE-090** · conserto · Com o mapa do Google aberto, o "Traçar rota" continua à mão, por cima do mapa (sumia junto com a capa) · `5818bb7`
 - **R9-SITE-091** · tela · Rodapé de contato com o telefone fixo (12) 3624-5957 e "Traçar rota" embaixo do endereço · `675dec7`
+- **R9-SITE-092** · desempenho · Recorte da fachada com versão de 640 px e "sizes" com a largura real: o celular baixa 18 KB no lugar de 35 KB (o Lighthouse apontava ~30 KB sobrando) · `ff7a11d`
+- **R9-SITE-093** · celular · Em telas de 320 px o selo da nota do topo não passa mais 17 px da tela · `fa78c4e`
