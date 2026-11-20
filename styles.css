@@ -1445,6 +1445,8 @@ main:focus { outline: none; }
 .btn-ink { background: var(--lt-ink); color: #fff; }
 .btn-ink:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(23,24,28,.3); }
 .rv-wa { flex-basis: 100%; font-size: .92rem; }
+/* a seta (aria-hidden, rodada 9) é um item separado: no celular estes links viram inline-flex e o espaço antes dela sumia */
+.warranty-link, .rv-wa { gap: .35em; }
 
 /* MAPA SOB DEMANDA */
 .contact-map { background: #111216; display: grid; }
