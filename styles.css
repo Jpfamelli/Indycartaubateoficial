@@ -589,9 +589,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
    as estrelas ficam num span próprio, escondido do leitor de tela, e seguem na cor e no espaçamento de antes */
 .footer-rating > span + span { color: var(--gray); font-size: .85rem; letter-spacing: 0; margin-left: 8px; }
 /* Rodada 9: a nota do rodapé leva ao perfil da oficina no Google (com as avaliações); 44 px de toque no celular, 24 no computador */
-.footer-rating a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,.3); text-underline-offset: 3px; display: inline-flex; align-items: center; min-height: 24px; }
+.footer-rating a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,.3); text-underline-offset: 3px; display: inline-block; padding: 5px 0; }
 .footer-rating a:hover { color: #fff; }
-@media (pointer: coarse), (max-width: 860px) { .footer-rating a { min-height: 44px; } }
+@media (pointer: coarse), (max-width: 860px) { .footer-rating a { padding: 15px 0; } }
 .footer-col h5, .footer-col .footer-h { font-family: var(--font-cond); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 1rem; margin-bottom: 18px; color: #fff; }
 .footer-col a, .footer-col span { display: block; color: var(--gray); font-size: .94rem; margin-bottom: 11px; transition: color .2s; }
 .footer-col a:hover { color: var(--red); }
