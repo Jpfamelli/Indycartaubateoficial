@@ -231,6 +231,16 @@ try {
     await fechar(page);
   }
 
+  {
+    // pedido que ficou na fila do aparelho (sem rede) e é reenviado ao abrir a página: a pessoa fica sabendo que chegou
+    const pedido = { nome: 'Maria Teste', telefone: '12996830272', servico: 'Freios (pastilhas e discos)', codigo: 'freios' };
+    const page = await abrir({ w: 375, antes: `localStorage.setItem('indycar_fila', JSON.stringify([{ em: Date.now() - 60000, pedido: ${JSON.stringify(pedido)} }]))` });
+    const chegou = await ate(() => page.evaluate(() => !document.getElementById('areaPedido').hidden), 15000);
+    const r = await page.evaluate(() => ({ area: document.getElementById('areaPedidoTit').textContent, aviso: document.getElementById('spName').textContent, fila: localStorage.getItem('indycar_fila') }));
+    ok(chegou && /QA0000/.test(r.area) && r.aviso === 'Seu pedido chegou à oficina' && !r.fila && page.__posts.length === 1, `pedido que esperava a rede: reenviado uma vez, aviso "${r.aviso}" e "${r.area}"`);
+    await fechar(page);
+  }
+
   titulo('convite do diagnóstico');
   {
     // a pessoa já está num campo quando a página termina de carregar (o convite estaria marcado para 1,5 s depois)

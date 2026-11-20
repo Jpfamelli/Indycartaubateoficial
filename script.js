@@ -2701,6 +2701,16 @@
           const r = await fetch(SITE_LEAD_URL, { method: 'POST', mode: 'cors', signal: ctrl.signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify(item.pedido) });
           clearTimeout(t);
           if (r.status < 500 && r.status !== 429) processados.push(JSON.stringify(item));
+          // Rodada 9: o pedido que esperava a rede chegou: a pessoa fica sabendo (antes o reenvio era mudo e o
+          // "Seu pedido está com a equipe" nunca aparecia para ele)
+          if (r.ok) {
+            const j = await r.json().catch(() => null);
+            if (j && j.protocolo) {
+              store.set(PEDIDO, JSON.stringify({ em: Date.now(), protocolo: String(j.protocolo).slice(0, 12), servico: item.pedido.servico || '', horario: '' }));
+              pintarPedidoRecente();
+              showToast('✓', 'Seu pedido chegou à oficina', 'Protocolo ' + String(j.protocolo).slice(0, 12) + '. A equipe confirma pelo WhatsApp.');
+            }
+          }
         } catch (_) { /* sem resposta: mantém o pedido para tentar de novo */ }
       }
       // A fila pode ter recebido pedidos enquanto a rede respondia. Remova só os itens processados.
