@@ -1851,13 +1851,19 @@
     // Rodada 4: a largura do grupo é medida só quando muda (antes, a cada quadro forçava o layout da página).
     let larguraGrupo = group.offsetWidth;
     if ('ResizeObserver' in window) new ResizeObserver(() => { larguraGrupo = group.offsetWidth; }).observe(group);
+    // Rodada 9: com o JS no comando, o "para quando o mouse passa por cima" do CSS tinha deixado de valer: volta aqui.
+    // No celular, um toque na faixa para e outro retoma (texto em movimento precisa de um jeito de pausar).
+    let parado = false;
+    bar.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') parado = true; });
+    bar.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') parado = false; });
+    bar.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') parado = !parado; });
 
     function frame() {
       const y = window.scrollY;
       vel += ((y - lastY) - vel) * 0.1;   // lerp do delta de scroll
       lastY = y;
 
-      offset -= 0.6 + Math.abs(vel) * 0.15;
+      if (!parado) offset -= 0.6 + Math.abs(vel) * 0.15;
       const w = larguraGrupo;
       if (w > 0) offset = ((offset % w) + w) % w - w;   // wrap pelo módulo de um grupo
 
