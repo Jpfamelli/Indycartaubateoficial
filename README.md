@@ -28,7 +28,7 @@ Atalhos no ar (netlify.toml): `/acompanhar` e `/minha` → Área do Cliente (ind
 
 ## Testar
 `npm install` uma vez e:
-- `npm test`: abre o site no Chrome instalado (puppeteer-core) em 375 e 1440 px e confere rolagem horizontal, erros de console, CSP, links de WhatsApp (prefixo + tabela + código + UTM), JSON-LD, FAQ, imagens (AVIF), mapa sob demanda, formulário (com **fetch falso** da Edge Function: nada vai para o banco; caminho sem rede abre o WhatsApp), entradas por endereço (`/?servico=`, `/?abrir=form`, UTM), Área do Cliente, status aberto/fechado, menu atual, tabelas de mensagens/números iguais ao HTML, `dist/` minificado, 404, axe-core. Capturas em `qa-out/`.
+- `npm test` (logica + qa + qa-r7 + qa-r8 + qa-r9): abre o site no Chrome instalado (puppeteer-core) em 375 e 1440 px e confere rolagem horizontal, erros de console, CSP, links de WhatsApp (prefixo + tabela + código + UTM), JSON-LD, FAQ, imagens (AVIF), mapa sob demanda, formulário (com **fetch falso** da Edge Function: nada vai para o banco; caminho sem rede abre o WhatsApp), entradas por endereço (`/?servico=`, `/?abrir=form`, UTM), Área do Cliente, status aberto/fechado, menu atual, tabelas de mensagens/números iguais ao HTML, `dist/` minificado, 404, axe-core. Capturas em `qa-out/`.
 - `npm run vitais`: Lighthouse (celular e computador) sobre o `dist/` local; `-- --prod` mede o site no ar. Falha se alguma nota ficar abaixo de 95. Relatórios em `qa-out/lighthouse-*.json`.
 
 ## Formulário → banco da oficina (rodada 5)
@@ -53,8 +53,9 @@ A tabela única está em `scripts/mensagens-whatsapp.mjs`; `npm run whatsapp` re
 | `cambio` `scanner` `motor` `oleo-motor` `freios` `amortecedores` `suspensao` `correia` `pneus` `alinhamento` `embreagem` `bicos` | cards de serviço (ids `#svc-<código>`) |
 | `cambio-dialise` · `nao-fazemos` · `garantia` · `pagamento` · `acompanhar` · `duvida` · `agendar` | FAQ, garantia e topo do FAQ |
 | `outro-servico` | faixa "Também fazemos" |
-| `avaliacao` · `avaliacao-<serviço>` (popover) | avaliações |
+| `avaliacao` | avaliações (o botão "Avaliações" de cada card e a janela dele saíram na rodada 9) |
 | `contato` · `rodape` · `area-cliente` | seção de contato, rodapé e "não recebeu o seu link?" |
+| `privacidade` | página de privacidade (LGPD), rodada 9 |
 | `formulario-<serviço>` | formulário (montado pelo script.js; também é o `utm_campaign` do lead criado pela Edge Function) |
 
 Entradas por endereço: `/?servico=freios` rola até o card e deixa o serviço escolhido no formulário; `/?abrir=form` abre o formulário; `utm_*`, `gclid` e `fbclid` ficam na sessão e vão no pedido.
@@ -103,3 +104,11 @@ Especificação: `indycar-ferramentas/r8/CONTRATO-RASTREIO.md`. Sem biblioteca, 
 - **Testes**: `npm test` roda também `scripts/qa-r8.mjs`. Ele sobe um banco de mentira em 127.0.0.1, serve o `script.js` com o endereço e a chave trocados e abre o Chrome sem resolver nomes (nada sai da máquina) e sem a marca de navegador comandado. Sempre testa os arquivos locais, mesmo com `QA_URL` definido.
 
 Pôr no ar, nesta ordem: 1) aplicar no banco a migração que cria `trafego_rastreio_registrar` e `trafego_aplicar_origem`; 2) publicar a função `site-lead` (pode ir antes ou depois da migração); 3) preencher `RASTREIO_CHAVE` com a chave pública e rodar `npm run publicar`. Com a chave preenchida antes da migração, cada visita deixa um erro 404 no console do navegador (o site segue funcionando no formato antigo).
+
+## Rodada 9 (19-20/11/2026): repaginar, enxugar e acertar os estados
+100 melhorias (`R9-SITE-001` a `100` no MELHORIAS.md), ramo `claude/r9`, sem publicar. O principal:
+- Topo: o botão "Agendar diagnóstico grátis" aparece sem rolar (360x740 a 1440x900); contadores com o número real no HTML.
+- Enxugar: saíram a rotação de "prova social", o botão "Avaliações" de cada card (e a janela), os quadros "Foto em breve" da equipe (escondidos até as fotos reais), repetições e chavões; a fonte Inter saiu (o corpo usa a Archivo).
+- Estados: sem rede o pedido não diz "Pedido enviado!" e o foco vai para o WhatsApp; o reenvio da fila avisa quando chega; agenda cheia leva ao WhatsApp; sem JavaScript a página aparece; feriados no chip do topo, no "Quando prefere?" e no horário do contato.
+- Acessibilidade: menu do celular pelo teclado, contraste do rótulo das seções e dos botões de WhatsApp (verde sólido #0f7a41), glifos decorativos fora do leitor de tela, alvos de 24 px no computador e 44 px no celular.
+- Teste novo `scripts/qa-r9.mjs` (entra no `npm test`): Chrome com a rede de fora desligada, horários e envio respondidos dentro da página, datas fixas para os feriados.
