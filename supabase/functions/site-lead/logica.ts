@@ -270,3 +270,17 @@ export function criarFreio(o: { janelaMs?: number; faxinaACada?: number } = {}) 
   };
   return { passa, tamanho: () => mapa.size };
 }
+
+/**
+ * O que a equipe lê na ficha do contato sobre a campanha: só origem, mídia e campanha, em palavras ("google · cpc ·
+ * freios-novembro"). Rodada 10: os identificadores de clique (gclid, fbclid: letras e números sem sentido para quem
+ * atende, e dado pessoal quando ligados a um contato) saíram do texto; quem guarda a origem completa é
+ * `trafego_aplicar_origem`. Sem nada para dizer, devolve null.
+ */
+export function campanhaParaAFicha(utm: Record<string, string>): string | null {
+  const partes = ['source', 'medium', 'campaign'].map((k) => utm[k]).filter(Boolean);
+  return partes.length ? partes.join(' · ') : null;
+}
+
+/** A página de entrada na ficha: só o caminho ("/s/freios"), sem o que vem depois de "?" (lá moram os identificadores de clique). */
+export const paginaParaAFicha = (pagina: string | null): string | null => (pagina ? pagina.split(/[?#]/)[0].slice(0, 120) || null : null);

@@ -39,3 +39,18 @@ test('r10-freio: limite por chave vale e as chaves paradas saem da memória', ()
   assert.ok(f.tamanho() < 300, 'ficaram ' + f.tamanho() + ' chaves (só as do último minuto e pouco)');
   assert.ok(!/new Map<string, number\[\]>/.test(fn), 'a função não guarda mais um mapa próprio que só cresce');
 });
+
+test('r10-ficha-limpa: a ficha do contato mostra a campanha em palavras, sem identificador de clique nem endereço com "?"', () => {
+  const utm = { source: 'google', medium: 'cpc', campaign: 'freios-novembro', gclid: 'Cj0KCQiAoae5BhCNARIsADVLzZd5oM2x', fbclid: 'IwY2xjawN5' };
+  assert.equal(L.campanhaParaAFicha(utm), 'google · cpc · freios-novembro');
+  assert.equal(L.campanhaParaAFicha({ gclid: 'Cj0KCQiAoae5' }), null, 'só o identificador de clique: nada a escrever');
+  assert.equal(L.campanhaParaAFicha({}), null);
+  assert.equal(L.paginaParaAFicha('/s/freios?utm_source=google&gclid=Cj0KCQiAoae5#agendar'), '/s/freios');
+  assert.equal(L.paginaParaAFicha('/'), '/');
+  assert.equal(L.paginaParaAFicha(null), null);
+  assert.ok(!/Object\.entries\(pedido\.utm\)/.test(fn) && !/`Página: \$\{pedido\.pagina\}`/.test(fn), 'a função não escreve mais gclid/fbclid nem a query na ficha');
+  assert.match(fn, /`Campanha: \$\{campanhaParaAFicha\(pedido\.utm\)\}`/);
+  // a origem completa continua indo para o lugar certo (trafego_aplicar_origem) e para o registro do pedido
+  assert.match(fn, /aplicarOrigem\(sb, lead\.id, pedido\.origem\)/);
+  assert.match(fn, /utm: pedido\.utm, lead_id: lead\.id/);
+});

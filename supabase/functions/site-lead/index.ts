@@ -14,7 +14,7 @@
 // freio por IP/telefone, o campo-isca, o tempo mínimo de preenchimento e a validação de cada campo.
 // Nunca devolve dado interno (nem o id do lead): só um protocolo curto para a pessoa.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.117.2';
-import { agoraSP, aplicarOrigem, criarFreio, extrairPlaca, lerHorario, rapidoDemais, temLink, horarioLivre, linksDaEquipe, origemDoPedido, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, NOME_NO_CATALOGO, venceEm, semControle, type Agendamento } from './logica.ts';
+import { agoraSP, aplicarOrigem, campanhaParaAFicha, criarFreio, paginaParaAFicha, extrairPlaca, lerHorario, rapidoDemais, temLink, horarioLivre, linksDaEquipe, origemDoPedido, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, NOME_NO_CATALOGO, venceEm, semControle, type Agendamento } from './logica.ts';
 
 /** Agenda: capacidade (consultores ativos) e agendamentos dos próximos dias. Só leitura. */
 async function lerAgenda(sb: SupabaseClient, dias = 16) {
@@ -186,7 +186,7 @@ async function tratar(req: Request): Promise<Response> {
   ]);
   if ((porIp ?? 0) >= LIMITE_IP_HORA) {
     await registrar(sb, { ...base, resultado: 'limite', telefone: pedido.tel, nome: pedido.nome, codigo: pedido.codigo });
-    throw new ErroHttp(429, 'Recebemos vários pedidos deste aparelho agora. Se quiser, chame a gente direto no WhatsApp.');
+    throw new ErroHttp(429, 'Recebemos vários pedidos deste aparelho agora.'); // o site completa: abre o WhatsApp com a mensagem pronta (rodada 10)
   }
   if ((doTelefone ?? []).length >= LIMITE_TEL_DIA) {
     // Já virou lead hoje: a equipe já vai chamar. Só acrescenta o que mudou no lead e não duplica.
@@ -235,8 +235,8 @@ async function tratar(req: Request): Promise<Response> {
     pedido.preferencia ? `Preferência de horário: ${pedido.preferencia}` : null,
     pedido.carro ? `Carro: ${pedido.carro}` : null,
     pedido.mensagem ? `O que o carro está fazendo: ${pedido.mensagem}` : null,
-    Object.keys(pedido.utm).length ? 'Campanha: ' + Object.entries(pedido.utm).map(([k, v]) => `${k}=${v}`).join(' ') : null,
-    pedido.pagina ? `Página: ${pedido.pagina}` : null,
+    campanhaParaAFicha(pedido.utm) ? `Campanha: ${campanhaParaAFicha(pedido.utm)}` : null,
+    paginaParaAFicha(pedido.pagina) ? `Página: ${paginaParaAFicha(pedido.pagina)}` : null,
   ].filter(Boolean).join('\n');
   const { data: lead, error: eLead } = await sb.from('leads').insert({
     nome: pedido.nome, telefone: pedido.tel, carro_modelo: pedido.carro, placa: pedido.placa, servico: pedido.servico, servico_id: servicoId, status: 'novo', origem: 'organico',
