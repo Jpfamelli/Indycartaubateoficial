@@ -2223,6 +2223,7 @@
     const badge = $('#yearsBadge');
     if (!badge || reduceMotion) return;
     const TARGET = Number(document.body.dataset.anos) || 18, DUR = 1400;
+    const alvo = $('[data-num]', badge) || badge;
     new IntersectionObserver(([e], obs) => {
       if (!e.isIntersecting) return;
       obs.disconnect();
@@ -2230,7 +2231,8 @@
       (function tick(now) {
         const p = Math.min((now - t0) / DUR, 1);
         const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
-        badge.textContent = Math.round(TARGET * eased) + '+';
+        // rodada 9: conta dentro da marca data-num (o '+' fica fora), para a marca do número não sumir da página
+        if (alvo !== badge) alvo.textContent = Math.round(TARGET * eased); else badge.textContent = Math.round(TARGET * eased) + '+';
         if (p < 1) requestAnimationFrame(tick);
       })(t0);
     }, { threshold: 0.5 }).observe(badge);
