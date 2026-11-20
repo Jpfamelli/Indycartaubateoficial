@@ -593,3 +593,6 @@ mudança anterior da própria rodada (02e878b, 8f0612c, 8e2f02b, 786808d) não c
 - **R9-SITE-093** · celular · Em telas de 320 px o selo da nota do topo não passa mais 17 px da tela · `fa78c4e`
 - **R9-SITE-094** · acessibilidade · A seta do fim do topo leva a "Conheça a IndyCar" e se chama assim (apontava para a faixa que corre e era lida como "Rolar para baixo") · `fe2d2ea`
 - **R9-SITE-095** · conserto · "Quando prefere?" no sábado à noite e no domingo oferece "Semana que vem, de manhã/à tarde" (antes "Esta semana" chegava à equipe para uma semana que tinha acabado) · `00f877a`
+- **R9-SITE-096** · aviso · O pedido que esperava a rede, quando o reenvio chega, avisa "Seu pedido chegou à oficina (protocolo ...)" e aparece na área do cliente (o reenvio era mudo) · `4e29df0`
+- **R9-SITE-097** · conserto · O ícone do site também como arquivo PNG nas três páginas: o Google não usa o ícone embutido (data:) no resultado da busca · `ca0cd24`
+- **R9-SITE-098** · conserto · "Quando prefere?" no sábado: "Sábado" vira "Sábado que vem" (era o próprio dia ou um dia já passado) · `0d781c9`
