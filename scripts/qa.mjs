@@ -192,7 +192,8 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     ok(area.secao && area.acompanhar.length >= 3 && area.minha >= 2 && area.semNoopener === 0, `Área do Cliente: links para /acompanhar/ (${area.acompanhar.length}) e /minha/ (${area.minha}) na seção, no rodapé e na FAQ, todos com noopener`);
     ok(area.menu && area.faq && /Sem senha e sem cadastro/.test(area.texto), 'Área do Cliente no menu, explicada em uma frase (sem senha, link pelo WhatsApp) e citada na resposta da FAQ');
     const status = await page.evaluate(() => { const c = document.getElementById('statusAberto'); return { hidden: c.hidden, txt: c.innerText.replace(/\s+/g, ' ') }; });
-    ok(!status.hidden && /^(Aberto agora|Fechado agora) /.test(status.txt), 'chip "Aberto agora / Fechado agora" calculado no fuso de Taubaté: ' + status.txt);
+    // Rodada 9: em feriado nacional o chip diz "Hoje é feriado (...)" (desde a rodada 7); o teste quebrava todo feriado (20/11/2026)
+    ok(!status.hidden && /^(Aberto agora|Fechado agora|Hoje é feriado \([^)]+\)) /.test(status.txt), 'chip "Aberto agora / Fechado agora" (ou o aviso de feriado) calculado no fuso de Taubaté: ' + status.txt);
     ok(await page.$eval('meta[name="color-scheme"]', m => m.content) === 'dark', 'meta color-scheme=dark (campos nativos no tema do site)');
     // Rodada 9: a página repete menos os números (saíram a rotação do canto, o popover e a lista repetida), então em vez de
     // contar um mínimo de marcas a conferência agora é: nenhum 4,8 / 1.200 / 18 visível fica fora de uma marca data-num
