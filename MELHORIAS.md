@@ -492,3 +492,80 @@ Numeração continua (325 em diante). 🔗 = conexão com outro sistema. Especif
 ### Pendências
 - `RASTREIO_CHAVE` vazia até a migração do banco ser aplicada (o orquestrador preenche e publica).
 - Função `site-lead` não publicada (só o orquestrador publica).
+
+## Rodada 9 (19-20/11/2026)
+
+Frente R9-site (ramo `claude/r9`). Uma linha por melhoria, com o commit que fez a mudança. Commits de ajuste de uma
+mudança anterior da própria rodada (02e878b, 8f0612c, 8e2f02b, 786808d) não contam linha.
+
+- **R9-SITE-001** · tela · O botão "Agendar diagnóstico grátis" aparece sem rolar (antes ficava em 912 px no 375x812 e em 935 px no 1440x900); título do topo curto e em caixa de frase · `dbbd014`
+- **R9-SITE-002** · conserto · Selo do topo não quebra mais entre o "+" e o "18" ("+18 anos" fica junto) · `dbbd014`
+- **R9-SITE-003** · celular · "Já é cliente?" sem o "·" sobrando no fim da linha no celular · `dbbd014`
+- **R9-SITE-004** · enxugar · Faixa de destaques do topo sem a nota 4,8 repetida (o selo logo abaixo já mostra) e sem "Pagamento consulte condições" · `08192c9`
+- **R9-SITE-005** · conserto · Menu do computador: "Área do cliente" não quebra em duas linhas e os links não encostam no logo (921 a 1440 px, com e sem as fontes do site) · `a33a9e8`
+- **R9-SITE-006** · conserto · Contadores nascem com 4,8 · 1.200 · 18 no HTML (sem JavaScript a página dizia "0★", "+0 avaliações", "+0 anos") · `b74a370`
+- **R9-SITE-007** · acessibilidade · Com "menos movimento" ligado, os contadores mostram o número direto, sem contar de 0 · `b74a370`
+- **R9-SITE-008** · texto · "100% Comprometidos" (número sem base) vira "12 meses de garantia" · `b74a370`
+- **R9-SITE-009** · texto · Títulos e subtítulos em caixa de frase do português ("Perguntas frequentes", "Onde estamos"), não no Title Case do inglês · `a668bea`
+- **R9-SITE-010** · texto · Sem travessão nos textos da página e nas respostas do FAQ (o JSON-LD acompanha) · `a668bea`
+- **R9-SITE-011** · texto · Os botões que abrem o mesmo formulário tinham 5 nomes; agora "Agendar diagnóstico grátis" (e "Agendar" no menu) · `a668bea`
+- **R9-SITE-012** · texto · Chamada final sem o superlativo sem prova "a oficina que Taubaté mais confia" · `a668bea`
+- **R9-SITE-013** · conserto · O formulário dizia "Agende seu Diagnóstico Grátis" até para quem chegou pedindo freios (/s/freios); agora "Peça seu horário" · `a668bea`
+- **R9-SITE-014** · enxugar · Os três quadros "Foto em breve" da equipe ficam escondidos até chegarem as fotos reais (pareciam site inacabado) · `a51cd7c`
+- **R9-SITE-015** · enxugar · "Por que a IndyCar?" deixa de repetir leva e traz, transparência e 12 meses das outras seções · `fe11107`
+- **R9-SITE-016** · enxugar · Sai a rotação de "prova social" no canto: repetia a página, cobria o conteúdo no celular e o leitor de tela anunciava cada troca · `fe53e5d`
+- **R9-SITE-017** · texto · Botão flutuante diz o que faz: "Chamar no WhatsApp" (era "Fale conosco! 👋") · `219bc0f`
+- **R9-SITE-018** · tela · Sem emoji decorativo no rodapé, no formulário, no convite e nos avisos; a confirmação do pedido usa um ✓ desenhado em SVG · `219bc0f`
+- **R9-SITE-019** · tela · Cartão das avaliações sem a faixa vermelha grossa na lateral (o guia visual proíbe) · `58e35ea`
+- **R9-SITE-020** · acessibilidade · "×" do formulário e do convite de 34 para 44 px; o do aviso do canto de 12x18 para 28x28 px e num cinza legível · `c39b074`
+- **R9-SITE-021** · enxugar · Sai o botão "Avaliações" dos 12 cards de serviço e a janela dele (repetia a seção de avaliações; o celular rola ~700 px a menos) · `56742a4`
+- **R9-SITE-022** · celular · Título dos cards de serviço sem o vão de 37 px entre as linhas no celular (altura de linha 1,2) · `6bfd243`
+- **R9-SITE-023** · tela · Ícone dos cards largos e pequenos alinhado ao título, não solto no meio do card · `6bfd243`
+- **R9-SITE-024** · acessibilidade · O aviso do canto escondido não recebe mais o foco do Tab nem deixa uma ponta de 8 px na borda · `e2447b1`
+- **R9-SITE-025** · conserto · Formulário: WhatsApp em branco agora diz o porquê ("Precisamos do seu WhatsApp com DDD..."); antes só ficava vermelho · `6e1107e`
+- **R9-SITE-026** · conserto · Formulário aceita o zero do interurbano ("012 99683-0272"); antes o número era barrado · `6e1107e`
+- **R9-SITE-027** · texto · Rótulo do telefone diz o que a oficina precisa: "Seu WhatsApp com DDD" · `6e1107e`
+- **R9-SITE-028** · celular · Exemplo do campo Carro não sai cortado no celular ("Ex: Civic 2018") · `6e1107e`
+- **R9-SITE-029** · conserto · O convite de 8 s não abre por cima de quem está digitando ou com o menu aberto (roubava o foco no meio da palavra) · `3195916`
+- **R9-SITE-030** · conserto · O convite não aparece para quem já abriu o formulário na visita ou mandou pedido nas últimas 36 h no aparelho · `3195916`
+- **R9-SITE-031** · conserto · "Cole aqui" da área do cliente: se o navegador barrar a janela nova, aparece "Se não abriu, toque aqui" com o link certo · `b41acaa`
+- **R9-SITE-032** · teste · O teste de números confere que nenhum 4,8 / 1.200 / 18 visível fica fora da marca data-num (antes só contava um mínimo de marcas) · `f5d3039`
+- **R9-SITE-033** · desempenho · A fonte Inter sai (48 KB a menos e um relayout a menos na primeira dobra do celular); o corpo usa a Archivo que a página já baixa · `824d636`
+- **R9-SITE-034** · acessibilidade · Rótulo vermelho pequeno das seções passa no contraste mínimo de 4,5 (escuro e claro) · `2c15c31`
+- **R9-SITE-035** · conserto · WhatsApp da LGPD na Privacidade segue o contrato com o Atendimento ("Olá! Vim pelo site" + código + UTM) e o gerar-whatsapp confere a página · `dec742e`
+- **R9-SITE-036** · texto · A página 404 começa pelo que aconteceu e o que fazer; a dica do código colado vem depois · `56b746a`
+- **R9-SITE-037** · tela · 404 e Privacidade com a tipografia do site (Archivo), não a fonte do sistema · `18845ab`
+- **R9-SITE-038** · acessibilidade · O leitor de tela não lê "seta para a direita" em 16 links; os 12 "Agende pelo WhatsApp" dizem o serviço e que abrem o WhatsApp · `c301e31`
+- **R9-SITE-039** · acessibilidade · 404 e Privacidade: link do rodapé com 44 px de toque (era 18 px) e seta do "Voltar ao site" fora do leitor de tela · `2f2001e`
+- **R9-SITE-040** · texto · O botão de "Como funciona" que abre o WhatsApp diz isso: "Agendar pelo WhatsApp", com o ícone (era "Agendar meu diagnóstico") · `bdd4a15`
+- **R9-SITE-041** · conserto · Contadores só voltam a 0 para animar quando entram na tela; até lá mostram os números reais · `e22a47d`
+- **R9-SITE-042** · texto · "Conheça a IndyCar" sem "referência em Taubaté" (superlativo sem prova) e sem o parágrafo que repetia o cartão logo abaixo · `51cc174`
+- **R9-SITE-043** · tela · Contato: o celular da oficina com duas ações claras, "WhatsApp · Ligar" (tocar no número abria o WhatsApp) · `9ecb2c1`
+- **R9-SITE-044** · conserto · Rodapé: "+1.200 avaliações" sem o vão de 8 px entre o "+" e o número · `1191d1e`
+- **R9-SITE-045** · acessibilidade · Estrelas e ✓ decorativos não são lidos em voz alta (selo, faixa, contadores, rodapé) · `0c71cc4`
+- **R9-SITE-046** · conserto · "Quando prefere?" avisa feriado no "Hoje" e, na véspera, no "Amanhã" (o valor enviado continua o mesmo) · `2664dde`
+- **R9-SITE-047** · tela · "Pedir meu horário" no vermelho de ação, não no verde do WhatsApp (o botão manda o pedido, não abre o WhatsApp) · `960c36b`
+- **R9-SITE-048** · segurança · O mapa do Google recebe só a origem do site (referrerPolicy), não a URL inteira com utm/gclid · `a1d4d35`
+- **R9-SITE-049** · acessibilidade · Menu do celular aberto pelo teclado leva o foco ao primeiro link da gaveta · `fdd5b35`
+- **R9-SITE-050** · acessibilidade · Gaveta do menu fechada sai da ordem do Tab (antes o teclado passava por 8 links invisíveis) · `183fa3f`
+- **R9-SITE-051** · acessibilidade · O botão do menu volta a dizer "Abrir menu" quando a gaveta fecha por Esc ou por um link · `00af1d5`
+- **R9-SITE-052** · acessibilidade · No computador os links soltos têm pelo menos 24 px de altura (WCAG 2.2, 2.5.8): eram 12 abaixo disso · `06e3446`
+- **R9-SITE-053** · texto · Convite de 8 s diz o caminho de verdade ("Você escolhe o horário aqui e a equipe confirma pelo WhatsApp") e sem "gratuito" três vezes · `7288b75`
+- **R9-SITE-054** · celular · Links no meio da frase do formulário ("Privacidade", "Acompanhar meu carro") sem abrir vãos de ~20 px entre as linhas, com 44 px de toque · `2618f7c`
+- **R9-SITE-055** · aviso · Agenda cheia: o aviso leva ao WhatsApp (link) e some o "Toque num horário" que não tinha horário · `4f97505`
+- **R9-SITE-056** · conserto · Formulário sem rede não diz mais "Pedido enviado!" (o pedido ainda não chegou): "Falta só mandar no WhatsApp", sem ✓ e sem festa · `e962c0c`
+- **R9-SITE-057** · texto · FAQ: "Preciso agendar?" oferece o formulário do site e "formas de pagamento" diz quando a pessoa fica sabendo, em vez de "consulte" · `e36b68d`
+- **R9-SITE-058** · celular · Links no meio das respostas do FAQ e das notas da área do cliente com 44 px de toque (tinham 17 px quando cabiam numa linha) · `c916de4`
+- **R9-SITE-059** · acessibilidade · Faixa vermelha que corre volta a parar com o mouse em cima e, no celular, para e retoma com um toque · `93e8af4`
+- **R9-SITE-060** · enxugar · Sai o item "Pagamento: consulte condições" da faixa vermelha que corre e o "pagamento sob consulta" da chamada final · `f2b643f`
+- **R9-SITE-061** · texto · Faixa vermelha: "Garantia de 12 meses em peças e mão de obra" (dizia só "12 meses em...") e "Mecânica em geral" (era "Especialista em Mecânica em Geral") · `c15e329`
+- **R9-SITE-062** · texto · Sem chavão: "Transparência absoluta" vira "Você aprova antes" e sai "scanners de última geração" (cartão e FAQ, com o JSON-LD) · `3225473`
+- **R9-SITE-063** · conserto · Formulário: o Enter ("próximo" do teclado do celular) vai ao campo seguinte; antes enviava o pedido pela metade, sem "Quando" e sem mensagem · `774df15`
+- **R9-SITE-064** · conserto · Sem JavaScript a página não fica vazia (10 dos 11 títulos sumiam); o aviso fica na frente do menu e o botão do menu, que não abriria, sai · `795e621`
+- **R9-SITE-065** · acessibilidade · O "Voltar ao topo" escondido no topo da página sai do Tab e do leitor de tela · `340ce4d`
+- **R9-SITE-066** · conserto · Chip "Fechado agora" não promete "abre amanhã, 8h" quando o próximo dia de abertura é feriado (hoje, 19/11, para 20/11) · `678e141`
+- **R9-SITE-067** · celular · Em feriado o chip do topo quebra em duas linhas e não sai cortado em "confirme no Wh" no celular · `e999791`
+- **R9-SITE-068** · conserto · "Cole aqui" com o campo vazio pede para colar, em vez de dizer "Não reconheci esse link ou código" · `ea43673`
+- **R9-SITE-069** · aviso · O horário do contato avisa o feriado dos próximos 7 dias ("Amanhã é feriado (Consciência Negra): confirme no WhatsApp se a oficina abre") · `b296050`
+- **R9-SITE-070** · acessibilidade · A caixa "Próximos horários livres" vira uma região com nome (o aria-labelledby num div sem papel era ignorado; o axe acusava) · `9009a5c`
+- **R9-SITE-071** · acessibilidade · Botões de WhatsApp (contato, depois do pedido, flutuante e 404) em verde sólido escuro: contraste do branco de 1,8 a 2,6 para 5,4 · `cd27056`
