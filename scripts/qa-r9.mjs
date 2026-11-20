@@ -285,6 +285,13 @@ try {
     await fechar(page);
   }
 
+  for (const [data, esperado] of [['2026-11-21T19:00:00-03:00', 'Semana que vem'], ['2026-11-22T10:00:00-03:00', 'Semana que vem'], ['2026-11-18T10:00:00-03:00', 'Esta semana']]) {
+    const page = await abrir({ w: 375, data });
+    const ops = await page.evaluate(() => [...document.querySelectorAll('#fQuando option')].map(o => o.value + '=' + o.textContent.trim()));
+    ok(ops.includes(esperado + ', de manhã=' + esperado + ', de manhã') && ops.includes(esperado + ', à tarde=' + esperado + ', à tarde'), `[${data.slice(0, 16)}] "Quando prefere?" oferece "${esperado}, de manhã / à tarde"`);
+    await fechar(page);
+  }
+
   titulo('mapa, roteador de links e voltar ao topo');
   {
     const page = await abrir({ w: 375 });

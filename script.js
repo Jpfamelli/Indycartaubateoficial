@@ -1349,6 +1349,8 @@
     const tirar = (txt) => { const o = $$('option', q).find(x => x.textContent.trim() === txt); if (o) o.remove(); };
     if (dia === 'Sun' || minutos >= 1050) tirar('Hoje');
     if (dia === 'Sat') tirar('Amanhã');
+    // Rodada 9: sábado depois das 17h30 e domingo, "Esta semana" já acabou: vira "Semana que vem" (no texto e no que vai para a equipe)
+    if (dia === 'Sun' || (dia === 'Sat' && minutos >= 1050)) $$('option', q).forEach(o => { if (/^Esta semana/.test(o.textContent.trim())) { o.textContent = o.value = o.textContent.trim().replace(/^Esta semana/, 'Semana que vem'); } });
   })();
   // A caixa já nasce com o tamanho final (esqueleto com altura reservada): quando os horários chegam nada pula na tela,
   // e quem entra por #contato ou #faq não perde o lugar. Sem JavaScript ela fica escondida.
