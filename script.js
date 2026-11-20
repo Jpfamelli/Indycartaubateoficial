@@ -1147,7 +1147,7 @@
       (mensagem ? '\nO carro está: ' + mensagem : '');
 
     estadoEnviando(true);
-    let resposta = null;
+    let resposta = null, motivo = 'rede', textoDoServidor = '';
     // Rodada 8: "rastreio" leva de onde a pessoa veio (campos do contrato §6.1) e o código do registro, quando existe.
     // O campo "codigo" do pedido continua sendo o código do SERVIÇO; "utm" é o formato antigo, mantido para a função publicada.
     const pedido = {
@@ -1166,8 +1166,17 @@
       });
       clearTimeout(t);
       const corpo = await r.json().catch(() => ({}));
-      if (r.status === 400 && corpo.erro) { estadoEnviando(false); mostrarAviso(corpo.erro); return; } // campo errado: a pessoa corrige
+      if (r.status === 400 && corpo.erro) {
+        // Campo errado: a pessoa corrige. Rodada 10: o campo que o servidor recusou fica marcado e recebe o foco
+        // (antes só aparecia a frase no fim do formulário, longe do campo).
+        estadoEnviando(false); mostrarAviso(corpo.erro);
+        const campo = /nome/i.test(corpo.erro) ? name : /n[uú]mero|DDD|telefone/i.test(corpo.erro) ? phone : /servi[cç]o/i.test(corpo.erro) ? service : null;
+        if (campo) { campo.classList.add('invalid'); campo.setAttribute('aria-invalid', 'true'); campo.focus(); }
+        return;
+      }
       if (r.ok && corpo.ok) resposta = corpo;
+      // Rodada 10: o servidor respondeu, mas não registrou. 429 = limite de pedidos (o texto vem de lá); o resto = defeito de lá.
+      else motivo = r.status === 429 ? 'limite' : 'servidor', textoDoServidor = r.status === 429 && typeof corpo.erro === 'string' ? corpo.erro.slice(0, 200) : '';
     } catch (_) { /* sem rede ou servidor fora: segue pelo WhatsApp */ }
     estadoEnviando(false);
 
@@ -1176,9 +1185,16 @@
       // O banco não respondeu: abre o WhatsApp com a mesma mensagem (comportamento das rodadas anteriores).
       window.open(linkWhatsApp(textoWa, servicoWa), '_blank', 'noopener');
       rastrearClique(servicoWa);
-      resposta = { ok: true, direto: true, mensagem: 'A internet não deixou o pedido chegar pelo site, então abrimos o WhatsApp da oficina com a mensagem pronta: é só tocar em enviar. Se a janela não apareceu, use o botão abaixo. O site também tenta de novo sozinho quando a internet voltar.' };
-      // Rodada 7: o pedido também fica numa fila no aparelho e é reenviado ao banco quando a rede volta (nada se perde)
-      window.dispatchEvent(new CustomEvent('indycar:pedido-offline', { detail: { pedido } }));
+      // Rodada 10: a mensagem diz o que aconteceu de verdade (antes, limite de pedidos e defeito do servidor também
+      // apareciam como "a internet não deixou", e a pessoa ia conferir o Wi-Fi à toa).
+      const SEGUE = ' Abrimos o WhatsApp da oficina com a mensagem pronta: é só tocar em enviar. Se a janela não apareceu, use o botão abaixo.';
+      resposta = { ok: true, direto: true, mensagem:
+        motivo === 'limite' ? (textoDoServidor || 'Recebemos vários pedidos deste aparelho agora.') + SEGUE
+        : motivo === 'servidor' ? 'O sistema da oficina não respondeu agora.' + SEGUE + ' O site tenta registrar de novo sozinho mais tarde.'
+        : 'A internet não deixou o pedido chegar pelo site, então abrimos o WhatsApp da oficina com a mensagem pronta: é só tocar em enviar. Se a janela não apareceu, use o botão abaixo. O site também tenta de novo sozinho quando a internet voltar.' };
+      // Rodada 7: o pedido também fica numa fila no aparelho e é reenviado ao banco quando a rede volta (nada se perde).
+      // Rodada 10: menos o que bateu no limite de pedidos; reenviar sozinho só bateria no limite de novo.
+      if (motivo !== 'limite') window.dispatchEvent(new CustomEvent('indycar:pedido-offline', { detail: { pedido } }));
     }
     sessao.set('indycar_promo', '1');
     resposta.horarioPedido = horarioRotulo;
