@@ -226,3 +226,47 @@ export async function aplicarOrigem(sb: { rpc: (...a: any[]) => any }, leadId: s
     clearTimeout(relogio);
   }
 }
+
+/* ---------------- Rodada 10: entrada do pedido conferida no servidor ---------------- */
+
+/** Horário escolhido no site: data de verdade e hora de relógio (antes "99:99" passava e ia parar na ficha do contato). */
+export function lerHorario(h: unknown): { data: string; hora: string } | null {
+  if (!h || typeof h !== 'object' || Array.isArray(h)) return null;
+  const { data, hora } = h as Record<string, unknown>;
+  if (!dataValida(data) || typeof hora !== 'string' || !/^\d{2}:\d{2}$/.test(hora) || minutos(hora) === null) return null;
+  return { data, hora };
+}
+
+/** Nome de gente não tem endereço de site: é a marca do pedido de robô que quer plantar link no CRM. */
+export const temLink = (s: string) => /:\/\/|\bwww\.|\.(com|net|org|br|ru|xyz|top|info|io)\b/i.test(s);
+
+/**
+ * O site mede o tempo entre começar a preencher e enviar e manda em `decorrido` (ms). Pessoa nenhuma preenche em menos
+ * de 1,5 s. Sem o campo (ou com valor que não é número) também é robô: o site manda sempre, desde a rodada 5.
+ */
+export function rapidoDemais(decorrido: unknown): boolean {
+  if (typeof decorrido !== 'number' || !Number.isFinite(decorrido)) return true;
+  return decorrido < 1500;
+}
+
+/**
+ * Freio de rajadas em memória (por instância): no máximo `porMinuto` chamadas por chave a cada 60 s.
+ * Rodada 10: as chaves paradas saem do mapa (antes cada IP que passava ficava guardado até a instância morrer).
+ * Devolve `false` quando a chave estourou o limite.
+ */
+export function criarFreio(o: { janelaMs?: number; faxinaACada?: number } = {}) {
+  const janela = o.janelaMs ?? 60_000, faxina = o.faxinaACada ?? 500;
+  const mapa = new Map<string, number[]>();
+  let chamadas = 0;
+  const passa = (chave: string, porMinuto: number, agora = Date.now()): boolean => {
+    if (++chamadas % faxina === 0) {
+      for (const [k, tempos] of mapa) if (!tempos.some((t) => agora - t < janela)) mapa.delete(k);
+    }
+    const lista = (mapa.get(chave) ?? []).filter((t) => agora - t < janela);
+    if (lista.length >= porMinuto) { mapa.set(chave, lista); return false; }
+    lista.push(agora);
+    mapa.set(chave, lista);
+    return true;
+  };
+  return { passa, tamanho: () => mapa.size };
+}

@@ -14,7 +14,7 @@
 // freio por IP/telefone, o campo-isca, o tempo mínimo de preenchimento e a validação de cada campo.
 // Nunca devolve dado interno (nem o id do lead): só um protocolo curto para a pessoa.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2.117.2';
-import { agoraSP, aplicarOrigem, dataValida, extrairPlaca, horarioLivre, linksDaEquipe, origemDoPedido, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, NOME_NO_CATALOGO, venceEm, semControle, type Agendamento } from './logica.ts';
+import { agoraSP, aplicarOrigem, criarFreio, extrairPlaca, lerHorario, rapidoDemais, temLink, horarioLivre, linksDaEquipe, origemDoPedido, placaDoCampo, proximosHorarios, rotuloHorario, somaDias, NOME_NO_CATALOGO, venceEm, semControle, type Agendamento } from './logica.ts';
 
 /** Agenda: capacidade (consultores ativos) e agendamentos dos próximos dias. Só leitura. */
 async function lerAgenda(sb: SupabaseClient, dias = 16) {
@@ -83,13 +83,10 @@ function ipDe(req: Request): string {
 }
 
 // Freio em memória por instância (barra rajadas antes de ir ao banco).
-const rajadas = new Map<string, number[]>();
+// Rodada 10: a regra mora em logica.ts (criarFreio), que também tira do mapa as chaves paradas.
+const rajadas = criarFreio();
 function freio(chave: string, porMinuto: number) {
-  const agora = Date.now();
-  const lista = (rajadas.get(chave) ?? []).filter((t) => agora - t < 60_000);
-  if (lista.length >= porMinuto) throw new ErroHttp(429, 'Muitas tentativas seguidas. Espere um minuto e tente de novo.', 60);
-  lista.push(agora);
-  rajadas.set(chave, lista);
+  if (!rajadas.passa(chave, porMinuto)) throw new ErroHttp(429, 'Muitas tentativas seguidas. Espere um minuto e tente de novo.', 60);
 }
 
 function banco(): SupabaseClient {
@@ -112,7 +109,7 @@ interface Pedido {
 
 function lerPedido(corpo: Record<string, unknown>): Pedido {
   const nome = txt(corpo.nome, 80);
-  if (!nome || nome.length < 2 || !/[a-zA-ZÀ-ÿ]{2}/.test(nome)) throw new ErroHttp(400, 'Conta pra gente o seu nome.');
+  if (!nome || nome.length < 2 || !/[a-zA-ZÀ-ÿ]{2}/.test(nome) || temLink(nome)) throw new ErroHttp(400, 'Conta pra gente o seu nome.');
   const tel = telefone(corpo.telefone);
   if (!tel) throw new ErroHttp(400, 'Confira o número com DDD (10 ou 11 dígitos).');
   const servico = txt(corpo.servico, 120);
@@ -126,8 +123,7 @@ function lerPedido(corpo: Record<string, unknown>): Pedido {
     if (v) utm[k] = v;
   }
   const carro = txt(corpo.carro, 100);
-  const h = corpo.horario as Record<string, unknown> | null | undefined;
-  const horario = h && typeof h === 'object' && dataValida(h.data) && /^\d{2}:\d{2}$/.test(String(h.hora)) ? { data: String(h.data), hora: String(h.hora) } : null;
+  const horario = lerHorario(corpo.horario);
   const pagina = (() => { const p = txt(corpo.pagina, 200); return p && p.startsWith('/') ? p : null; })();
   return {
     nome, tel, servico, codigo,
@@ -176,8 +172,7 @@ async function tratar(req: Request): Promise<Response> {
     throw e;
   }
   // Rápido demais para uma pessoa (o site mede o tempo entre começar a preencher e enviar).
-  const decorrido = Number(corpo.decorrido);
-  if (Number.isFinite(decorrido) && decorrido >= 0 && decorrido < 1500) {
+  if (rapidoDemais(corpo.decorrido)) {
     await registrar(sb, { ...base, resultado: 'invalido', telefone: pedido.tel, nome: pedido.nome, codigo: pedido.codigo });
     throw new ErroHttp(400, 'Confere os dados? Se estiver tudo certo, toque em enviar de novo.');
   }
