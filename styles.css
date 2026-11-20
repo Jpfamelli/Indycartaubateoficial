@@ -1701,6 +1701,12 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
   .sp-close { width: 44px; height: 44px; top: 0; right: 0; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
   .form-mini a, .form-ok-dica a { display: inline-flex; align-items: center; min-height: 44px; }
 }
+/* Rodada 9: no computador (mouse) os links soltos têm pelo menos 24 px de altura, o mínimo da WCAG 2.2 (2.5.8):
+   antes "Privacidade" do rodapé tinha 15 px, "Tirar dúvida sobre a garantia" 17 px, os "Agende pelo WhatsApp" 21 px
+   e os links do contato ("Ver horários livres agora", Instagram) 19 px. */
+@media (pointer: fine) and (min-width: 861px) {
+  .service-link, .warranty-link, .footer-bottom a, .contact-list a { display: inline-flex; align-items: center; min-height: 24px; }
+}
 .sr-only { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 .hero-cliente { margin-top: 14px; font-size: .95rem; color: #d8d8dc; }
 /* Rodada 9: no celular os dois links quebram juntos, sem o "·" sobrando no fim da linha */
