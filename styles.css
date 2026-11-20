@@ -417,15 +417,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .about-pillar h4, .about-pillar .h-sub { font-family: var(--font-cond); font-weight: 700; font-size: 1.25rem; letter-spacing: .01em; margin-bottom: 5px; }
 .about-pillar p { color: var(--gray); font-size: .95rem; }
 .about-cta { margin-top: 6px; }
-.about-photo {
-  position: relative; margin-top: 34px; border-radius: var(--radius); overflow: hidden;
-  border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.5);
-}
-.about-photo img { width: 100%; height: 240px; object-fit: cover; transition: transform .6s var(--ease); }
-.about-photo:hover img { transform: scale(1.05); }
-.about-photo::after { content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(180deg, rgba(10,10,11,.12), rgba(10,10,11,.05) 45%, rgba(10,10,11,.5)),
-              linear-gradient(120deg, rgba(229,9,20,.14), transparent 55%); }
 
 /* ========================= SERVIÇOS (bento editorial) ========================= */
 .services-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
@@ -733,12 +724,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background: linear-gradient(180deg, transparent, var(--red) 30% 70%, transparent);
   box-shadow: 0 0 18px var(--red-glow); opacity: 0; pointer-events: none;
 }
-.about-photo.in img,
 .why-visual.in .img-sweep img {
   clip-path: inset(-1% 0% -1% 0);
   transition: transform .6s var(--ease), clip-path 1.1s var(--ease) .2s;
 }
-.about-photo.in::before,
 .why-visual.in .img-sweep::before { animation: sweepBar 1.1s var(--ease) .2s both; }
 @keyframes sweepBar {
   0%   { left: -4px; opacity: 0; }
@@ -756,7 +745,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .why-grid { grid-template-columns: 1fr; gap: 40px; }
   .why-image { aspect-ratio: 16/10; max-height: 360px; width: 100%; }
   .contact-grid { grid-template-columns: 1fr; }
-  .review-card { flex-basis: calc((100% - 24px) / 2); }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .counters { grid-template-columns: repeat(2, 1fr); gap: 30px 10px; }
   .counter:nth-child(2)::after { display: none; }
@@ -1058,7 +1046,6 @@ body.fx-paused .hero-highlights .hl::after { animation-play-state: paused; }
 .sr-done .sr-word { animation: none; opacity: 1; filter: none; transform: none; }
 
 /* ---- GlareHover nas fotos (sobre e diferenciais): mesmo glare do bento ---- */
-.about-photo:hover .tile-glare,
 .why-image:hover .tile-glare { left: 145%; transition: left .75s var(--ease) .05s; }
 
 /* ---- Faíscas de pit lane no CTA final (canvas 2D via JS) ---- */
@@ -1810,3 +1797,20 @@ a, button, [role="button"], label, select, summary { touch-action: manipulation;
 .modal-backdrop { color-scheme: dark; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.3) transparent; }
 /* Rodada 9: em celular de 320 px o selo da nota passava 17 px da tela (borda direita cortada) */
 @media (max-width: 360px) { .rating-badge { max-width: 100%; gap: 10px; padding: 12px 14px; } }
+
+/* ====================================================================
+   RODADA 10 (20/11/2026)
+   ==================================================================== */
+/* Desempenho: o formulário e o convite (fechados) e o rodapé (longe da tela) não entram no primeiro leiaute nem no
+   releiaute de quando a fonte chega. Medido no Lighthouse celular (4 pares alternados): bloqueio da página (TBT) de
+   340 para 280 ms na mediana. Aberto o modal, tudo volta a existir antes do foco. */
+.modal-backdrop:not(.open) { content-visibility: hidden; }
+.footer { content-visibility: auto; contain-intrinsic-size: auto 760px; }
+@media (max-width: 720px) { .footer { contain-intrinsic-size: auto 1700px; } } /* no celular o rodapé empilha: o espaço reservado acompanha */
+/* Ao fechar, o conteúdo continua à vista enquanto o fundo some (navegador sem allow-discrete só corta o conteúdo na hora). */
+@supports (transition-behavior: allow-discrete) {
+  .modal-backdrop { transition: opacity .35s, visibility 0s .35s, content-visibility .35s allow-discrete; }
+}
+@media print { .footer { content-visibility: visible; } }
+/* Aviso que não é erro (internet lenta): mesma caixa do aviso do formulário, sem o vermelho de erro. */
+.form-aviso.neutro { color: var(--gray); }

@@ -227,6 +227,54 @@ bloco('r10-mapa-semrede', async () => {
   await fechar(page);
 });
 
+bloco('r10-demora', async () => {
+  const page = await abrir({ resposta: { atraso: 5600 } });
+  await preencher(page); await enviar(page);
+  await espera(1500);
+  const cedo = await page.evaluate(() => document.getElementById('fEnvioMsg').hidden);
+  await espera(3100);
+  const r = await page.evaluate(() => ({ aviso: document.getElementById('fEnvioMsg').hidden ? '' : document.getElementById('fEnvioMsg').textContent, ocupado: document.getElementById('fEnviar').disabled }));
+  ok(cedo && /demorando/.test(r.aviso) && r.ocupado, `r10-demora: internet lenta: depois de 4 s sem resposta o formulário avisa que ainda está tentando ("${r.aviso.slice(0, 44)}…") e o botão segue travado`);
+  await esperarConfirmacao(page); await espera(300);
+  const fim = await page.evaluate(() => ({ t: document.getElementById('formOkTitulo').textContent, aviso: document.getElementById('fEnvioMsg').hidden }));
+  ok(fim.t === 'Pedido enviado!' && fim.aviso && page.__posts.length === 1, 'r10-demora: quando a resposta chega, o pedido aparece como enviado (um envio só) e o aviso de demora some');
+  await fechar(page);
+});
+
+bloco('r10-fila-chegou', async () => {
+  // um pedido igual ficou na fila numa tentativa sem rede; a pessoa envia de novo, agora com rede
+  const pedido = { nome: 'Maria Teste', telefone: '12996830272', servico: 'Freios (pastilhas e discos)', codigo: 'freios', decorrido: 5000 };
+  const outro = { ...pedido, servico: 'Pneus', codigo: 'pneus' };
+  const antes = `localStorage.setItem('indycar_fila', JSON.stringify([{ em: Date.now() - 60000, pedido: ${JSON.stringify(pedido)} }, { em: Date.now() - 50000, pedido: ${JSON.stringify(outro)} }]));
+    const st = window.setTimeout; window.setTimeout = (f, ms, ...a) => st(f, ms === 6000 ? 600000 : ms, ...a);`; // o reenvio automático não entra no meio do teste
+  const page = await abrir({ antes });
+  await preencher(page); await enviar(page); await esperarConfirmacao(page); await espera(300);
+  const fila = await page.evaluate(() => JSON.parse(localStorage.getItem('indycar_fila') || '[]').map(x => x.pedido.servico).join(' + '));
+  ok(fila === 'Pneus' && page.__posts.length === 1, `r10-fila-chegou: o pedido que chegou sai da fila de reenvio (não vira "novo envio" repetido na ficha); o de outro serviço continua lá (fila: ${fila || 'vazia'})`);
+  await fechar(page);
+});
+
+bloco('r10-leiaute-adiado', async () => {
+  // formulário e convite fechados e o rodapé longe da tela ficam fora do leiaute; abrir e fechar continua igual
+  const page = await abrir({ movimento: true });
+  const r0 = await page.evaluate(() => ({ form: getComputedStyle(document.getElementById('formBackdrop')).contentVisibility, promo: getComputedStyle(document.getElementById('promoBackdrop')).contentVisibility, rodape: getComputedStyle(document.querySelector('.footer')).contentVisibility, ano: document.getElementById('year').textContent }));
+  ok(r0.form === 'hidden' && r0.promo === 'hidden' && r0.rodape === 'auto' && /^20\d\d$/.test(r0.ano), `r10-leiaute-adiado: fechados, o formulário (${r0.form}) e o convite (${r0.promo}) não entram no leiaute; o rodapé só quando chega perto da tela (${r0.rodape})`);
+  await page.focus('.hero-cta [data-open-modal]'); await page.keyboard.press('Enter'); await espera(700); // abre pelo teclado: o foco tem para onde voltar
+  const r1 = await page.evaluate(() => ({ cv: getComputedStyle(document.getElementById('formBackdrop')).contentVisibility, foco: document.activeElement.id, alt: Math.round(document.getElementById('fName').getBoundingClientRect().height), botao: Math.round(document.getElementById('fEnviar').getBoundingClientRect().height) }));
+  ok(r1.cv === 'visible' && r1.foco === 'fName' && r1.alt >= 44 && r1.botao >= 44, `r10-leiaute-adiado: aberto, o formulário existe inteiro e o foco cai no nome (campo com ${r1.alt} px)`);
+  await page.keyboard.down('Shift'); await page.keyboard.press('Tab'); await page.keyboard.up('Shift'); await espera(100);
+  const preso = await page.evaluate(() => !!document.activeElement.closest('#formBackdrop'));
+  // fecha com Esc e lê dois quadros depois, dentro da página (sem depender da pressa da máquina)
+  const meio = await page.evaluate(async () => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); return getComputedStyle(document.getElementById('formBackdrop')).contentVisibility; });
+  await espera(700);
+  const r2 = await page.evaluate(() => ({ cv: getComputedStyle(document.getElementById('formBackdrop')).contentVisibility, vis: getComputedStyle(document.getElementById('formBackdrop')).visibility, foco: document.activeElement.hasAttribute('data-open-modal') }));
+  ok(preso && meio === 'visible' && r2.cv === 'hidden' && r2.vis === 'hidden' && r2.foco, `r10-leiaute-adiado: o Tab continua preso no formulário aberto; ao fechar o conteúdo some junto com o fundo (no meio: ${meio}; depois: ${r2.cv}) e o foco volta ao botão`);
+  for (let i = 0; i < 4; i++) { await page.evaluate(() => { window.scrollTo(0, document.documentElement.scrollHeight); }); await espera(400); } // as seções de cima ganham o tamanho real no caminho
+  const r3 = await page.evaluate(() => { const f = document.querySelector('.footer').getBoundingClientRect(), l = document.querySelector('.footer a[href="privacidade.html"], .footer a[href*="privacidade"]'); return { alt: Math.round(f.height), link: l ? Math.round(l.getBoundingClientRect().height) : 0, lateral: document.documentElement.scrollWidth > innerWidth }; });
+  ok(r3.alt > 1200 && r3.link > 0 && !r3.lateral, `r10-leiaute-adiado: rolando até o fim o rodapé aparece inteiro (${r3.alt} px, link de privacidade com ${r3.link} px), sem rolagem lateral`);
+  await fechar(page);
+});
+
 bloco('r10-csp', async () => {
   // as páginas inteiras com o CSP do netlify.toml: nada barrado e o estilo que saiu do <style> continua valendo
   const semInline = !CSP.includes('unsafe-inline');

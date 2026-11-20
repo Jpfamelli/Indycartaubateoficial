@@ -1040,9 +1040,9 @@
     if (el.value !== v && /^[\d\s()\-+]*$/.test(el.value)) el.value = v;
   });
 
-  function mostrarAviso(texto) {
+  function mostrarAviso(texto, neutro) {
     const aviso = $('#fEnvioMsg');
-    if (aviso) { aviso.textContent = texto; aviso.hidden = !texto; }
+    if (aviso) { aviso.textContent = texto; aviso.hidden = !texto; aviso.classList.toggle('neutro', !!neutro); } // neutro = aviso que não é erro (rodada 10)
   }
   function estadoEnviando(on) {
     enviando = on;
@@ -1147,7 +1147,7 @@
       (mensagem ? '\nO carro está: ' + mensagem : '');
 
     estadoEnviando(true);
-    let resposta = null, motivo = 'rede', textoDoServidor = '';
+    let resposta = null, motivo = 'rede', textoDoServidor = '', lento = 0;
     // Rodada 8: "rastreio" leva de onde a pessoa veio (campos do contrato §6.1) e o código do registro, quando existe.
     // O campo "codigo" do pedido continua sendo o código do SERVIÇO; "utm" é o formato antigo, mantido para a função publicada.
     const pedido = {
@@ -1159,6 +1159,9 @@
     try {
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 9000);
+      // Rodada 10: internet lenta. Depois de 4 s sem resposta a pessoa fica sabendo que o site ainda está tentando
+      // (antes eram até 9 s só com "Enviando…", e dava vontade de fechar ou tocar de novo).
+      lento = setTimeout(() => mostrarAviso('Está demorando mais que o normal. Aguarde só mais um pouco, não precisa tocar de novo.', true), 4000);
       const r = await fetch(SITE_LEAD_URL, {
         method: 'POST', mode: 'cors', signal: ctrl.signal,
         headers: { 'content-type': 'application/json' },
@@ -1169,7 +1172,7 @@
       if (r.status === 400 && corpo.erro) {
         // Campo errado: a pessoa corrige. Rodada 10: o campo que o servidor recusou fica marcado e recebe o foco
         // (antes só aparecia a frase no fim do formulário, longe do campo).
-        estadoEnviando(false); mostrarAviso(corpo.erro);
+        clearTimeout(lento); estadoEnviando(false); mostrarAviso(corpo.erro);
         const campo = /nome/i.test(corpo.erro) ? name : /n[uú]mero|DDD|telefone/i.test(corpo.erro) ? phone : /servi[cç]o/i.test(corpo.erro) ? service : null;
         if (campo) { campo.classList.add('invalid'); campo.setAttribute('aria-invalid', 'true'); campo.focus(); }
         return;
@@ -1178,6 +1181,7 @@
       // Rodada 10: o servidor respondeu, mas não registrou. 429 = limite de pedidos (o texto vem de lá); o resto = defeito de lá.
       else motivo = r.status === 429 ? 'limite' : 'servidor', textoDoServidor = r.status === 429 && typeof corpo.erro === 'string' ? corpo.erro.slice(0, 200) : '';
     } catch (_) { /* sem rede ou servidor fora: segue pelo WhatsApp */ }
+    clearTimeout(lento); mostrarAviso('');
     estadoEnviando(false);
 
     if (resposta) launchConfetti();   // 🎉 bandeira quadriculada, só quando o pedido chegou de verdade (rodada 9)
@@ -2177,7 +2181,7 @@
      ================================================================ */
   if (hasFinePointer && !reduceMotion) {
     // 3º passe: o glare também varre as fotos (sobre e diferenciais)
-    $$('.service-card, .about-photo, .why-image').forEach(card => {
+    $$('.service-card, .why-image').forEach(card => {
       const g = document.createElement('i');
       g.className = 'tile-glare';
       g.setAttribute('aria-hidden', 'true');
@@ -2720,6 +2724,12 @@
       if (resposta && resposta.protocolo && !resposta.direto) {
         store.set(PEDIDO, JSON.stringify({ em: Date.now(), protocolo: String(resposta.protocolo).slice(0, 12), servico: pedido ? pedido.servico : '', horario: horarioRotulo || '' }));
         pintarPedidoRecente();
+      }
+      // Rodada 10: o pedido chegou agora. Se o mesmo (telefone e serviço) ainda esperava na fila de uma tentativa sem
+      // rede, sai de lá: senão ele seria reenviado depois e a ficha do contato ganharia um "novo envio" repetido.
+      if (resposta && !resposta.direto && pedido) {
+        const resto = lerFila().filter(x => !(x.pedido.telefone === pedido.telefone && x.pedido.servico === pedido.servico));
+        if (resto.length) store.set(FILA, JSON.stringify(resto)); else store.del(FILA);
       }
     });
     pintarPedidoRecente();
