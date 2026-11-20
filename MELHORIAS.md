@@ -596,3 +596,4 @@ mudança anterior da própria rodada (02e878b, 8f0612c, 8e2f02b, 786808d) não c
 - **R9-SITE-096** · aviso · O pedido que esperava a rede, quando o reenvio chega, avisa "Seu pedido chegou à oficina (protocolo ...)" e aparece na área do cliente (o reenvio era mudo) · `4e29df0`
 - **R9-SITE-097** · conserto · O ícone do site também como arquivo PNG nas três páginas: o Google não usa o ícone embutido (data:) no resultado da busca · `ca0cd24`
 - **R9-SITE-098** · conserto · "Quando prefere?" no sábado: "Sábado" vira "Sábado que vem" (era o próprio dia ou um dia já passado) · `0d781c9`
+- **R9-SITE-099** · conserto · Atalhos do app instalado "Acompanhar meu carro" e "Minha IndyCar" apontavam para outro endereço (o navegador descarta): agora /acompanhar e /minha, que o site redireciona · `62c8459`
