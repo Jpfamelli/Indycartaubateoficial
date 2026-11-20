@@ -17,13 +17,16 @@
   <link rel="canonical" href="https://indycar-taubate.netlify.app/privacidade.html" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M16 10h42l-10 44H6z' fill='%23e50914'/><path d='M24 46l8-7 8 7M24 33l8-7 8 7M24 20l8-7 8 7' fill='none' stroke='white' stroke-width='5'/></svg>" />
   <style>
+    /* Rodada 9: a mesma Archivo do site (já em cache para quem veio de lá), não a fonte do sistema */
+    @font-face { font-family: 'Archivo'; font-style: normal; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; src: url('/fontes/archivo-variavel.woff2') format('woff2'); }
     :root { --red: #e50914; --ink: #f5f5f7; --muted: #b4b4ba; --line: #2a2a2e; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0d0e12; color: var(--ink); font: 17px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    body { background: #0d0e12; color: var(--ink); font: 17px/1.65 'Archivo', Arial, sans-serif; }
     main { max-width: 760px; margin: 0 auto; padding: 56px 20px 80px; }
-    .tag { display: inline-block; background: var(--red); color: #fff; font-weight: 800; letter-spacing: .12em; font-size: .78rem; padding: 6px 14px; transform: skewX(-12deg); margin-bottom: 22px; }
-    h1 { font-size: clamp(1.9rem, 6vw, 2.7rem); line-height: 1.1; margin-bottom: 14px; }
-    h2 { font-size: 1.2rem; margin: 34px 0 8px; padding-left: 14px; border-left: 4px solid var(--red); }
+    .tag { display: inline-block; background: var(--red); color: #fff; font-weight: 800; letter-spacing: .12em; font-size: .78rem; padding: 6px 14px; transform: skewX(-12deg); margin-bottom: 22px; font-stretch: 125%; }
+    h1 { font-size: clamp(1.9rem, 6vw, 2.7rem); line-height: 1.08; margin-bottom: 14px; font-weight: 800; font-stretch: 112%; letter-spacing: -.015em; text-wrap: balance; }
+    /* títulos separados por um fio fino (antes uma faixa vermelha grossa na lateral) */
+    h2 { font-size: 1.2rem; font-weight: 700; margin: 38px 0 8px; padding-top: 22px; border-top: 1px solid var(--line); }
     p, li { color: var(--muted); }
     ul { padding-left: 20px; display: grid; gap: 6px; margin-top: 6px; }
     strong { color: var(--ink); }
@@ -69,7 +72,7 @@
     <p>IndyCar Centro Automotivo · Av. Bandeirantes, 875 – Parque Paduan, Taubaté-SP, 12070-100.</p>
 
     <a class="voltar" href="/">← Voltar ao site</a>
-    <small>Atualizada em 19/11/2026. Quem conhece, Indyca! 🏎</small>
+    <small>Atualizada em 19/11/2026. Quem conhece, Indyca!</small>
   </main>
 </body>
 </html>
