@@ -1490,9 +1490,15 @@
       chip.classList.toggle('fechado', !aberto);
       rotulo.textContent = aberto ? 'Aberto agora' : 'Fechado agora';
       if (aberto) detalhe.textContent = minutos >= 990 ? 'fecha às 17h30' : 'até 17h30';
-      else if (dia === 'Sat' && minutos >= 1050) detalhe.textContent = 'abre segunda, 8h';
-      else if (dia === 'Sun') detalhe.textContent = 'abre segunda, 8h';
-      else detalhe.textContent = minutos < 480 ? 'abre hoje, 8h' : 'abre amanhã, 8h';
+      else {
+        // Rodada 9: o próximo dia de abertura pode ser feriado (de 19/11 para 20/11, Consciência Negra; de sábado para a segunda
+        // de Carnaval): aí o chip não promete "abre amanhã, 8h", avisa e manda confirmar, como o chip de hoje já fazia.
+        const [a, m, d] = data.split('-').map(Number);
+        const passo = dia === 'Sat' && minutos >= 1050 ? 2 : dia === 'Sun' || minutos >= 1050 ? 1 : 0;
+        const quando = passo === 0 ? 'hoje' : dia === 'Sat' || dia === 'Sun' ? 'segunda' : 'amanhã';
+        const proximo = new Date(Date.UTC(a, m - 1, d + passo)).toISOString().slice(0, 10);
+        detalhe.textContent = FERIADOS[proximo] ? quando + ' é feriado' : 'abre ' + quando + ', 8h';
+      }
       chip.hidden = false;
     }
     pintar();
