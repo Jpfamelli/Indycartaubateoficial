@@ -569,3 +569,17 @@ mudança anterior da própria rodada (02e878b, 8f0612c, 8e2f02b, 786808d) não c
 - **R9-SITE-069** · aviso · O horário do contato avisa o feriado dos próximos 7 dias ("Amanhã é feriado (Consciência Negra): confirme no WhatsApp se a oficina abre") · `b296050`
 - **R9-SITE-070** · acessibilidade · A caixa "Próximos horários livres" vira uma região com nome (o aria-labelledby num div sem papel era ignorado; o axe acusava) · `9009a5c`
 - **R9-SITE-071** · acessibilidade · Botões de WhatsApp (contato, depois do pedido, flutuante e 404) em verde sólido escuro: contraste do branco de 1,8 a 2,6 para 5,4 · `cd27056`
+- **R9-SITE-072** · teste · Novo qa-r9.mjs: o botão "Agendar diagnóstico grátis" inteiro na primeira tela em 375x812, 360x740, 1280x720 e 1440x900 · `80dd10f`
+- **R9-SITE-073** · teste · Contadores mostram 4,8 · 1.200 · 18 · 12 antes de rolar e depois de animar, com e sem "menos movimento" · `80dd10f`
+- **R9-SITE-074** · teste · Menu do celular pelo teclado: gaveta fechada fora do Tab, foco entra no primeiro link, Esc devolve o foco e o nome "Abrir menu" · `80dd10f`
+- **R9-SITE-075** · teste · Contraste de pelo menos 4,5 no rótulo vermelho de todas as seções e nos botões de WhatsApp (sem degradê) · `80dd10f`
+- **R9-SITE-076** · teste · Nenhuma estrela, ✓ ou seta decorativa exposta ao leitor de tela; a caixa de horários é região com nome · `80dd10f`
+- **R9-SITE-077** · teste · No computador, nenhum link ou botão solto com menos de 24x24 px · `80dd10f`
+- **R9-SITE-078** · teste · A faixa vermelha anda, para com o mouse (1440) e com um toque (375) e volta · `80dd10f`
+- **R9-SITE-079** · teste · Formulário: Enter vai ao próximo campo e nunca envia pela metade; WhatsApp em branco tem aviso próprio; "012 99683-0272" vai como 12996830272 · `80dd10f`
+- **R9-SITE-080** · teste · Pedido sem rede: título "Falta só mandar no WhatsApp", sem ✓ e sem a festa de concluído (faíscas contadas) · `80dd10f`
+- **R9-SITE-081** · teste · Convite de 8 s (tempo acelerado): espera quem está digitando, não aparece com pedido de 2 h e volta com pedido de 40 h · `80dd10f`
+- **R9-SITE-082** · teste · Agenda cheia (lista vazia): o aviso tem o link do WhatsApp e o "Toque num horário" some · `80dd10f`
+- **R9-SITE-083** · teste · Feriados com data fixa (19/11, 18/11, 20/11, 25/11 e sábado antes do Carnaval de 2027): "Quando prefere?", chip do topo e horário do contato · `80dd10f`
+- **R9-SITE-084** · teste · Mapa com referrerPolicy, "Cole aqui" vazio e "toque aqui" quando a janela é barrada, "Voltar ao topo" fora do Tab no topo · `80dd10f`
+- **R9-SITE-085** · teste · Página 404: ações antes da dica do código, link do rodapé com 44 px e fonte Archivo · `80dd10f`
