@@ -118,12 +118,13 @@ const bloco = (nome, fn) => blocos.push([nome, fn]);
 // ===================================================================== blocos =====================================================================
 
 bloco('r10-limite', async () => {
-  const erro = 'Recebemos vários pedidos deste aparelho agora. Se quiser, chame a gente direto no WhatsApp.';
+  const erro = 'Recebemos vários pedidos deste aparelho agora.';
   const page = await abrir({ resposta: { status: 429, corpo: { ok: false, erro } } });
   await preencher(page); await enviar(page); await esperarConfirmacao(page); await espera(300);
   const r = await confirmacao(page);
   ok(r.visivel && r.texto.includes('Recebemos vários pedidos') && !/internet/i.test(r.texto), 'r10-limite: limite de pedidos (429) mostra o motivo que o servidor deu, não "a internet não deixou": "' + r.texto.slice(0, 90) + '…"');
   ok(r.abertas === 1 && r.titulo === 'Falta só mandar no WhatsApp', 'r10-limite: o WhatsApp abre com a mensagem pronta (a pessoa não fica sem caminho)');
+  await foto(page, 'limite-depois-375');
   ok(r.fila === 0, 'r10-limite-fila: pedido barrado pelo limite não entra na fila de reenvio (reenviar sozinho só bateria no limite de novo)');
   await fechar(page);
 });
@@ -133,6 +134,7 @@ bloco('r10-servidor', async () => {
   await preencher(page); await enviar(page); await esperarConfirmacao(page); await espera(300);
   const r = await confirmacao(page);
   ok(r.visivel && /sistema da oficina não respondeu/.test(r.texto) && !/internet não deixou/i.test(r.texto), 'r10-servidor: erro do servidor (500) não culpa a internet da pessoa: "' + r.texto.slice(0, 90) + '…"');
+  await foto(page, 'servidor-depois-375');
   ok(r.fila === 1 && r.abertas === 1, 'r10-servidor: o pedido fica guardado para o site tentar de novo e o WhatsApp abre');
   await fechar(page);
   const p2 = await abrir({ resposta: 'semrede' });
@@ -148,6 +150,7 @@ bloco('r10-campo', async () => {
     await preencher(page); await enviar(page);
     await ate(() => page.evaluate(() => !document.getElementById('fEnvioMsg').hidden), 8000);
     const r = await page.evaluate((id) => ({ aviso: document.getElementById('fEnvioMsg').textContent, foco: document.activeElement.id, inv: document.getElementById(id).getAttribute('aria-invalid'), ok: !document.getElementById('formOk').hidden, btn: document.getElementById('fEnviar').disabled }), campo);
+    if (campo === 'fName') await foto(page, 'campo-recusado-depois-375');
     ok(r.aviso === erro && r.foco === campo && r.inv === 'true' && !r.ok && !r.btn, `r10-campo: o servidor recusou ("${erro.slice(0, 28)}…"): o campo ${campo} fica marcado e com o foco (foco em ${r.foco}, aria-invalid ${r.inv})`);
     await fechar(page);
   }
@@ -229,6 +232,7 @@ bloco('r10-mapa-semrede', async () => {
   await page.setOfflineMode(true); await espera(200);
   await page.evaluate(() => document.getElementById('mapLoad').click()); await espera(300);
   const fora = await page.evaluate(() => ({ quadro: !!document.querySelector('#mapBox iframe'), nota: document.querySelector('#mapBox .map-ph small').textContent, capa: getComputedStyle(document.querySelector('#mapBox .map-ph')).display !== 'none' }));
+  await foto(page, 'mapa-sem-internet-depois-375');
   ok(!fora.quadro && fora.capa && /Sem internet/.test(fora.nota), 'r10-mapa-semrede: sem internet "Ver mapa aqui" não troca o endereço por uma página de erro: avisa e mantém a capa ("' + fora.nota.slice(0, 40) + '…")');
   await page.setOfflineMode(false); await espera(200);
   await page.evaluate(() => document.getElementById('mapLoad').click()); await espera(300);
@@ -243,6 +247,7 @@ bloco('r10-demora', async () => {
   const cedo = await page.evaluate(() => document.getElementById('fEnvioMsg').hidden);
   await espera(3100);
   const r = await page.evaluate(() => ({ aviso: document.getElementById('fEnvioMsg').hidden ? '' : document.getElementById('fEnvioMsg').textContent, ocupado: document.getElementById('fEnviar').disabled }));
+  await page.evaluate(() => document.getElementById('fEnvioMsg').scrollIntoView({ block: 'center' })); await foto(page, 'demora-depois-375');
   ok(cedo && /demorando/.test(r.aviso) && r.ocupado, `r10-demora: internet lenta: depois de 4 s sem resposta o formulário avisa que ainda está tentando ("${r.aviso.slice(0, 44)}…") e o botão segue travado`);
   await esperarConfirmacao(page); await espera(300);
   const fim = await page.evaluate(() => ({ t: document.getElementById('formOkTitulo').textContent, aviso: document.getElementById('fEnvioMsg').hidden }));
@@ -286,17 +291,47 @@ bloco('r10-rastreio-volta', async () => {
 });
 
 bloco('r10-aviso-relogio', async () => {
-  // dois avisos no canto com 3,5 s de diferença: o segundo fica os seus 5 s
-  const page = await abrir({});
-  const robo = async () => { await abrirForm(page); await page.evaluate(() => { document.getElementById('fEmpresa').value = 'x'; document.getElementById('fEnviar').click(); }); };
-  await robo(); const t0 = Date.now();
-  await espera(3500 - 700); await robo();
-  await espera(Math.max(0, 5700 - (Date.now() - t0)));
-  const aos57 = await page.evaluate(() => document.getElementById('socialProof').classList.contains('show'));
+  // dois pedidos da fila chegam com 3,5 s de diferença: cada um dá o seu aviso no canto, e o segundo fica os seus 5 s
+  const p1 = { nome: 'Maria Teste', telefone: '12996830272', servico: 'Freios (pastilhas e discos)', codigo: 'freios', decorrido: 5000 };
+  const p2 = { ...p1, servico: 'Pneus', codigo: 'pneus' };
+  const antes = `localStorage.setItem('indycar_fila', JSON.stringify([{ em: Date.now() - 60000, pedido: ${JSON.stringify(p1)} }, { em: Date.now() - 50000, pedido: ${JSON.stringify(p2)} }]));`;
+  const page = await abrir({ antes, resposta: { atraso: 3500 } });
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  const visivel = () => page.evaluate(() => document.getElementById('socialProof').classList.contains('show'));
+  const primeiro = await ate(visivel, 9000); const t1 = Date.now();
+  await ate(() => page.__posts.length === 2, 3000);
+  await espera(Math.max(0, 5800 - (Date.now() - t1))); // 5,8 s depois do primeiro aviso = 2,3 s depois do segundo
+  const noMeio = await visivel();
   await espera(3600);
-  const fim = await page.evaluate(() => document.getElementById('socialProof').classList.contains('show'));
-  ok(aos57 && !fim && !page.__posts.length, `r10-aviso-relogio: o segundo aviso do canto não é apagado pelo relógio do primeiro (visível 2 s depois: ${aos57}; some no fim dos 5 s dele: ${!fim})`);
+  const fim = await visivel();
+  ok(primeiro && noMeio && !fim && page.__posts.length === 2, `r10-aviso-relogio: o segundo aviso do canto não é apagado pelo relógio do primeiro (ainda visível 2 s depois de aparecer: ${noMeio}; some ao fim dos 5 s dele: ${!fim})`);
   await fechar(page);
+});
+
+bloco('r10-isca', async () => {
+  // preenchimento automático do navegador escreveu no campo escondido: o cliente não pode ficar com um "Pedido enviado!" de mentira
+  const page = await abrir({});
+  await preencher(page);
+  await page.evaluate(() => { document.querySelector('.campo-isca input').value = 'Oficina do Zé Ltda'; });
+  await enviar(page); await espera(900);
+  const r = await page.evaluate(() => ({ ok: !document.getElementById('formOk').hidden, titulo: document.getElementById('formOkTitulo').textContent, texto: document.getElementById('formOkTexto').textContent, wa: decodeURIComponent(document.getElementById('formOkWa').href), aviso: document.getElementById('socialProof').classList.contains('show'), abertas: window.__abertas.length }));
+  ok(r.ok && r.titulo === 'Falta só mandar no WhatsApp' && /mensagem pronta/.test(r.texto) && /Nome: Maria Teste/.test(r.wa) && !r.aviso, `r10-isca: campo escondido preenchido não vira mais "Pedido enviado!" de mentira: fica a mensagem pronta com o botão do WhatsApp ("${r.titulo}")`);
+  ok(!page.__posts.length && r.abertas === 0, 'r10-isca: e continua sem mandar nada ao banco e sem abrir janela sozinho (robô não ganha nada)');
+  const campo = await page.evaluate(() => { const i = document.querySelector('.campo-isca input'), l = document.querySelector('.campo-isca label'); return [i.id, i.name, l.textContent, i.getAttribute('autocomplete')].join(' | '); });
+  // nomes que o preenchimento automático dos navegadores liga a empresa, nome, telefone, e-mail ou endereço
+  ok(!/empresa|company|organi[sz]|business|firma|nome|name|fone|phone|tel|mail|endere|address|cidade|city|cep|zip/i.test(campo) && /off$/.test(campo), `r10-isca: o campo escondido não tem nome nem rótulo que o preenchimento automático reconheça (${campo})`);
+  await fechar(page);
+});
+
+bloco('r10-fila-estragada', async () => {
+  for (const lixo of ['{"a":1}', '"texto"', '[null, 5, {"em":1}, {"em":' + Date.now() + ',"pedido":"x"}]']) {
+    const erros0 = errosDePagina.length;
+    const page = await abrir({ resposta: 'semrede', antes: `localStorage.setItem('indycar_fila', ${JSON.stringify(lixo)});` });
+    await preencher(page); await enviar(page); await esperarConfirmacao(page); await espera(300);
+    const fila = await page.evaluate(() => { try { const v = JSON.parse(localStorage.getItem('indycar_fila')); return Array.isArray(v) ? v.map(x => x.pedido && x.pedido.servico).join(',') : 'não é lista'; } catch (_) { return 'ilegível'; } });
+    ok(fila === 'Freios (pastilhas e discos)' && errosDePagina.length === erros0, `r10-fila-estragada: fila guardada com valor torto (${lixo.slice(0, 18)}…) não derruba o site: o pedido sem rede é guardado do mesmo jeito (fila: ${fila})`);
+    await fechar(page);
+  }
 });
 
 bloco('r10-sugerido-sem-agenda', async () => {
@@ -304,6 +339,7 @@ bloco('r10-sugerido-sem-agenda', async () => {
   const page = await abrir({ horariosFora: true, caminho: '?h=2026-11-24T11:00#agendar-freios' });
   const pos = await ate(() => page.evaluate(() => /24\/11 às 11:00/.test(document.getElementById('fQuando').value)), 8000);
   const r = await page.evaluate(() => ({ aberto: document.getElementById('formBackdrop').classList.contains('open'), quando: document.getElementById('fQuando').value, servico: document.getElementById('fService').value }));
+  await page.evaluate(() => document.getElementById('fQuando').scrollIntoView({ block: 'center' })); await foto(page, 'sugerido-sem-agenda-depois-375');
   ok(pos && r.aberto && /sugerido pela equipe/.test(r.quando) && /Freios/.test(r.servico), `r10-sugerido-sem-agenda: Agenda fora do ar, o horário que a equipe sugeriu aparece em "Quando prefere?" ("${r.quando}")`);
   await page.type('#fName', 'Maria Teste'); await page.type('#fPhone', '12996830272'); await espera(2600);
   await enviar(page); await esperarConfirmacao(page);

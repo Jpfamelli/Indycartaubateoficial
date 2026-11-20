@@ -228,10 +228,12 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     await page.click('#fPhone', { clickCount: 3 });
     await page.type('#fPhone', '(12) 99683-0272');
     // anti-spam 1: campo-isca invisível, fora do Tab e do leitor de tela
-    const isca = await page.evaluate(() => { const i = document.getElementById('fEmpresa'), r = i.getBoundingClientRect(); return { tab: i.tabIndex, oculto: i.closest('[aria-hidden="true"]') !== null, fora: r.right < 0 || r.bottom < 0 }; });
+    const isca = await page.evaluate(() => { const i = document.getElementById('fRef'), r = i.getBoundingClientRect(); return { tab: i.tabIndex, oculto: i.closest('[aria-hidden="true"]') !== null, fora: r.right < 0 || r.bottom < 0 }; });
     ok(isca.tab === -1 && isca.oculto && isca.fora, 'campo-isca do formulário fora da tela, do Tab e do leitor de tela');
-    await page.evaluate(() => { document.getElementById('fEmpresa').value = 'robo ltda'; document.querySelector('#leadForm button[type=submit]').click(); });
+    await page.evaluate(() => { document.getElementById('fRef').value = 'robo ltda'; document.querySelector('#leadForm button[type=submit]').click(); });
     ok(!(await page.evaluate(() => window.__aberto)), 'robô que preenche o campo-isca não abre o WhatsApp');
+    // rodada 10: a isca não fecha mais o formulário sozinha (ver qa-r10 › r10-isca); limpa para o pedido de gente logo abaixo
+    await page.evaluate(() => { document.getElementById('leadForm').reset(); });
     // reabre o formulário limpo, preenche como gente e espera: o pedido vai para a Edge Function (falsa aqui)
     await page.evaluate(() => { document.querySelector('[data-open-modal]').click(); });
     await page.type('#fName', 'Teste QA'); await page.type('#fPhone', '12996830272'); await page.select('#fService', 'Pneus');

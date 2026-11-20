@@ -254,12 +254,6 @@
   /* ================================================================
      0. CSP sem script embutido: o que antes era onload/onerror no HTML
      ================================================================ */
-  // Desde a rodada 4 as fontes ficam no próprio site (styles.css). Se alguma página ainda tiver um link
-  // data-fontes (media=print), ele vira "all" aqui.
-  $$('link[data-fontes]').forEach(l => {
-    const ligar = () => { l.media = 'all'; };
-    if (l.sheet) ligar(); else { l.addEventListener('load', ligar); setTimeout(ligar, 3000); }
-  });
   // Imagem que não carregou: troca pela reserva (data-reserva) ou some com o bloco (data-reserva-remover).
   function reservaDaImagem(img) {
     if (img.dataset.reserva && !img.dataset.reservaUsada) {
@@ -1104,13 +1098,6 @@
     if (enviando) return;
     const name = $('#fName'), phone = $('#fPhone'), service = $('#fService');
 
-    // Robô preencheu o campo-isca: finge que deu certo e não abre nada.
-    if ($('#fEmpresa') && $('#fEmpresa').value.trim()) {
-      closeEl(formBackdrop); form.reset(); comecouEm = 0;
-      showToast('✓', 'Pedido enviado!', 'Continue a conversa pelo WhatsApp.');
-      return;
-    }
-
     // validação simples com feedback visual
     let ok = true;
     const digitos = digitosDoFone(phone.value);
@@ -1155,6 +1142,17 @@
       (car ? ' · Carro: ' + car : '') + (placa ? ' · Placa: ' + placa : '') + (horario ? ' · Horário: ' + horarioRotulo : quando ? ' · Quando: ' + quando : '') +
       (mensagem ? '\nO carro está: ' + mensagem : '');
 
+    // Campo-isca preenchido: nada vai para o banco e nenhuma janela abre sozinha. Rodada 10: em vez de fingir "Pedido
+    // enviado!" e fechar (o preenchimento automático do navegador às vezes escreve em campo escondido, e aí o pedido de
+    // um cliente de verdade sumia calado), fica a mensagem pronta com o botão do WhatsApp. Robô não ganha nada com isso.
+    const isca = $('#fRef');
+    if (isca && isca.value.trim()) {
+      try { sessionStorage.removeItem('indycar_rascunho'); } catch (_) {}
+      mostrarSucesso({ ok: true, direto: true, mensagem: 'Para o pedido chegar à oficina, mande a mensagem pronta pelo WhatsApp: é só tocar no botão abaixo.' }, textoWa, servicoWa);
+      form.reset(); limparHorario(); comecouEm = 0;
+      return;
+    }
+
     estadoEnviando(true);
     let resposta = null, motivo = 'rede', textoDoServidor = '', lento = 0;
     // Rodada 8: "rastreio" leva de onde a pessoa veio (campos do contrato §6.1) e o código do registro, quando existe.
@@ -1163,7 +1161,7 @@
       nome: name.value.trim(), telefone: digitos, servico: service.value, codigo: codigoServico, carro: car || null,
       preferencia: quando || null, placa, horario, mensagem: mensagem || null, pagina: (sessao.get('indycar_entrada') || (location.pathname + location.search)).slice(0, 200),
       utm: UTM, rastreio: R.codigo ? Object.assign({ codigo: R.codigo }, R.dados) : R.dados,
-      decorrido: Date.now() - comecouEm, empresa: ($('#fEmpresa') || {}).value || '',
+      decorrido: Date.now() - comecouEm, empresa: (isca || {}).value || '',
     };
     try {
       const ctrl = new AbortController();
@@ -2760,7 +2758,9 @@
 
     // --- Fila de reenvio: sem rede o pedido abre o WhatsApp E fica guardado; quando a rede volta, vai ao banco ---
     const FILA = 'indycar_fila';
-    const lerFila = () => (lerJson(store.get(FILA)) || []).filter(x => x && x.em && x.pedido && Date.now() - x.em < DIA);
+    // Rodada 10: o que está guardado no aparelho não é de confiança. Valor estragado (não é lista, item sem pedido) vale como fila
+    // vazia; antes um valor torto derrubava o reenvio e o pedido sem rede seguinte não era guardado.
+    const lerFila = () => { const v = lerJson(store.get(FILA)); return (Array.isArray(v) ? v : []).filter(x => x && x.em && x.pedido && typeof x.pedido === 'object' && Date.now() - x.em < DIA); };
     window.addEventListener('indycar:pedido-offline', (e) => {
       const pedido = e.detail && e.detail.pedido;
       if (!pedido) return;

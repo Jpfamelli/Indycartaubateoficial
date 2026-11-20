@@ -1438,10 +1438,11 @@
           <textarea id="fMsg" name="mensagem" maxlength="500" rows="2" placeholder="Ex: luz do motor acesa e barulho ao frear" aria-describedby="fMsgConta"></textarea>
           <small class="field-dica field-conta" id="fMsgConta" aria-live="off">0/500</small>
         </div>
-        <!-- armadilha para robô: invisível para gente, robô preenche e o pedido é ignorado -->
+        <!-- armadilha para robô: invisível para gente. Rodada 10: nome e rótulo que o preenchimento automático do navegador não reconhece
+             (antes "Empresa", que o Chrome preenche sozinho para quem tem empresa no cadastro de endereço) -->
         <div class="campo-isca" aria-hidden="true">
-          <label for="fEmpresa">Empresa</label>
-          <input type="text" id="fEmpresa" name="empresa" tabindex="-1" autocomplete="off" />
+          <label for="fRef">Deixe este campo em branco</label>
+          <input type="text" id="fRef" name="ref_interna" tabindex="-1" autocomplete="off" />
         </div>
         <!-- rodada 10: aparece só quando o aparelho está sem internet (script.js) -->
         <p class="field-dica form-semrede" id="fSemRede" role="status" hidden>Você está sem internet agora. Pode pedir assim mesmo: o site abre o seu WhatsApp com a mensagem pronta e registra o pedido quando a rede voltar.</p>
