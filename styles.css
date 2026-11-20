@@ -611,6 +611,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* botão voltar ao topo */
 .to-top { position: fixed; right: 28px; bottom: 96px; z-index: 799; width: 46px; height: 46px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); color: #fff; font-size: 1.3rem; display: grid; place-items: center; opacity: 0; pointer-events: none; transform: translateY(12px); transition: .3s var(--ease); }
 .to-top.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+/* Rodada 9: escondido (no topo da página) ele não recebe o foco do Tab nem é lido; some depois do fade */
+.to-top:not(.show) { visibility: hidden; transition: .3s var(--ease), visibility 0s linear .3s; }
 .to-top:hover { background: var(--red); border-color: var(--red); transform: translateY(-3px); box-shadow: 0 8px 22px var(--red-glow); }
 
 /* ========================= PROVA SOCIAL POPUP ========================= */
