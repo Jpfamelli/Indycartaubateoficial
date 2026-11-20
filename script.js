@@ -1265,11 +1265,16 @@
     if (!corpo) { if (caixa) caixa.hidden = true; $$('[data-so-horarios]').forEach(e => { e.hidden = true; }); retomarPulo(); return; } // Agenda não respondeu: a caixa some, o formulário segue igual
     if (caixa && !corpo.dias.length) {
       const l = $('#horariosLista'); l.textContent = '';
+      // Rodada 9: "Chame a gente no WhatsApp" virou link (antes era só texto: agenda cheia e nenhum caminho para seguir)
       const p = document.createElement('p'); p.className = 'horarios-carregando';
-      p.textContent = 'A agenda está cheia nos próximos dias. Chame a gente no WhatsApp que a equipe encaixa o seu carro.';
+      const wa = document.createElement('a'); wa.target = '_blank'; wa.rel = 'noopener'; wa.textContent = 'Chame a gente no WhatsApp';
+      ligarWhatsApp(wa, 'Olá! Vim pelo site, quero agendar um horário.', 'agendar');
+      p.append('A agenda está cheia nos próximos dias. ', wa, ' que a equipe encaixa o seu carro.');
+      const sub = $('.horarios-sub', caixa); if (sub) sub.hidden = true; // sem horário, o "Toque num horário" não faz sentido
       l.appendChild(p); caixa.hidden = false; caixa.removeAttribute('aria-busy'); retomarPulo();
     } else if (caixa && corpo.atualizado_em !== horariosPintados) {
       pintarHorarios($('#horariosLista'), corpo, 'secao');
+      const sub = $('.horarios-sub', caixa); if (sub) sub.hidden = false; // voltou a ter horário (a lista se atualiza com a página aberta)
       const hh = new Date(corpo.atualizado_em);
       if (!isNaN(hh)) $('#horariosAtualizado').textContent = 'Atualizado às ' + hh.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) + '.';
       caixa.hidden = false; caixa.removeAttribute('aria-busy'); retomarPulo(); // a altura da caixa pode ter mudado: quem estava a caminho de uma âncora cai no lugar certo
