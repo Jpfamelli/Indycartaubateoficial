@@ -1424,7 +1424,9 @@
       const r = rotearCodigo(campo.value);
       if (!r) {
         campo.setAttribute('aria-invalid', 'true'); msg.classList.add('erro');
-        msg.textContent = 'Não reconheci esse link ou código. Confira se copiou inteiro, ou peça outro pelo WhatsApp.';
+        // Rodada 9: com o campo vazio, "Não reconheci esse link" não fazia sentido
+        msg.textContent = campo.value.trim() ? 'Não reconheci esse link ou código. Confira se copiou inteiro, ou peça outro pelo WhatsApp.'
+          : 'Cole aqui o link ou o código que a oficina mandou pelo WhatsApp.';
         campo.focus(); return;
       }
       // Rodada 9: se o navegador barrar a janela nova (bloqueador de pop-up, app do Instagram), fica um link para tocar
