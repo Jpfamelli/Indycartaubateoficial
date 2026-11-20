@@ -357,15 +357,17 @@
      ================================================================ */
   // Rodada 9: o HTML já traz o número certo (sem JavaScript, leitor de tela e Google leem 4,8 · 1.200 · 18, não 0).
   // A contagem só roda para quem não pediu menos movimento; ela começa do zero quando o número entra na tela.
+  // Rodada 9: o número certo fica no HTML até o contador entrar na tela; só aí ele volta a 0 e conta. Antes era zerado
+  // no carregamento e, se o contador nunca chegasse a 60% visível (rolagem rápida, pulo por âncora, impressão,
+  // captura da página inteira), ficava "0★", "+0 avaliações", "+0 anos".
   const counters = reduceMotion ? [] : $$('.counter-num');
-  counters.forEach(c => { c.textContent = '0'; }); // sem ler o layout no carregamento
   const counterIO = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (!e.isIntersecting) return;
-      animateCount(e.target);
       counterIO.unobserve(e.target);
+      animateCount(e.target);
     });
-  }, { threshold: 0.6 });
+  }, { threshold: 0 });
   counters.forEach(c => counterIO.observe(c));
 
   function animateCount(el) {
