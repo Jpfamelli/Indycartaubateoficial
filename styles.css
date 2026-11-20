@@ -1808,3 +1808,5 @@ a, button, [role="button"], label, select, summary { touch-action: manipulation;
 @media print { .area-pedido, .field-lembrar, .hero-cliente { display: none !important; } }
 
 .modal-backdrop { color-scheme: dark; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.3) transparent; }
+/* Rodada 9: em celular de 320 px o selo da nota passava 17 px da tela (borda direita cortada) */
+@media (max-width: 360px) { .rating-badge { max-width: 100%; gap: 10px; padding: 12px 14px; } }
