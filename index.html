@@ -1438,8 +1438,9 @@
           <label for="fEmpresa">Empresa</label>
           <input type="text" id="fEmpresa" name="empresa" tabindex="-1" autocomplete="off" />
         </div>
-        <button type="submit" class="btn btn-whatsapp glow full" id="fEnviar">
-          <svg viewBox="0 0 32 32" class="btn-ico wa"><path fill="currentColor" d="M16 3C9.4 3 4 8.4 4 15c0 2.1.6 4.2 1.6 6L4 29l8.2-1.6c1.7.9 3.7 1.4 5.8 1.4 6.6 0 12-5.4 12-12S22.6 3 16 3z"/></svg>
+        <!-- rodada 9: vermelho de ação, não o verde do WhatsApp: este botão manda o pedido para a oficina, não abre o WhatsApp -->
+        <button type="submit" class="btn btn-primary glow full" id="fEnviar">
+          <svg viewBox="0 0 24 24" class="btn-ico" aria-hidden="true" focusable="false"><path d="M9 11.5L11 13.5L15.5 9M21 12a9 9 0 11-18 0 9 9 0 0118 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Pedir meu horário
         </button>
         <!-- Rodada 7: lembrar os dados só neste aparelho (nome, telefone, carro e placa; nunca vai para servidor) -->
