@@ -291,6 +291,8 @@ try {
     await page.evaluate(() => { document.documentElement.classList.add('cv-off'); document.getElementById('mapLoad').click(); });
     const ref = await ate(() => page.evaluate(() => { const f = document.querySelector('#mapBox iframe'); return f && f.referrerPolicy === 'strict-origin-when-cross-origin'; }), 4000);
     ok(ref, 'o mapa do Google carrega com referrerPolicy strict-origin-when-cross-origin (o Google não recebe o endereço completo com utm/gclid)');
+    const rota = await page.evaluate(() => { const a = document.querySelector('#mapBox .map-rota'); if (!a) return null; const r = a.getBoundingClientRect(); return { href: a.href, alt: Math.round(r.height), vis: getComputedStyle(a).visibility }; });
+    ok(!!rota && /\/maps\/dir\//.test(rota.href) && rota.alt >= 44 && rota.vis === 'visible', 'com o mapa aberto, o "Traçar rota" continua à mão, por cima do mapa (' + (rota ? rota.alt + ' px' : 'sumia') + ')');
     const cola = await page.evaluate(() => {
       const f = document.getElementById('areaCola'), c = document.getElementById('areaColaCampo'), m = document.getElementById('areaColaMsg');
       f.requestSubmit(); const vazio = m.textContent;

@@ -2555,6 +2555,9 @@
       f.referrerPolicy = 'strict-origin-when-cross-origin';
       box.classList.add('map-on');
       box.appendChild(f);
+      // Rodada 9: com o mapa aberto o "Traçar rota" sumia junto com a capa; fica por cima do mapa, no canto
+      const rota = $('.map-ph a[href*="/maps/dir/"]', box);
+      if (rota) { const r = rota.cloneNode(true); r.className = 'btn btn-light sm map-rota'; box.appendChild(r); }
       f.focus();
     }, { once: true });
   })();
