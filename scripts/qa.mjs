@@ -202,7 +202,9 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
       const soltos = [];
       const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
       for (let n = w.nextNode(); n; n = w.nextNode()) {
-        if (!/(^|[^\d,.])(4,8|1\.200|18)(?![\d,.]*\d)/.test(n.nodeValue)) continue;
+        // horas e datas (00:18, 18h, 18/11) não são o número da oficina: saem antes da conferência (falhava às 00:18 e às 18h)
+        const texto = n.nodeValue.replace(/\d{1,2}:\d{2}|\d{1,2}h\d{0,2}|\d{1,2}\/\d{1,2}/g, ' ');
+        if (!/(^|[^\d,.])(4,8|1\.200|18)(?![\d,.]*\d)/.test(texto)) continue;
         if (n.parentElement.closest('[data-num], .counter-num, script, style, noscript')) continue;
         soltos.push(n.nodeValue.trim().slice(0, 60));
       }
