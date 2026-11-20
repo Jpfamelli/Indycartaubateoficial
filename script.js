@@ -1519,6 +1519,22 @@
     }
   })();
 
+  // Rodada 9: o horário do contato avisa o feriado dos próximos 7 dias (a oficina pode não abrir: a equipe confirma), como o
+  // chip do topo e os horários livres já faziam. Antes, "Segunda a sábado: 8h às 17h30" valia até para a véspera do feriado.
+  (function feriadoNoContato() {
+    const p = $$('.contact-list p').find(x => x.textContent.includes('Domingo: fechado')); if (!p) return;
+    const { data } = agoraSP(); const [a, m, d] = data.split('-').map(Number);
+    const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+    for (let i = 0; i <= 7; i++) {
+      const dt = new Date(Date.UTC(a, m - 1, d + i)), iso = dt.toISOString().slice(0, 10);
+      if (!FERIADOS[iso] || dt.getUTCDay() === 0) continue;
+      const quando = i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : DIAS[dt.getUTCDay()].replace(/^./, c => c.toUpperCase()) + ', ' + iso.slice(8) + '/' + iso.slice(5, 7) + ',';
+      const s = document.createElement('small'); s.className = 'contato-feriado';
+      s.textContent = quando + ' é feriado (' + FERIADOS[iso] + '): confirme no WhatsApp se a oficina abre.';
+      p.after(s); break;
+    }
+  })();
+
   spClose.addEventListener('click', () => { sp.classList.remove('show'); });
 
   /* ================================================================
