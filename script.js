@@ -313,6 +313,8 @@
     navLinks.classList.toggle('open', open);
     hamburger.setAttribute('aria-expanded', String(open));
     hamburger.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+    // Rodada 9: aberto pelo teclado, o foco entra no menu (os links vêm antes do botão no HTML; com Tab o foco saía do menu)
+    if (open && hamburger.matches(':focus-visible')) { const primeiro = $('.nav-link', navLinks); if (primeiro) primeiro.focus(); }
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && navLinks.classList.contains('open')) { closeMenu(); hamburger.focus(); } });
   // fecha ao clicar num link
