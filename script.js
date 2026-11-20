@@ -1292,7 +1292,10 @@
   async function montarHorarios() {
     const corpo = await carregarHorarios();
     const caixa = $('#horarios');
-    if (!corpo) { if (caixa) caixa.hidden = true; $$('[data-so-horarios]').forEach(e => { e.hidden = true; }); retomarPulo(); return; } // Agenda não respondeu: a caixa some, o formulário segue igual
+    // Agenda não respondeu: a caixa some, o formulário segue igual. Rodada 10: a falha é passageira; a próxima resposta
+    // boa pinta tudo de novo (antes, a mesma lista de um minuto atrás não era repintada e a caixa ficava sumida).
+    if (!corpo) { horariosPintados = ''; if (caixa) caixa.hidden = true; $$('[data-so-horarios]').forEach(e => { e.hidden = true; }); retomarPulo(); return; }
+    $$('[data-so-horarios]').forEach(e => { e.hidden = false; });
     if (caixa && !corpo.dias.length) {
       const l = $('#horariosLista'); l.textContent = '';
       // Rodada 9: "Chame a gente no WhatsApp" virou link (antes era só texto: agenda cheia e nenhum caminho para seguir)
@@ -1329,6 +1332,20 @@
     marcarHorario();
     preencherPromo(corpo);
   }
+  // Rodada 10: a internet voltou. Se a caixa de horários tinha sumido por falta de rede (ou o formulário está aberto),
+  // a consulta é refeita na hora, sem esperar a pessoa recarregar a página.
+  window.addEventListener('online', () => {
+    const caixa = $('#horarios');
+    if (!(caixa && caixa.hidden) && !formBackdrop.classList.contains('open')) return;
+    horariosPromessa = null; horariosEm = 0;
+    montarHorarios();
+  });
+  // Rodada 10: sem internet, o formulário avisa antes de a pessoa preencher que o pedido vai sair pelo WhatsApp.
+  (function () {
+    const aviso = $('#fSemRede'); if (!aviso) return;
+    const pintar = () => { aviso.hidden = navigator.onLine !== false; };
+    window.addEventListener('online', pintar); window.addEventListener('offline', pintar); pintar();
+  })();
   document.addEventListener('click', (e) => {
     const b = e.target.closest && e.target.closest('.horario-chip');
     if (!b) return;
@@ -2566,7 +2583,17 @@
   (function mapaSobDemanda() {
     const box = $('#mapBox'), btn = $('#mapLoad');
     if (!box || !btn) return;
+    let aberto = false;
     btn.addEventListener('click', () => {
+      if (aberto) return;
+      // Rodada 10: sem internet o quadro do mapa abria uma página de erro do navegador no lugar do endereço. Agora a
+      // capa fica (com o endereço escrito) e avisa; quando a rede voltar, o mesmo botão abre o mapa.
+      if (navigator.onLine === false) {
+        const nota = $('.map-ph small', box);
+        if (nota) { nota.setAttribute('role', 'status'); nota.textContent = 'Sem internet agora: o mapa não abre. O endereço está aqui em cima; tente de novo quando a rede voltar.'; }
+        return;
+      }
+      aberto = true;
       const f = document.createElement('iframe');
       f.title = 'Mapa da IndyCar Centro Automotivo, Av. Bandeirantes 875, Taubaté';
       f.src = box.dataset.mapSrc;
@@ -2579,7 +2606,7 @@
       const rota = $('.map-ph a[href*="/maps/dir/"]', box);
       if (rota) { const r = rota.cloneNode(true); r.className = 'btn btn-light sm map-rota'; box.appendChild(r); }
       f.focus();
-    }, { once: true });
+    });
   })();
 
   /* ================================================================
@@ -2703,11 +2730,22 @@
     window.addEventListener('indycar:pedido-offline', (e) => {
       const pedido = e.detail && e.detail.pedido;
       if (!pedido) return;
-      const f = lerFila(); f.push({ em: Date.now(), pedido });
+      // Rodada 10: o mesmo pedido de novo (mesmo telefone e serviço, a pessoa tocou em enviar duas vezes sem rede)
+      // troca o que estava guardado em vez de entrar duas vezes na fila.
+      const f = lerFila().filter(x => !(x.pedido.telefone === pedido.telefone && x.pedido.servico === pedido.servico));
+      f.push({ em: Date.now(), pedido });
       store.set(FILA, JSON.stringify(f.slice(-3)));
     });
     let esvaziando = false;
-    async function esvaziarFila() {
+    // Rodada 10: duas abas do site abertas reenviavam a mesma fila ao mesmo tempo (dois pedidos iguais chegando juntos
+    // ao servidor). Só uma aba por vez esvazia a fila (Web Locks); navegador sem esse recurso segue como antes.
+    function esvaziarFila() {
+      if (navigator.locks && navigator.locks.request) {
+        try { return navigator.locks.request('indycar_fila', { ifAvailable: true }, (trava) => (trava ? esvaziarFilaAgora() : undefined)).catch(() => {}); } catch (_) {}
+      }
+      return esvaziarFilaAgora();
+    }
+    async function esvaziarFilaAgora() {
       if (esvaziando || navigator.onLine === false) return;
       const f = lerFila();
       if (!f.length) { store.del(FILA); return; }

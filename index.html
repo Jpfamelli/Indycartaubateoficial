@@ -1443,6 +1443,8 @@
           <label for="fEmpresa">Empresa</label>
           <input type="text" id="fEmpresa" name="empresa" tabindex="-1" autocomplete="off" />
         </div>
+        <!-- rodada 10: aparece só quando o aparelho está sem internet (script.js) -->
+        <p class="field-dica form-semrede" id="fSemRede" role="status" hidden>Você está sem internet agora. Pode pedir assim mesmo: o site abre o seu WhatsApp com a mensagem pronta e registra o pedido quando a rede voltar.</p>
         <!-- rodada 9: vermelho de ação, não o verde do WhatsApp: este botão manda o pedido para a oficina, não abre o WhatsApp -->
         <button type="submit" class="btn btn-primary glow full" id="fEnviar">
           <svg viewBox="0 0 24 24" class="btn-ico" aria-hidden="true" focusable="false"><path d="M9 11.5L11 13.5L15.5 9M21 12a9 9 0 11-18 0 9 9 0 0118 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>

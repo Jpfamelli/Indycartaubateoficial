@@ -100,6 +100,8 @@ const enviar = async (page) => { await page.evaluate(() => document.getElementBy
 const confirmacao = (page) => page.evaluate(() => ({ visivel: !document.getElementById('formOk').hidden, titulo: document.getElementById('formOkTitulo').textContent, texto: document.getElementById('formOkTexto').textContent, fila: JSON.parse(localStorage.getItem('indycar_fila') || '[]').length, abertas: window.__abertas.length }));
 const esperarConfirmacao = (page) => ate(() => page.evaluate(() => !document.getElementById('formOk').hidden), 12000);
 
+const FOTOS = process.env.QA_FOTOS ? path.join(ROOT, 'qa-out', 'r10') : ''; // QA_FOTOS=1 guarda capturas em qa-out/r10/
+const foto = async (page, nome) => { if (FOTOS) { fs.mkdirSync(FOTOS, { recursive: true }); await page.screenshot({ path: path.join(FOTOS, nome + '.png') }); } };
 const blocos = [];
 /** bloco('r10-nome', async () => {...}): um bloco por teste citado no MELHORIAS.md. */
 const bloco = (nome, fn) => blocos.push([nome, fn]);
@@ -140,6 +142,89 @@ bloco('r10-campo', async () => {
     ok(r.aviso === erro && r.foco === campo && r.inv === 'true' && !r.ok && !r.btn, `r10-campo: o servidor recusou ("${erro.slice(0, 28)}…"): o campo ${campo} fica marcado e com o foco (foco em ${r.foco}, aria-invalid ${r.inv})`);
     await fechar(page);
   }
+});
+
+bloco('r10-abas', async () => {
+  // duas abas do mesmo navegador com o mesmo pedido esperando na fila: só uma reenvia
+  const pedido = { nome: 'Maria Teste', telefone: '12996830272', servico: 'Freios (pastilhas e discos)', codigo: 'freios', decorrido: 5000 };
+  const antes = `if (!localStorage.getItem('indycar_fila') && !sessionStorage.getItem('ja')) localStorage.setItem('indycar_fila', JSON.stringify([{ em: Date.now() - 60000, pedido: ${JSON.stringify(pedido)} }])); sessionStorage.setItem('ja', '1');`;
+  const a = await abrir({ antes, resposta: { atraso: 2500 } });
+  const b = await abrir({ ctx: a.__ctx, antes, resposta: { atraso: 2500 } });
+  // as duas tentam no mesmo instante (a rede "voltou" para as duas)
+  await Promise.all([a, b].map(p => p.evaluate(() => { window.dispatchEvent(new Event('online')); })));
+  await ate(async () => !(await a.evaluate(() => localStorage.getItem('indycar_fila'))), 12000);
+  await espera(4500); // passa do reenvio automático de 6 s das duas abas
+  const fila = await a.evaluate(() => localStorage.getItem('indycar_fila'));
+  ok(a.__posts.length + b.__posts.length === 1 && !fila, `r10-abas: com duas abas abertas o pedido da fila é reenviado uma vez só (foram ${a.__posts.length + b.__posts.length} envios; fila ${fila ? 'ainda cheia' : 'vazia'})`);
+  await fechar(a);
+});
+
+bloco('r10-fila-repetido', async () => {
+  const page = await abrir({ resposta: 'semrede' });
+  for (let i = 0; i < 2; i++) {
+    await preencher(page); await enviar(page); await esperarConfirmacao(page); await espera(300);
+    await page.evaluate(() => document.querySelector('#formOk .form-ok-fechar').click()); await espera(900);
+  }
+  const f1 = await page.evaluate(() => JSON.parse(localStorage.getItem('indycar_fila') || '[]').length);
+  ok(f1 === 1, `r10-fila-repetido: o mesmo pedido enviado duas vezes sem rede fica uma vez só na fila (ficaram ${f1})`);
+  await preencher(page, { servico: 'Pneus' }); await enviar(page); await esperarConfirmacao(page); await espera(300);
+  const f2 = await page.evaluate(() => JSON.parse(localStorage.getItem('indycar_fila') || '[]').map(x => x.pedido.servico).join(' + '));
+  ok(f2 === 'Freios (pastilhas e discos) + Pneus', 'r10-fila-repetido: pedido de outro serviço continua entrando na fila (' + f2 + ')');
+  await fechar(page);
+});
+
+bloco('r10-semrede-aviso', async () => {
+  const page = await abrir({});
+  await abrirForm(page);
+  const antes = await page.evaluate(() => { const e = document.getElementById('fSemRede'); return !!e && getComputedStyle(e).display !== 'none'; });
+  await page.setOfflineMode(true); await espera(300);
+  const fora = await page.evaluate(() => { const e = document.getElementById('fSemRede'); return e ? { v: getComputedStyle(e).display !== 'none', t: e.textContent, acima: e.getBoundingClientRect().bottom <= document.getElementById('fEnviar').getBoundingClientRect().top + 1 } : {}; });
+  await page.evaluate(() => document.getElementById('fSemRede').scrollIntoView({ block: 'center' })); await foto(page, 'form-sem-internet-depois-375');
+  await page.setOfflineMode(false); await espera(300);
+  const volta = await page.evaluate(() => { const e = document.getElementById('fSemRede'); return !!e && getComputedStyle(e).display !== 'none'; });
+  ok(!antes && fora.v && /sem internet/.test(fora.t || '') && fora.acima && !volta, 'r10-semrede-aviso: sem internet o formulário avisa, antes do botão, que o pedido vai sair pelo WhatsApp; com rede o aviso some');
+  await fechar(page);
+});
+
+bloco('r10-horarios-voltam', async () => {
+  const page = await abrir({ horariosFora: true });
+  await page.evaluate(() => { document.documentElement.classList.add('cv-off'); document.getElementById('diagnostico').scrollIntoView(); });
+  const sumiu = await ate(() => page.evaluate(() => document.getElementById('horarios').hidden), 10000);
+  page.__op = {};
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  const voltou = await ate(() => page.evaluate(() => !document.getElementById('horarios').hidden && document.querySelectorAll('#horariosLista .horario-chip').length > 0), 6000);
+  const links = await page.evaluate(() => [...document.querySelectorAll('[data-so-horarios]')].every(e => !e.hidden));
+  ok(sumiu && voltou && links, 'r10-horarios-voltam: a rede voltou e os horários livres reaparecem sozinhos, com os links "Ver horários livres" (sem recarregar a página)');
+  await fechar(page);
+});
+
+bloco('r10-horarios-repintam', async () => {
+  // a consulta funciona, falha uma vez (sinal ruim) e volta com a MESMA lista: a caixa tem de reaparecer
+  const page = await abrir({ antes: 'window.__horariosTtl = 0;' });
+  await page.evaluate(() => { document.documentElement.classList.add('cv-off'); document.getElementById('diagnostico').scrollIntoView(); });
+  const pintou = await ate(() => page.evaluate(() => document.querySelectorAll('#horariosLista .horario-chip').length > 0), 10000);
+  page.__op = { horariosFora: true };
+  await abrirForm(page);
+  const sumiu = await ate(() => page.evaluate(() => document.getElementById('horarios').hidden), 6000);
+  await page.keyboard.press('Escape'); await espera(700);
+  page.__op = {};
+  await abrirForm(page);
+  const voltou = await ate(() => page.evaluate(() => !document.getElementById('horarios').hidden && document.querySelectorAll('#horariosLista .horario-chip').length > 0), 6000);
+  ok(pintou && sumiu && voltou, `r10-horarios-repintam: depois de uma falha passageira a caixa de horários volta na consulta seguinte (pintou ${pintou}, sumiu ${sumiu}, voltou ${voltou})`);
+  await fechar(page);
+});
+
+bloco('r10-mapa-semrede', async () => {
+  const page = await abrir({});
+  await page.evaluate(() => { document.documentElement.classList.add('cv-off'); document.getElementById('mapBox').scrollIntoView({ block: 'center' }); });
+  await page.setOfflineMode(true); await espera(200);
+  await page.evaluate(() => document.getElementById('mapLoad').click()); await espera(300);
+  const fora = await page.evaluate(() => ({ quadro: !!document.querySelector('#mapBox iframe'), nota: document.querySelector('#mapBox .map-ph small').textContent, capa: getComputedStyle(document.querySelector('#mapBox .map-ph')).display !== 'none' }));
+  ok(!fora.quadro && fora.capa && /Sem internet/.test(fora.nota), 'r10-mapa-semrede: sem internet "Ver mapa aqui" não troca o endereço por uma página de erro: avisa e mantém a capa ("' + fora.nota.slice(0, 40) + '…")');
+  await page.setOfflineMode(false); await espera(200);
+  await page.evaluate(() => document.getElementById('mapLoad').click()); await espera(300);
+  ok(await page.evaluate(() => document.querySelectorAll('#mapBox iframe').length === 1), 'r10-mapa-semrede: com a rede de volta o mesmo botão abre o mapa');
+  await fechar(page);
 });
 
 // ===================================================================== fim =====================================================================
