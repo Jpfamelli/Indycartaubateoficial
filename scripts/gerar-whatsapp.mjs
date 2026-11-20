@@ -1,4 +1,4 @@
-// Reescreve todos os links wa.me do index.html e do 404.html a partir de scripts/mensagens-whatsapp.mjs.
+// Reescreve todos os links wa.me do index.html, do 404.html e do privacidade.html (rodada 9) a partir de scripts/mensagens-whatsapp.mjs.
 // Idempotente: rodar duas vezes não muda nada. Uso: node scripts/gerar-whatsapp.mjs [--conferir]
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,7 +9,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const conferir = process.argv.includes('--conferir');
 let mudou = 0, total = 0;
 const usados = new Set();
-for (const arquivo of ['index.html', '404.html']) {
+for (const arquivo of ['index.html', '404.html', 'privacidade.html']) {
   const f = path.join(ROOT, arquivo);
   const antes = fs.readFileSync(f, 'utf8');
   const depois = antes.replace(/href="https:\/\/wa\.me\/[^"]*"/g, (m) => {
