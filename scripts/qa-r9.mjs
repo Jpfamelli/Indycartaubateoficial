@@ -299,6 +299,8 @@ try {
     const page = await abrir({ w: 375, data });
     const ops = await page.evaluate(() => [...document.querySelectorAll('#fQuando option')].map(o => o.value + '=' + o.textContent.trim()));
     ok(ops.includes(esperado + ', de manhã=' + esperado + ', de manhã') && ops.includes(esperado + ', à tarde=' + esperado + ', à tarde'), `[${data.slice(0, 16)}] "Quando prefere?" oferece "${esperado}, de manhã / à tarde"`);
+    const sab = data.startsWith('2026-11-21') ? 'Sábado que vem' : 'Sábado';
+    ok(ops.includes(sab + '=' + sab) && ops.filter(o => /^Sábado/.test(o)).length === 1, `[${data.slice(0, 16)}] opção de sábado: "${sab}"`);
     await fechar(page);
   }
 

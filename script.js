@@ -1350,6 +1350,8 @@
     if (dia === 'Sun' || minutos >= 1050) tirar('Hoje');
     if (dia === 'Sat') tirar('Amanhã');
     // Rodada 9: sábado depois das 17h30 e domingo, "Esta semana" já acabou: vira "Semana que vem" (no texto e no que vai para a equipe)
+    // Rodada 9: no sábado, "Sábado" era hoje mesmo (já coberto pelo "Hoje") ou um dia que já passou: vira "Sábado que vem"
+    if (dia === 'Sat') $$('option', q).forEach(o => { if (o.textContent.trim() === 'Sábado') o.textContent = o.value = 'Sábado que vem'; });
     if (dia === 'Sun' || (dia === 'Sat' && minutos >= 1050)) $$('option', q).forEach(o => { if (/^Esta semana/.test(o.textContent.trim())) { o.textContent = o.value = o.textContent.trim().replace(/^Esta semana/, 'Semana que vem'); } });
   })();
   // A caixa já nasce com o tamanho final (esqueleto com altura reservada): quando os horários chegam nada pula na tela,
