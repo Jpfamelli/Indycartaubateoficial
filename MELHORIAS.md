@@ -591,3 +591,5 @@ mudança anterior da própria rodada (02e878b, 8f0612c, 8e2f02b, 786808d) não c
 - **R9-SITE-091** · tela · Rodapé de contato com o telefone fixo (12) 3624-5957 e "Traçar rota" embaixo do endereço · `675dec7`
 - **R9-SITE-092** · desempenho · Recorte da fachada com versão de 640 px e "sizes" com a largura real: o celular baixa 18 KB no lugar de 35 KB (o Lighthouse apontava ~30 KB sobrando) · `ff7a11d`
 - **R9-SITE-093** · celular · Em telas de 320 px o selo da nota do topo não passa mais 17 px da tela · `fa78c4e`
+- **R9-SITE-094** · acessibilidade · A seta do fim do topo leva a "Conheça a IndyCar" e se chama assim (apontava para a faixa que corre e era lida como "Rolar para baixo") · `fe2d2ea`
+- **R9-SITE-095** · conserto · "Quando prefere?" no sábado à noite e no domingo oferece "Semana que vem, de manhã/à tarde" (antes "Esta semana" chegava à equipe para uma semana que tinha acabado) · `00f877a`
