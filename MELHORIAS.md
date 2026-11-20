@@ -583,3 +583,7 @@ mudança anterior da própria rodada (02e878b, 8f0612c, 8e2f02b, 786808d) não c
 - **R9-SITE-083** · teste · Feriados com data fixa (19/11, 18/11, 20/11, 25/11 e sábado antes do Carnaval de 2027): "Quando prefere?", chip do topo e horário do contato · `80dd10f`
 - **R9-SITE-084** · teste · Mapa com referrerPolicy, "Cole aqui" vazio e "toque aqui" quando a janela é barrada, "Voltar ao topo" fora do Tab no topo · `80dd10f`
 - **R9-SITE-085** · teste · Página 404: ações antes da dica do código, link do rodapé com 44 px e fonte Archivo · `80dd10f`
+- **R9-SITE-086** · texto · Leva e traz sem o "pergunte... (consulte condições)": "pergunte no WhatsApp se o leva e traz vale para o seu caso" (passo 2 do diagnóstico e FAQ "Onde fica", com o JSON-LD) · `361ceb8`
+- **R9-SITE-087** · teste · O teste do chip do topo no qa.mjs aceita o aviso de feriado: em 20/11 (Consciência Negra) o npm test falhava sem defeito no site · `d803e35`
+- **R9-SITE-088** · conserto · A nota do rodapé e o ícone do Google Maps levam ao perfil da oficina com as avaliações (o ícone buscava só o endereço; a nota era texto) · `5b31d95`
+- **R9-SITE-089** · acessibilidade · Sem rede, o foco vai para "Abrir no WhatsApp" (o que falta fazer), não para "Fechar"; com o pedido entregue continua no "Fechar" · `97ea26f`
