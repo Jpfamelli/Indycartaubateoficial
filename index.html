@@ -211,7 +211,7 @@
   <link rel="stylesheet" href="styles.css" />
   <!-- Rodada 9: sem JavaScript, as seções que surgem ao rolar ficavam invisíveis (a página aparecia vazia), o aviso abaixo
        ficava atrás do menu fixo e o botão do menu não abria nada -->
-  <noscript><style>.reveal{opacity:1!important;transform:none!important}.sem-js{position:relative;z-index:950}.hamburger{display:none}</style></noscript>
+  <noscript><link rel="stylesheet" href="sem-js.css" /></noscript>
   <!-- favicon: versão mínima da logomarca vetorial (paralelogramo vermelho + banda de pneu) -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M16 10h42l-10 44H6z' fill='%23e50914'/><path d='M24 46l8-7 8 7M24 33l8-7 8 7M24 20l8-7 8 7' fill='none' stroke='white' stroke-width='5'/></svg>" />
   <link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
@@ -1122,7 +1122,7 @@
 
       <div class="contact-grid">
         <!-- Mapa -->
-        <div class="contact-map reveal" id="mapBox" data-map-src="https://maps.google.com/maps?q=Av.%20Bandeirantes%2C%20875%20-%20Parque%20Paduan%2C%20Taubat%C3%A9%20-%20SP%2C%2012070-100&amp;t=&amp;z=15&amp;ie=UTF8&amp;iwloc=&amp;output=embed">
+        <div class="contact-map reveal" id="mapBox" data-map-src="https://www.google.com/maps?q=Av.%20Bandeirantes%2C%20875%20-%20Parque%20Paduan%2C%20Taubat%C3%A9%20-%20SP%2C%2012070-100&amp;t=&amp;z=15&amp;ie=UTF8&amp;iwloc=&amp;output=embed">
           <div class="map-ph">
             <svg class="map-pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.3 7-12a7 7 0 10-14 0c0 5.7 7 12 7 12z" fill="#e50914"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>
             <strong>Av. Bandeirantes, 875</strong>

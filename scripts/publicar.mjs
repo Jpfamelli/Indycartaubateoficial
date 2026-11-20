@@ -26,7 +26,7 @@ for (const [pasta, tipo] of Object.entries(PASTAS)) {
   if (!arquivos.length) { console.error('pasta vazia: ' + pasta); process.exit(1); }
   for (const n of arquivos) { fs.copyFileSync(path.join(ROOT, pasta, n), path.join(DIST, pasta, n)); copiados.push(pasta + '/' + n); }
 }
-for (const f of ['index.html', '404.html', 'privacidade.html', 'robots.txt', 'sitemap.xml', 'script.js', '404.js', 'styles.css', 'manifest.webmanifest', 'icone-192.png', 'icone-512.png']) {
+for (const f of ['index.html', '404.html', 'privacidade.html', 'robots.txt', 'sitemap.xml', 'script.js', '404.js', 'styles.css', '404.css', 'privacidade.css', 'sem-js.css', 'manifest.webmanifest', 'icone-192.png', 'icone-512.png']) {
   if (!copiados.includes(f)) { console.error('faltou ' + f); process.exit(1); }
 }
 
@@ -54,12 +54,28 @@ const antes = h.length;
 h = enxugarHtml(h);
 fs.writeFileSync(html, h);
 tamanhos.push(`index.html ${Math.round(antes / 1024)} → ${Math.round(h.length / 1024)} KB`);
+// Rodada 10: os estilos das páginas pequenas saíram do <style> embutido (CSP sem 'unsafe-inline'): vão minificados e com ?v=<hash>,
+// porque o netlify.toml deixa todo /*.css em cache de um ano.
+const cssPequeno = {};
+for (const arquivo of ['404.css', 'privacidade.css', 'sem-js.css']) {
+  const { code } = transformSync(fs.readFileSync(path.join(ROOT, arquivo), 'utf8'), { loader: 'css', minify: true, charset: 'utf8', legalComments: 'none' });
+  fs.writeFileSync(path.join(DIST, arquivo), code);
+  cssPequeno[arquivo] = crypto.createHash('sha256').update(code).digest('hex').slice(0, 10);
+}
+{
+  const h2 = fs.readFileSync(html, 'utf8');
+  if (!h2.includes('href="sem-js.css"')) { console.error('não achei o link de sem-js.css no index.html'); process.exit(1); }
+  fs.writeFileSync(html, h2.replace('href="sem-js.css"', 'href="sem-js.css?v=' + cssPequeno['sem-js.css'] + '"'));
+}
 // 404.js também vai com ?v=<hash> (o netlify.toml deixa todo /*.js em cache de um ano)
 const js404 = crypto.createHash('sha256').update(fs.readFileSync(path.join(DIST, '404.js'))).digest('hex').slice(0, 10);
 for (const extra of ['404.html', 'privacidade.html']) {
   const p = path.join(DIST, extra);
   let t = enxugarHtml(fs.readFileSync(p, 'utf8'));
   if (extra === '404.html') t = t.replace('src="/404.js"', 'src="/404.js?v=' + js404 + '"');
+  const css = extra.replace('.html', '.css');
+  if (!t.includes('href="/' + css + '"')) { console.error('não achei o link de ' + css + ' em ' + extra); process.exit(1); }
+  t = t.replace('href="/' + css + '"', 'href="/' + css + '?v=' + cssPequeno[css] + '"');
   fs.writeFileSync(p, t);
 }
 

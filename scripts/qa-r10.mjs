@@ -227,6 +227,34 @@ bloco('r10-mapa-semrede', async () => {
   await fechar(page);
 });
 
+bloco('r10-csp', async () => {
+  // as páginas inteiras com o CSP do netlify.toml: nada barrado e o estilo que saiu do <style> continua valendo
+  const semInline = !CSP.includes('unsafe-inline');
+  const vigia = `window.__viol = []; document.addEventListener('securitypolicyviolation', e => window.__viol.push(e.violatedDirective + ' ' + e.blockedURI));`;
+  const p404 = await abrir({ caminho: 'nao-existe', antes: vigia });
+  const r404 = await p404.evaluate(() => ({ viol: window.__viol, cor: getComputedStyle(document.querySelector('.n')).color, fonte: getComputedStyle(document.body).fontFamily, grade: getComputedStyle(document.querySelector('.links')).display }));
+  ok(semInline && !r404.viol.length && !p404.__csp.length && r404.cor === 'rgb(229, 9, 20)' && /Archivo/.test(r404.fonte) && r404.grade === 'grid', `r10-csp: 404 com o estilo no arquivo próprio e CSP sem 'unsafe-inline' (barrados: ${r404.viol.length + p404.__csp.length}; "404" em ${r404.cor})`);
+  await fechar(p404);
+  const pp = await abrir({ caminho: 'privacidade.html', antes: vigia });
+  const rp = await pp.evaluate(() => ({ viol: window.__viol, fundo: getComputedStyle(document.body).backgroundColor, larg: Math.round(document.querySelector('main').getBoundingClientRect().width), fonte: getComputedStyle(document.querySelector('h1')).fontFamily }));
+  ok(semInline && !rp.viol.length && !pp.__csp.length && rp.fundo === 'rgb(13, 14, 18)' && /Archivo/.test(rp.fonte), `r10-csp: privacidade com o estilo no arquivo próprio (barrados: ${rp.viol.length + pp.__csp.length}; fundo ${rp.fundo})`);
+  await fechar(pp);
+  const pi = await abrir({ antes: vigia, movimento: true, w: 1280 });
+  await pi.evaluate(() => { document.documentElement.classList.add('cv-off'); window.scrollTo(0, document.body.scrollHeight); });
+  await espera(1500);
+  await abrirForm(pi);
+  await pi.keyboard.press('Escape'); await espera(500);
+  await pi.evaluate(() => document.getElementById('mapLoad').click()); await espera(400);
+  const ri = await pi.evaluate(() => ({ viol: window.__viol, mapa: (document.querySelector('#mapBox iframe') || {}).src || '' }));
+  ok(semInline && !ri.viol.length && !pi.__csp.length, `r10-csp: página principal inteira (efeitos, formulário, mapa) sem nada barrado pelo CSP` + (ri.viol.length ? ': ' + ri.viol.slice(0, 3).join(' | ') : ''));
+  ok(ri.mapa.startsWith('https://www.google.com/maps?') && /frame-src https:\/\/www\.google\.com;/.test(CSP), 'r10-csp-dominios: o mapa entra direto por www.google.com (sem o redirecionamento de maps.google.com) e é a única origem liberada para quadro');
+  await fechar(pi);
+  const ps = await abrir({ semJs: true });
+  const rs = await ps.evaluate(() => ({ op: getComputedStyle(document.querySelector('#sobre .reveal')).opacity, menu: getComputedStyle(document.querySelector('.hamburger')).display, aviso: getComputedStyle(document.querySelector('.sem-js')).zIndex }));
+  ok(semInline && rs.op === '1' && rs.menu === 'none' && rs.aviso === '950', `r10-csp: sem JavaScript a página continua aparecendo (seções com opacidade ${rs.op}, aviso por cima do menu), agora com o estilo vindo de sem-js.css`);
+  await fechar(ps);
+});
+
 // ===================================================================== fim =====================================================================
 try {
   for (const [nome, fn] of blocos) {

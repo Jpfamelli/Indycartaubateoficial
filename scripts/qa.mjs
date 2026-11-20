@@ -461,7 +461,7 @@ console.log('\n== cabeçalhos de segurança ==');
   const r = await fetch(BASE + '/');
   const h = k => r.headers.get(k) || '';
   const csp = h('content-security-policy');
-  ok(/script-src 'self'(;|$)/.test(csp) && /frame-ancestors/.test(csp) && csp.includes('frame-src https://maps.google.com'), 'CSP com script só do site, frame-ancestors e mapa liberado');
+  ok(/script-src 'self'(;|$)/.test(csp) && /frame-ancestors/.test(csp) && csp.includes('frame-src https://www.google.com'), 'CSP com script só do site, frame-ancestors e mapa liberado');
   ok(csp.includes("connect-src 'self' https://nppfqhavqahapmugnyng.supabase.co"), 'CSP libera só o Supabase da oficina em connect-src (formulário → site-lead)');
   ok(/max-age=[0-9]{8}/.test(h('strict-transport-security')), 'HSTS de 1 ano');
   ok(h('permissions-policy').includes('camera=()') && h('permissions-policy').includes('browsing-topics=()'), 'Permissions-Policy fecha câmera, microfone, localização, pagamento e rastreio');
