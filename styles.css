@@ -1745,6 +1745,9 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
 .horarios-nota { grid-column: 1 / -1; margin-top: 6px; font-size: .88rem; color: var(--gray); }
 .horarios-dia-rot .feriado { display: block; font-size: .78rem; color: #ffcf6e; letter-spacing: .04em; }
 .hl-status.feriado .hl-dot { background: #ffcf6e; box-shadow: none; animation: none; }
+/* Rodada 9: em feriado o chip tem texto longo ("Hoje é feriado (Consciência Negra)" + "confirme no WhatsApp se abrimos")
+   e saía cortado no celular: agora quebra em duas linhas dentro do próprio chip */
+.hero-highlights .hl-status.feriado { white-space: normal; flex-wrap: wrap; row-gap: 2px; border-radius: 22px; }
 @media (prefers-contrast: more) {
   .hero-cliente, .promo-proximo, .area-pedido, .lembrar, .horarios-nota { color: #fff; }
   .field-dica, .form-mini, .horarios-sub, .field-conta { color: #fff !important; }
