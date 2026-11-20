@@ -85,7 +85,7 @@ const sm = path.join(DIST, 'sitemap.xml');
 fs.writeFileSync(sm, fs.readFileSync(sm, 'utf8').replace(/<lastmod>[^<]*<\/lastmod>/g, '<lastmod>' + hoje + '</lastmod>'));
 
 // Orçamento de peso (rodada 7): falha o publicar se a página engordar sem querer. Valores em bytes, depois da minificação.
-const ORCAMENTO = { 'index.html': 96 * 1024, 'styles.css': 92 * 1024, 'script.js': 66 * 1024 }; // rodada 10: script.js de 64 para 66 KB (avisos de rede ruim e fila sem pedido em dobro)
+const ORCAMENTO = { 'index.html': 96 * 1024, 'styles.css': 92 * 1024, 'script.js': 64 * 1024 };
 const estouros = Object.entries(ORCAMENTO).filter(([f, max]) => fs.statSync(path.join(DIST, f)).size > max);
 if (estouros.length) { console.error('acima do orçamento de peso: ' + estouros.map(([f, max]) => `${f} ${fs.statSync(path.join(DIST, f)).size} > ${max}`).join('; ')); process.exit(1); }
 

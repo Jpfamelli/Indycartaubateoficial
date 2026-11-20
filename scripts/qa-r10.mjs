@@ -402,6 +402,21 @@ bloco('r10-csp', async () => {
   await fechar(ps);
 });
 
+bloco('r10-feriado-fixo', async () => {
+  // a lista de feriados acabava em 2027: do Ano-Novo de 2028 em diante o site voltava a dizer "Aberto agora" no Natal
+  const page = await abrir({ data: '2028-12-25T10:00:00-03:00' }); // segunda-feira, 10h
+  const chip = await page.evaluate(() => document.getElementById('statusAberto').textContent.replace(/\s+/g, ' ').trim());
+  ok(/feriado \(Natal\)/.test(chip) && !/Aberto agora/.test(chip), `r10-feriado-fixo: feriado de data fixa vale em qualquer ano (25/12/2028, segunda, 10h: "${chip}")`);
+  await fechar(page);
+  const p2 = await abrir({ data: '2026-11-20T10:00:00-03:00' }); // os de 2026 seguem iguais: Consciência Negra (fixo) e a véspera do Carnaval (móvel)
+  const hoje = await p2.evaluate(() => document.getElementById('statusAberto').textContent.replace(/\s+/g, ' ').trim());
+  await fechar(p2);
+  const p3 = await abrir({ data: '2026-02-14T18:30:00-03:00' }); // sábado depois de fechar: segunda (16/02) é Carnaval
+  const vespera = await p3.evaluate(() => document.getElementById('statusAberto').textContent.replace(/\s+/g, ' ').trim());
+  await fechar(p3);
+  ok(/Consciência Negra/.test(hoje) && /segunda é feriado/.test(vespera), `r10-feriado-fixo: os feriados de 2026 seguem como estavam, fixo e móvel ("${hoje}" · "${vespera}")`);
+});
+
 // ===================================================================== fim =====================================================================
 try {
   for (const [nome, fn] of blocos) {

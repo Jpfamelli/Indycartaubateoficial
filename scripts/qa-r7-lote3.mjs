@@ -101,8 +101,8 @@ export async function lote3({ abrir, ok, espera, BASE, aplicarRedirect, ROOT, br
     const jsonld = [...distHtml.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => { try { JSON.parse(m[1]); return true; } catch (_) { return false; } });
     ok(jsonld.length === 3 && jsonld.every(Boolean), 'os 3 blocos JSON-LD continuam válidos depois de enxugar o HTML');
     ok(/<noscript>/.test(distHtml) && distHtml.includes('id="leadForm"') && distHtml.includes('<textarea'), 'noscript, formulário e textarea intactos no HTML enxuto');
-    const limites = { 'index.html': 96, 'styles.css': 92, 'script.js': 66 }; // rodada 10: JS de 64 para 66 KB (rede ruim, fila sem pedido em dobro); o mesmo número do publicar.mjs
-    ok(Object.entries(limites).every(([f, kb]) => fs.statSync(dist(f)).size <= kb * 1024), 'orçamento de peso: HTML ≤ 96 KB, CSS ≤ 92 KB, JS ≤ 66 KB depois de minificar');
+    const limites = { 'index.html': 96, 'styles.css': 92, 'script.js': 64 };
+    ok(Object.entries(limites).every(([f, kb]) => fs.statSync(dist(f)).size <= kb * 1024), 'orçamento de peso: HTML ≤ 96 KB, CSS ≤ 92 KB, JS ≤ 64 KB depois de minificar');
     let sobra = 0;
     try { execFileSync(process.execPath, [path.join(ROOT, 'scripts', 'css-morto.mjs'), '--silencioso', '--falhar'], { cwd: ROOT, stdio: 'pipe' }); } catch (_) { sobra = 1; }
     ok(sobra === 0, 'styles.css sem regra para classe que nenhuma página usa (npm run css-morto)');

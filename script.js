@@ -60,8 +60,11 @@
   const POUPAR = REDE.saveData === true || /(^|-)2g$/.test(REDE.effectiveType || '');
   const sessao = {
     get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
-    set(k, v) { try { sessionStorage.setItem(k, v); } catch (_) {} }
+    set(k, v) { try { sessionStorage.setItem(k, v); } catch (_) {} },
+    del(k) { try { sessionStorage.removeItem(k); } catch (_) {} },
   };
+  // chaves do que a sessão guarda: o rascunho do formulário e "o convite já apareceu (ou não precisa mais)"
+  const RASCUNHO = 'indycar_rascunho', PROMO = 'indycar_promo';
   // O mesmo para o que fica no aparelho (modo privado ou armazenamento bloqueado não derrubam a página).
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
@@ -883,7 +886,7 @@
     $$('#navbar, main, footer, aside[aria-label="Atalhos de contato"]').forEach(e => { if (aberto) e.setAttribute('inert', ''); else e.removeAttribute('inert'); });
   }
   const openEl = (el) => {
-    if (el === formBackdrop) sessao.set('indycar_promo', '1'); // rodada 9: quem já abriu o formulário não recebe o convite
+    if (el === formBackdrop) sessao.set(PROMO, '1'); // rodada 9: quem já abriu o formulário não recebe o convite
     if (!el.classList.contains('open')) lastFocus = document.activeElement;
     el.classList.add('open');
     fundoInerte();
@@ -997,7 +1000,7 @@
   // promo aparece após 8s (uma vez por sessão)
   // quem já clicou no WhatsApp não precisa do convite
   document.addEventListener('click', e => {
-    if (e.target.closest && e.target.closest('a[href*="wa.me"]')) sessao.set('indycar_promo', '1');
+    if (e.target.closest && e.target.closest('a[href*="wa.me"]')) sessao.set(PROMO, '1');
   });
   // Rodada 9: o convite não interrompe quem está digitando (antes roubava o foco do campo no meio da palavra), nem
   // quem está com o menu aberto: espera mais 6 s (até 3 vezes) e desiste. Também não aparece para quem já abriu o
@@ -1005,13 +1008,13 @@
   const pedidoRecente = () => { try { const p = JSON.parse(store.get('indycar_pedido') || 'null'); return !!(p && p.protocolo && Date.now() - p.em < 36 * 3600000); } catch (_) { return false; } };
   const ocupado = () => formBackdrop.classList.contains('open') || hamburger.classList.contains('open') ||
     !!(document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
-  if (!sessao.get('indycar_promo') && !pedidoRecente()) {
+  if (!sessao.get(PROMO) && !pedidoRecente()) {
     let tentativas = 0;
     setTimeout(function convidar() {
-      if (sessao.get('indycar_promo') || pedidoRecente()) return;
+      if (sessao.get(PROMO) || pedidoRecente()) return;
       if (ocupado()) { if (++tentativas <= 3) setTimeout(convidar, 6000); return; }
       openEl(promoBackdrop);
-      sessao.set('indycar_promo', '1');
+      sessao.set(PROMO, '1');
     }, 8000);
   }
 
@@ -1022,6 +1025,11 @@
   // Rodada 5: o pedido vai para o banco da oficina pela Edge Function site-lead (lead no CRM + tarefa para a equipe).
   // Se a rede falhar, o caminho antigo continua valendo: abre o WhatsApp com a mesma mensagem — nada se perde.
   const SITE_LEAD_URL = 'https://nppfqhavqahapmugnyng.supabase.co/functions/v1/site-lead';
+  // O pedido vai ao servidor do mesmo jeito no envio e no reenvio da fila: POST com limite de 9 s.
+  const postarPedido = (pedido) => {
+    const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), 9000);
+    return fetch(SITE_LEAD_URL, { method: 'POST', mode: 'cors', signal: ctrl.signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify(pedido) }).finally(() => clearTimeout(t));
+  };
   const formOk = $('#formOk');
   const formHead = $('.form-modal-head');
 
@@ -1147,8 +1155,8 @@
     // um cliente de verdade sumia calado), fica a mensagem pronta com o botão do WhatsApp. Robô não ganha nada com isso.
     const isca = $('#fRef');
     if (isca && isca.value.trim()) {
-      try { sessionStorage.removeItem('indycar_rascunho'); } catch (_) {}
-      mostrarSucesso({ ok: true, direto: true, mensagem: 'Para o pedido chegar à oficina, mande a mensagem pronta pelo WhatsApp: é só tocar no botão abaixo.' }, textoWa, servicoWa);
+      sessao.del(RASCUNHO);
+      mostrarSucesso({ ok: true, direto: true, mensagem: 'Falta mandar a mensagem pronta pelo WhatsApp: é só tocar no botão abaixo.' }, textoWa, servicoWa);
       form.reset(); limparHorario(); comecouEm = 0;
       return;
     }
@@ -1164,17 +1172,10 @@
       decorrido: Date.now() - comecouEm, empresa: (isca || {}).value || '',
     };
     try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 9000);
       // Rodada 10: internet lenta. Depois de 4 s sem resposta a pessoa fica sabendo que o site ainda está tentando
       // (antes eram até 9 s só com "Enviando…", e dava vontade de fechar ou tocar de novo).
-      lento = setTimeout(() => mostrarAviso('Está demorando mais que o normal. Aguarde só mais um pouco, não precisa tocar de novo.', true), 4000);
-      const r = await fetch(SITE_LEAD_URL, {
-        method: 'POST', mode: 'cors', signal: ctrl.signal,
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(pedido),
-      });
-      clearTimeout(t);
+      lento = setTimeout(() => mostrarAviso('Está demorando mais que o normal. Aguarde, não precisa tocar de novo.', true), 4000);
+      const r = await postarPedido(pedido);
       const corpo = await r.json().catch(() => ({}));
       if (r.status === 400 && corpo.erro) {
         // Campo errado: a pessoa corrige. Rodada 10: o campo que o servidor recusou fica marcado e recebe o foco
@@ -1201,13 +1202,12 @@
       const SEGUE = ' Abrimos o WhatsApp da oficina com a mensagem pronta: é só tocar em enviar. Se a janela não apareceu, use o botão abaixo.';
       resposta = { ok: true, direto: true, mensagem:
         motivo === 'limite' ? (textoDoServidor || 'Recebemos vários pedidos deste aparelho agora.') + SEGUE
-        : motivo === 'servidor' ? 'O sistema da oficina não respondeu agora.' + SEGUE + ' O site tenta registrar de novo sozinho mais tarde.'
-        : 'A internet não deixou o pedido chegar pelo site, então abrimos o WhatsApp da oficina com a mensagem pronta: é só tocar em enviar. Se a janela não apareceu, use o botão abaixo. O site também tenta de novo sozinho quando a internet voltar.' };
+        : (motivo === 'servidor' ? 'O sistema da oficina não respondeu agora.' : 'A internet não deixou o pedido chegar pelo site.') + SEGUE + ' O site tenta registrar de novo sozinho.' };
       // Rodada 7: o pedido também fica numa fila no aparelho e é reenviado ao banco quando a rede volta (nada se perde).
       // Rodada 10: menos o que bateu no limite de pedidos; reenviar sozinho só bateria no limite de novo.
       if (motivo !== 'limite') window.dispatchEvent(new CustomEvent('indycar:pedido-offline', { detail: { pedido } }));
     }
-    sessao.set('indycar_promo', '1');
+    sessao.set(PROMO, '1');
     resposta.horarioPedido = horarioRotulo;
     horariosPromessa = null; horariosEm = 0; // a Agenda mudou: a próxima consulta traz a lista nova
     window.dispatchEvent(new CustomEvent('indycar:pedido', { detail: { resposta, pedido, horarioRotulo } }));
@@ -1267,7 +1267,7 @@
     corpo.dias.slice(0, modo === 'form' && window.innerWidth <= 480 ? 2 : 3).forEach(dia => {
       const linha = document.createElement('div'); linha.className = 'horarios-dia';
       const rot = document.createElement('span'); rot.className = 'horarios-dia-rot'; rot.textContent = dia.rotulo;
-      const feriadoDia = FERIADOS[dia.data];
+      const feriadoDia = feriado(dia.data);
       if (feriadoDia) { const f = document.createElement('small'); f.className = 'feriado'; f.textContent = 'feriado'; rot.appendChild(f); temFeriado = true; }
       const horas = document.createElement('div'); horas.className = 'horarios-horas';
       dia.horas.slice(0, 4).forEach(hora => {
@@ -1510,18 +1510,19 @@
 
   // Rodada 7: feriados nacionais 2026–2027 (a mesma lista do Comunicar, dados.js › FERIADOS). A oficina pode ou não abrir
   // nesses dias: o site não promete nada, só avisa e manda confirmar pelo WhatsApp.
-  const FERIADOS = {
-    '2026-01-01': 'Confraternização Universal', '2026-02-16': 'Carnaval', '2026-02-17': 'Carnaval',
-    '2026-04-03': 'Sexta-feira Santa', '2026-04-21': 'Tiradentes', '2026-05-01': 'Dia do Trabalho',
-    '2026-06-04': 'Corpus Christi', '2026-09-07': 'Independência', '2026-10-12': 'Nossa Senhora Aparecida',
-    '2026-11-02': 'Finados', '2026-11-15': 'Proclamação da República', '2026-11-20': 'Consciência Negra',
-    '2026-12-25': 'Natal',
-    '2027-01-01': 'Confraternização Universal', '2027-02-08': 'Carnaval', '2027-02-09': 'Carnaval',
-    '2027-03-26': 'Sexta-feira Santa', '2027-04-21': 'Tiradentes', '2027-05-01': 'Dia do Trabalho',
-    '2027-05-27': 'Corpus Christi', '2027-09-07': 'Independência', '2027-10-12': 'Nossa Senhora Aparecida',
-    '2027-11-02': 'Finados', '2027-11-15': 'Proclamação da República', '2027-11-20': 'Consciência Negra',
-    '2027-12-25': 'Natal',
+  const FERIADOS_FIXOS = {
+    '01-01': 'Confraternização Universal', '04-21': 'Tiradentes', '05-01': 'Dia do Trabalho', '09-07': 'Independência',
+    '10-12': 'Nossa Senhora Aparecida', '11-02': 'Finados', '11-15': 'Proclamação da República', '11-20': 'Consciência Negra',
+    '12-25': 'Natal',
   };
+  const FERIADOS_MOVEIS = {
+    '2026-02-16': 'Carnaval', '2026-02-17': 'Carnaval', '2026-04-03': 'Sexta-feira Santa', '2026-06-04': 'Corpus Christi',
+    '2027-02-08': 'Carnaval', '2027-02-09': 'Carnaval', '2027-03-26': 'Sexta-feira Santa', '2027-05-27': 'Corpus Christi',
+  };
+  const feriado = iso => FERIADOS_MOVEIS[iso] || FERIADOS_FIXOS[iso.slice(5)];
+  // dia do calendário + n dias, no mesmo formato AAAA-MM-DD
+  const maisDias = (iso, n) => { const [a, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(a, m - 1, d + n)); };
+  const emIso = dt => dt.toISOString().slice(0, 10);
   // Horário comercial: Seg–Sáb 8h–17h30 · Dom fechado (sempre no fuso de Taubaté)
   function agoraSP() {
     const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
@@ -1541,7 +1542,7 @@
       const { dia, minutos, data } = agoraSP();
       const aberto = isBusinessHours();
       // Rodada 7: em feriado nacional o site não afirma "Aberto agora" (a equipe confirma pelo WhatsApp se abre)
-      const feriadoHoje = FERIADOS[data];
+      const feriadoHoje = feriado(data);
       chip.classList.toggle('feriado', !!feriadoHoje && dia !== 'Sun');
       if (feriadoHoje && dia !== 'Sun') {
         chip.classList.remove('fechado');
@@ -1556,11 +1557,10 @@
       else {
         // Rodada 9: o próximo dia de abertura pode ser feriado (de 19/11 para 20/11, Consciência Negra; de sábado para a segunda
         // de Carnaval): aí o chip não promete "abre amanhã, 8h", avisa e manda confirmar, como o chip de hoje já fazia.
-        const [a, m, d] = data.split('-').map(Number);
         const passo = dia === 'Sat' && minutos >= 1050 ? 2 : dia === 'Sun' || minutos >= 1050 ? 1 : 0;
         const quando = passo === 0 ? 'hoje' : dia === 'Sat' || dia === 'Sun' ? 'segunda' : 'amanhã';
-        const proximo = new Date(Date.UTC(a, m - 1, d + passo)).toISOString().slice(0, 10);
-        detalhe.textContent = FERIADOS[proximo] ? quando + ' é feriado' : 'abre ' + quando + ', 8h';
+        const proximo = emIso(maisDias(data, passo));
+        detalhe.textContent = feriado(proximo) ? quando + ' é feriado' : 'abre ' + quando + ', 8h';
       }
       chip.hidden = false;
     }
@@ -1572,11 +1572,10 @@
   (function quandoEmFeriado() {
     const q = $('#fQuando'); if (!q) return;
     const { data } = agoraSP();
-    const [a, m, d] = data.split('-').map(Number);
-    const amanha = new Date(Date.UTC(a, m - 1, d + 1)).toISOString().slice(0, 10);
+    const amanha = emIso(maisDias(data, 1));
     for (const [txt, dia] of [['Hoje', data], ['Amanhã', amanha]]) {
       const o = $$('option', q).find(x => x.textContent.trim() === txt);
-      if (o && FERIADOS[dia]) { o.value = txt; o.textContent = txt + ' (feriado: a equipe confirma)'; }
+      if (o && feriado(dia)) { o.value = txt; o.textContent = txt + ' (feriado: a equipe confirma)'; }
     }
   })();
 
@@ -1584,14 +1583,14 @@
   // chip do topo e os horários livres já faziam. Antes, "Segunda a sábado: 8h às 17h30" valia até para a véspera do feriado.
   (function feriadoNoContato() {
     const p = $$('.contact-list p').find(x => x.textContent.includes('Domingo: fechado')); if (!p) return;
-    const { data } = agoraSP(); const [a, m, d] = data.split('-').map(Number);
+    const { data } = agoraSP();
     const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
     for (let i = 0; i <= 7; i++) {
-      const dt = new Date(Date.UTC(a, m - 1, d + i)), iso = dt.toISOString().slice(0, 10);
-      if (!FERIADOS[iso] || dt.getUTCDay() === 0) continue;
+      const dt = maisDias(data, i), iso = emIso(dt);
+      if (!feriado(iso) || dt.getUTCDay() === 0) continue;
       const quando = i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : DIAS[dt.getUTCDay()].replace(/^./, c => c.toUpperCase()) + ', ' + iso.slice(8) + '/' + iso.slice(5, 7) + ',';
       const s = document.createElement('small'); s.className = 'contato-feriado';
-      s.textContent = quando + ' é feriado (' + FERIADOS[iso] + '): confirme no WhatsApp se a oficina abre.';
+      s.textContent = quando + ' é feriado (' + feriado(iso) + '): confirme no WhatsApp se a oficina abre.';
       p.after(s); break;
     }
   })();
@@ -2616,7 +2615,7 @@
       // capa fica (com o endereço escrito) e avisa; quando a rede voltar, o mesmo botão abre o mapa.
       if (navigator.onLine === false) {
         const nota = $('.map-ph small', box);
-        if (nota) { nota.setAttribute('role', 'status'); nota.textContent = 'Sem internet agora: o mapa não abre. O endereço está aqui em cima; tente de novo quando a rede voltar.'; }
+        if (nota) { nota.setAttribute('role', 'status'); nota.textContent = 'Sem internet: o mapa abre quando a rede voltar. O endereço está aqui em cima.'; }
         return;
       }
       aberto = true;
@@ -2694,11 +2693,11 @@
     }
     function salvarRascunho() {
       const v = valores();
-      if (Object.entries(v).some(([k, x]) => k !== 'servico' && String(x).trim())) sessao.set('indycar_rascunho', JSON.stringify(v));
+      if (Object.entries(v).some(([k, x]) => k !== 'servico' && String(x).trim())) sessao.set(RASCUNHO, JSON.stringify(v));
     }
     form.addEventListener('input', salvarRascunho);
     form.addEventListener('change', salvarRascunho);
-    const rascunho = lerJson(sessao.get('indycar_rascunho'));
+    const rascunho = lerJson(sessao.get(RASCUNHO));
     if (rascunho) preencher(rascunho);
 
     // --- Lembrar meus dados neste aparelho (localStorage, só se a pessoa marcar) ---
@@ -2715,7 +2714,7 @@
     if (esquecer) esquecer.addEventListener('click', () => {
       store.del(EU);
       for (const sel of Object.values(CAMPOS)) { const el = $(sel); if (el) { el.value = ''; if (el.id === 'fMsg') el.dispatchEvent(new Event('input')); } }
-      try { sessionStorage.removeItem('indycar_rascunho'); } catch (_) {}
+      sessao.del(RASCUNHO);
       if (chk) chk.checked = false;
       esquecer.hidden = true;
       const aviso = $('#fHorarioEscolhido'); if (aviso) aviso.textContent = 'Seus dados foram apagados deste aparelho.';
@@ -2739,7 +2738,7 @@
     }
     window.addEventListener('indycar:pedido', (e) => {
       const { resposta, pedido, horarioRotulo } = e.detail || {};
-      try { sessionStorage.removeItem('indycar_rascunho'); } catch (_) {}
+      sessao.del(RASCUNHO);
       if (chk && chk.checked && pedido) {
         store.set(EU, JSON.stringify({ em: Date.now(), nome: pedido.nome, tel: ($('#fPhone') || {}).value || '', carro: pedido.carro || '', placa: pedido.placa || '' }));
       } else if (chk && !chk.checked) store.del(EU);
@@ -2750,7 +2749,7 @@
       // Rodada 10: o pedido chegou agora. Se o mesmo (telefone e serviço) ainda esperava na fila de uma tentativa sem
       // rede, sai de lá: senão ele seria reenviado depois e a ficha do contato ganharia um "novo envio" repetido.
       if (resposta && !resposta.direto && pedido) {
-        const resto = lerFila().filter(x => !(x.pedido.telefone === pedido.telefone && x.pedido.servico === pedido.servico));
+        const resto = filaSem(pedido);
         if (resto.length) store.set(FILA, JSON.stringify(resto)); else store.del(FILA);
       }
     });
@@ -2761,12 +2760,13 @@
     // Rodada 10: o que está guardado no aparelho não é de confiança. Valor estragado (não é lista, item sem pedido) vale como fila
     // vazia; antes um valor torto derrubava o reenvio e o pedido sem rede seguinte não era guardado.
     const lerFila = () => { const v = lerJson(store.get(FILA)); return (Array.isArray(v) ? v : []).filter(x => x && x.em && x.pedido && typeof x.pedido === 'object' && Date.now() - x.em < DIA); };
+    const filaSem = p => lerFila().filter(x => !(x.pedido.telefone === p.telefone && x.pedido.servico === p.servico)); // a fila sem este mesmo pedido (telefone e serviço)
     window.addEventListener('indycar:pedido-offline', (e) => {
       const pedido = e.detail && e.detail.pedido;
       if (!pedido) return;
       // Rodada 10: o mesmo pedido de novo (mesmo telefone e serviço, a pessoa tocou em enviar duas vezes sem rede)
       // troca o que estava guardado em vez de entrar duas vezes na fila.
-      const f = lerFila().filter(x => !(x.pedido.telefone === pedido.telefone && x.pedido.servico === pedido.servico));
+      const f = filaSem(pedido);
       f.push({ em: Date.now(), pedido });
       store.set(FILA, JSON.stringify(f.slice(-3)));
     });
@@ -2774,10 +2774,8 @@
     // Rodada 10: duas abas do site abertas reenviavam a mesma fila ao mesmo tempo (dois pedidos iguais chegando juntos
     // ao servidor). Só uma aba por vez esvazia a fila (Web Locks); navegador sem esse recurso segue como antes.
     function esvaziarFila() {
-      if (navigator.locks && navigator.locks.request) {
-        try { return navigator.locks.request('indycar_fila', { ifAvailable: true }, (trava) => (trava ? esvaziarFilaAgora() : undefined)).catch(() => {}); } catch (_) {}
-      }
-      return esvaziarFilaAgora();
+      const L = navigator.locks;
+      return L ? L.request(FILA, { ifAvailable: true }, trava => trava && esvaziarFilaAgora()).catch(() => {}) : esvaziarFilaAgora();
     }
     async function esvaziarFilaAgora() {
       if (esvaziando || navigator.onLine === false) return;
@@ -2787,9 +2785,7 @@
       const processados = [];
       for (const item of f) {
         try {
-          const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 9000);
-          const r = await fetch(SITE_LEAD_URL, { method: 'POST', mode: 'cors', signal: ctrl.signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify(item.pedido) });
-          clearTimeout(t);
+          const r = await postarPedido(item.pedido);
           if (r.status < 500 && r.status !== 429) processados.push(JSON.stringify(item));
           // Rodada 9: o pedido que esperava a rede chegou: a pessoa fica sabendo (antes o reenvio era mudo e o
           // "Seu pedido está com a equipe" nunca aparecia para ele)
