@@ -1057,7 +1057,9 @@
     if (!formOk) return;
     form.hidden = true;
     if (formHead) formHead.hidden = true;
-    $('#formOkTitulo').textContent = resposta.repetido ? 'Já estamos com o seu pedido!' : 'Pedido enviado!';
+    // Rodada 9: quando a rede falhou e o WhatsApp abriu, o pedido ainda NÃO chegou: o título não diz "Pedido enviado!"
+    const ico = $('.form-ok-ico', formOk); if (ico) ico.hidden = !!resposta.direto; // sem o ✓ de concluído enquanto falta mandar
+    $('#formOkTitulo').textContent = resposta.direto ? 'Falta só mandar no WhatsApp' : resposta.repetido ? 'Já estamos com o seu pedido!' : 'Pedido enviado!';
     $('#formOkTexto').textContent = (resposta.mensagem || 'A equipe confirma o horário com você pelo WhatsApp, de segunda a sábado, das 8h às 17h30.') + (resposta.horarioPedido ? ' Horário pedido: ' + resposta.horarioPedido + '.' : '');
     const proto = $('#formOkProto');
     if (proto) { proto.hidden = !resposta.protocolo; if (resposta.protocolo) $('b', proto).textContent = resposta.protocolo; }
@@ -1168,12 +1170,12 @@
     } catch (_) { /* sem rede ou servidor fora: segue pelo WhatsApp */ }
     estadoEnviando(false);
 
-    launchConfetti();                 // 🎉 bandeira quadriculada
+    if (resposta) launchConfetti();   // 🎉 bandeira quadriculada, só quando o pedido chegou de verdade (rodada 9)
     if (!resposta) {
       // O banco não respondeu: abre o WhatsApp com a mesma mensagem (comportamento das rodadas anteriores).
       window.open(linkWhatsApp(textoWa, servicoWa), '_blank', 'noopener');
       rastrearClique(servicoWa);
-      resposta = { ok: true, direto: true, mensagem: 'Seu pedido abriu no WhatsApp da oficina. Se a janela não apareceu, toque no botão abaixo.' };
+      resposta = { ok: true, direto: true, mensagem: 'A internet não deixou o pedido chegar pelo site, então abrimos o WhatsApp da oficina com a mensagem pronta: é só tocar em enviar. Se a janela não apareceu, use o botão abaixo. O site também tenta de novo sozinho quando a internet voltar.' };
       // Rodada 7: o pedido também fica numa fila no aparelho e é reenviado ao banco quando a rede volta (nada se perde)
       window.dispatchEvent(new CustomEvent('indycar:pedido-offline', { detail: { pedido } }));
     }
