@@ -45,23 +45,31 @@ const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers
 /**
  * Abre a página. op: { w, h, caminho, data (ISO fixa), movimento, convite, antes (código antes da página), ctx (reusar o
  * contexto: outra aba do mesmo navegador), semJs, horarios (dias), horariosFora (true = a consulta falha),
- * resposta: { status, corpo, atraso } ou 'semrede' para o envio do pedido }. O que a página manda fica em page.__posts.
+ * resposta: { status, corpo, atraso } ou 'semrede' para o envio do pedido, chave (liga o registro de visita),
+ * rastreio: 'semrede' (o registro de visita não sai do aparelho) }. O que a página manda fica em page.__posts.
  * page.__op pode ser trocado no meio do teste (a rede "volta").
  */
 async function abrir(op = {}) {
   const ctx = op.ctx || await browser.createBrowserContext();
   const page = await ctx.newPage();
-  page.__ctx = ctx; page.__posts = []; page.__csp = []; page.__op = op; page.__horarios = 0;
+  page.__ctx = ctx; page.__posts = []; page.__csp = []; page.__op = op; page.__horarios = 0; page.__rastreio = [];
   if (op.semJs) await page.setJavaScriptEnabled(false);
   await page.setRequestInterception(true);
   page.on('request', async (r) => {
     const u = r.url(), o = page.__op;
+    // op.chave: o script.js vai com uma chave pública de mentira, para o registro de visita (rastreio) rodar no teste
+    if (o.chave && u.split('?')[0] === BASE + '/script.js') return r.respond({ status: 200, contentType: 'text/javascript', headers: { 'content-security-policy': CSP }, body: fs.readFileSync(path.join(ROOT, 'script.js'), 'utf8').replace("const RASTREIO_CHAVE = '';", "const RASTREIO_CHAVE = 'sb_publishable_chave-de-mentira-so-para-o-teste';") });
     if (u.startsWith(BASE)) return r.continue();
     if (u.startsWith(BANCO) && r.method() === 'OPTIONS') return r.respond({ status: 204, headers: CORS });
     if (u.startsWith(BANCO) && u.includes('/horarios') && r.method() === 'GET') {
       page.__horarios++;
       if (o.horariosFora) return r.abort('internetdisconnected');
       return r.respond({ status: 200, contentType: 'application/json', headers: CORS, body: JSON.stringify({ ok: true, atualizado_em: '2026-11-19T13:00:00Z', dias: o.horarios || DIAS }) });
+    }
+    if (u.startsWith(BANCO) && u.includes('/rpc/trafego_rastreio_registrar')) {
+      barrados.push('POST rastreio'); page.__rastreio.push(r.postData() || '');
+      if (o.rastreio === 'semrede') return r.abort('internetdisconnected');
+      return r.respond({ status: 200, contentType: 'application/json', headers: CORS, body: JSON.stringify({ ok: true, codigo: 'ABCDE' }) });
     }
     if (u.startsWith(BANCO) && !['GET', 'HEAD'].includes(r.method())) {
       barrados.push(r.method() + ' ' + u.slice(BANCO.length)); page.__posts.push(r.postData() || '');
@@ -78,8 +86,9 @@ async function abrir(op = {}) {
     if (o.data) { const R = Date; const F = R.parse(o.data); globalThis.Date = class extends R { constructor(...a) { if (a.length) super(...a); else super(F); } static now() { return F; } }; }
     if (!o.convite) { try { sessionStorage.setItem('indycar_promo', '1'); } catch (_) {} }
     window.__abertas = []; window.open = (u) => { window.__abertas.push(String(u)); return null; }; // a janela nova (WhatsApp) nunca abre no teste
+    if (o.chave) { try { Object.defineProperty(Navigator.prototype, 'webdriver', { get: () => false }); } catch (_) {} } // o registro de visita não roda em navegador comandado
     if (o.antes) { try { new Function(o.antes)(); } catch (_) {} }
-  }, { data: op.data || '', convite: !!op.convite, antes: op.antes || '' });
+  }, { data: op.data || '', convite: !!op.convite, antes: op.antes || '', chave: !!op.chave });
   await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: op.movimento ? 'no-preference' : 'reduce' }]);
   const w = op.w || 375;
   await page.setViewport({ width: w, height: op.h || (w < 768 ? 812 : 900), isMobile: w < 768, hasTouch: w < 768 });
@@ -252,6 +261,60 @@ bloco('r10-fila-chegou', async () => {
   const fila = await page.evaluate(() => JSON.parse(localStorage.getItem('indycar_fila') || '[]').map(x => x.pedido.servico).join(' + '));
   ok(fila === 'Pneus' && page.__posts.length === 1, `r10-fila-chegou: o pedido que chegou sai da fila de reenvio (não vira "novo envio" repetido na ficha); o de outro serviço continua lá (fila: ${fila || 'vazia'})`);
   await fechar(page);
+});
+
+bloco('r10-rastreio-volta', async () => {
+  // a pessoa chegou por um anúncio com o sinal ruim: o registro da visita não saiu; quando a rede volta, o site tenta de novo
+  const page = await abrir({ chave: true, rastreio: 'semrede', caminho: '?utm_source=google&utm_medium=cpc&gclid=TesteR10abc' });
+  await page.mouse.click(10, 300); // primeira interação: dispara o registro
+  const tentou = await ate(() => page.__rastreio.length === 1, 4000);
+  await espera(300);
+  page.__op = { chave: true };
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+  const veio = await ate(() => page.evaluate(() => { try { return JSON.parse(localStorage.getItem('indycar_rastreio')).codigo === 'ABCDE'; } catch (_) { return false; } }), 5000);
+  const link = await page.evaluate(() => decodeURIComponent(document.querySelector('.hero-cta a[href*="wa.me"], a.wa-float').href));
+  ok(tentou && veio && page.__rastreio.length === 2 && /--google--r-abcde\)/.test(link), `r10-rastreio-volta: a visita que não saiu por falta de rede é registrada quando a internet volta (${page.__rastreio.length} chamadas) e o WhatsApp passa a levar o código do anúncio`);
+  await page.evaluate(() => window.dispatchEvent(new Event('online'))); await espera(600);
+  ok(page.__rastreio.length === 2, 'r10-rastreio-volta: depois de registrada, a visita não é mandada de novo (uma por sessão, como no contrato)');
+  await fechar(page);
+  // resposta que chegou (mesmo sem código) não é repetida
+  const p2 = await abrir({ chave: true, caminho: '?utm_source=google&utm_medium=cpc' });
+  await p2.mouse.click(10, 300); await ate(() => p2.__rastreio.length === 1, 4000);
+  await p2.evaluate(() => window.dispatchEvent(new Event('online'))); await espera(600);
+  ok(p2.__rastreio.length === 1, 'r10-rastreio-volta: visita que o banco recebeu não é reenviada quando a rede oscila');
+  await fechar(p2);
+});
+
+bloco('r10-aviso-relogio', async () => {
+  // dois avisos no canto com 3,5 s de diferença: o segundo fica os seus 5 s
+  const page = await abrir({});
+  const robo = async () => { await abrirForm(page); await page.evaluate(() => { document.getElementById('fEmpresa').value = 'x'; document.getElementById('fEnviar').click(); }); };
+  await robo(); const t0 = Date.now();
+  await espera(3500 - 700); await robo();
+  await espera(Math.max(0, 5700 - (Date.now() - t0)));
+  const aos57 = await page.evaluate(() => document.getElementById('socialProof').classList.contains('show'));
+  await espera(3600);
+  const fim = await page.evaluate(() => document.getElementById('socialProof').classList.contains('show'));
+  ok(aos57 && !fim && !page.__posts.length, `r10-aviso-relogio: o segundo aviso do canto não é apagado pelo relógio do primeiro (visível 2 s depois: ${aos57}; some no fim dos 5 s dele: ${!fim})`);
+  await fechar(page);
+});
+
+bloco('r10-sugerido-sem-agenda', async () => {
+  // link que a equipe manda com horário (/s/freios?h=...) e a Agenda fora do ar: o horário segue no pedido
+  const page = await abrir({ horariosFora: true, caminho: '?h=2026-11-24T11:00#agendar-freios' });
+  const pos = await ate(() => page.evaluate(() => /24\/11 às 11:00/.test(document.getElementById('fQuando').value)), 8000);
+  const r = await page.evaluate(() => ({ aberto: document.getElementById('formBackdrop').classList.contains('open'), quando: document.getElementById('fQuando').value, servico: document.getElementById('fService').value }));
+  ok(pos && r.aberto && /sugerido pela equipe/.test(r.quando) && /Freios/.test(r.servico), `r10-sugerido-sem-agenda: Agenda fora do ar, o horário que a equipe sugeriu aparece em "Quando prefere?" ("${r.quando}")`);
+  await page.type('#fName', 'Maria Teste'); await page.type('#fPhone', '12996830272'); await espera(2600);
+  await enviar(page); await esperarConfirmacao(page);
+  const corpo = page.__posts.map(p => { try { return JSON.parse(p); } catch (_) { return {}; } }).find(p => p.telefone) || {};
+  ok(/24\/11 às 11:00/.test(corpo.preferencia || '') && corpo.horario === null, `r10-sugerido-sem-agenda: o pedido leva o horário sugerido para a equipe confirmar (preferência "${corpo.preferencia}")`);
+  await fechar(page);
+  // Agenda no ar: nada muda (o horário vira o botão marcado, sem opção a mais)
+  const p2 = await abrir({ caminho: '?h=2026-11-24T11:00#agendar-freios' });
+  const marcado = await ate(() => p2.evaluate(() => !!document.querySelector('.horario-chip[aria-pressed="true"][data-hora="11:00"]')), 8000);
+  ok(marcado && await p2.evaluate(() => !document.querySelector('#fQuando option[data-sugerido]')), 'r10-sugerido-sem-agenda: com a Agenda no ar o horário sugerido continua sendo o botão marcado, sem opção a mais');
+  await fechar(p2);
 });
 
 bloco('r10-leiaute-adiado', async () => {

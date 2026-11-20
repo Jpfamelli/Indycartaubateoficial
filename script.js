@@ -193,14 +193,23 @@
   // só baixa a página não gera registro, e navegador comandado por programa (teste, Lighthouse) também não.
   if (RASTREIO_CHAVE && !navigator.webdriver && sessao.get(RASTREIO) !== String(R.quando)) {
     const sinais = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
-    let relogio;
+    let relogio, jaRepetiu = false;
     const registrar = () => {
       sinais.forEach(s => removeEventListener(s, registrar, true));
       document.removeEventListener('visibilitychange', armar);
       clearTimeout(relogio);
       sessao.set(RASTREIO, String(R.quando));
       try {
-        enviarRastreio(Object.assign({ evento: 'visita' }, R.dados)).then(r => r.json()).then((j) => {
+        // Rodada 10: se a chamada nem saiu do aparelho (sem rede), a visita não fica marcada como registrada e o site
+        // tenta mais uma vez quando a internet voltar. Antes, a visita de quem abriu a página num sinal ruim ficava sem
+        // código e o contato chegava ao WhatsApp sem dizer de qual anúncio veio. Resposta que chegou não é repetida.
+        enviarRastreio(Object.assign({ evento: 'visita' }, R.dados)).then(r => r.json(), () => {
+          if (jaRepetiu) return null;
+          jaRepetiu = true;
+          sessao.set(RASTREIO, '');
+          addEventListener('online', registrar, { once: true });
+          return null;
+        }).then((j) => {
           const c = String((j && j.codigo) || '').toUpperCase();
           if (!CODIGO_RE.test(c)) return; // sem código válido, o site segue no formato antigo
           R.codigo = c;
@@ -1293,13 +1302,25 @@
     if (q) q.disabled = !!horarioEscolhido; // o horário escolhido já diz quando; o campo volta se a pessoa desmarcar
   }
   function limparHorario() { horarioEscolhido = null; marcarHorario(); }
+  // Rodada 10: a pessoa chegou pelo link que a equipe mandou com um horário (/s/freios?h=2026-11-24T10:00) e a Agenda
+  // não respondeu. Antes o horário sumia calado; agora vai no "Quando prefere?" e segue no pedido para a equipe confirmar.
+  function sugestaoSemAgenda() {
+    const q = $('#fQuando');
+    if (!slotPedido || !q || $('option[data-sugerido]', q) || isNaN(Date.parse(slotPedido.data + 'T' + slotPedido.hora))) return;
+    const [, mes, dia] = slotPedido.data.split('-');
+    const o = document.createElement('option');
+    o.dataset.sugerido = '1';
+    o.value = o.textContent = dia + '/' + mes + ' às ' + slotPedido.hora + ' (sugerido pela equipe)';
+    q.appendChild(o); q.value = o.value;
+  }
   async function montarHorarios() {
     const corpo = await carregarHorarios();
     const caixa = $('#horarios');
     // Agenda não respondeu: a caixa some, o formulário segue igual. Rodada 10: a falha é passageira; a próxima resposta
     // boa pinta tudo de novo (antes, a mesma lista de um minuto atrás não era repintada e a caixa ficava sumida).
-    if (!corpo) { horariosPintados = ''; if (caixa) caixa.hidden = true; $$('[data-so-horarios]').forEach(e => { e.hidden = true; }); retomarPulo(); return; }
+    if (!corpo) { horariosPintados = ''; if (caixa) caixa.hidden = true; $$('[data-so-horarios]').forEach(e => { e.hidden = true; }); sugestaoSemAgenda(); retomarPulo(); return; }
     $$('[data-so-horarios]').forEach(e => { e.hidden = false; });
+    { const o = $('#fQuando option[data-sugerido]'); if (o) o.remove(); } // a Agenda respondeu: o horário sugerido volta a ser um botão de horário
     if (caixa && !corpo.dias.length) {
       const l = $('#horariosLista'); l.textContent = '';
       // Rodada 9: "Chame a gente no WhatsApp" virou link (antes era só texto: agenda cheia e nenhum caminho para seguir)
@@ -1582,12 +1603,15 @@
   /* ================================================================
      11. TOAST genérico (usa o mesmo aviso do canto)
      ================================================================ */
+  let toastRelogio = 0;
   function showToast(emoji, title, text) {
     sp.classList.add('show'); // visível antes do texto: o leitor de tela anuncia a troca
     spEmoji.textContent = emoji;
     spName.textContent = title;
     spAction.textContent = text;
-    setTimeout(() => { sp.classList.remove('show'); }, 5000);
+    // Rodada 10: cada aviso fica os seus 5 s (antes o relógio do aviso anterior apagava o novo antes da hora)
+    clearTimeout(toastRelogio);
+    toastRelogio = setTimeout(() => { sp.classList.remove('show'); }, 5000);
   }
 
   /* ================================================================

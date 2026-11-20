@@ -169,7 +169,8 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     await page.waitForSelector('#mapBox iframe', { timeout: 5000 }).catch(() => {});
     ok(await page.$('#mapBox iframe') !== null, 'mapa carrega ao clicar em "Ver mapa aqui"');
 
-    const corpo = await page.evaluate(() => document.body.innerText);
+    // rodada 10: o rodapé longe da tela fica fora do leiaute e o innerText não o lê; cv-off devolve o tamanho real
+    const corpo = await page.evaluate(() => { document.documentElement.classList.add('cv-off'); return document.body.innerText; });
     const achadas = PROIBIDAS.filter(re => re.test(corpo)).map(String);
     ok(achadas.length === 0, 'vocabulário da casa (sem prezado/efetuar/comparecer/veículo/10x/leva e traz grátis)' + (achadas.length ? ': ' + achadas : ''));
     ok(/Quem conhece, Indyca!/.test(corpo) && /8h às 17h30/.test(corpo) && /12 meses/.test(corpo), 'slogan, horário e garantia presentes');
@@ -665,7 +666,7 @@ for (const w of [375, 1440]) {
   ok(/from = "\/s\/:servico"[\s\S]*?to = "\/#agendar-:servico"/.test(toml) && /from = "\/orcamento"/.test(toml) && /from = "\/horarios"[\s\S]*?to = "\/#horarios"/.test(toml) && /from = "\/indicar"[\s\S]*?minha\/#indique/.test(toml) && /from = "\/minha-indycar"/.test(toml), 'netlify.toml: atalhos /s/<serviço>, /orcamento, /horarios, /indicar e /minha-indycar');
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const ld = JSON.parse(/<script type="application\/ld\+json">\s*(\{[\s\S]*?"@type": "AutoRepair"[\s\S]*?\n\})\s*<\/script>/.exec(html)[1]);
-  ok(ld.potentialAction && ld.potentialAction.target.urlTemplate === 'https://indycar-taubate.netlify.app/agendar' && !('priceRange' in ld), 'JSON-LD: ação "Pedir horário" (ReserveAction → /agendar) e sem faixa de preço inventada');
+  ok(ld.potentialAction && ld.potentialAction.target.urlTemplate === 'https://indycar-taubate.netlify.app/#agendar' && !('priceRange' in ld), 'JSON-LD: ação "Pedir horário" (ReserveAction → /#agendar, que o robots.txt não barra) e sem faixa de preço inventada');
   ok(/hreflang="pt-BR"/.test(html) && /geo\.region" content="BR-SP"/.test(html), 'SEO local: hreflang pt-BR e geo.region BR-SP');
   const priv = fs.readFileSync(path.join(ROOT, 'privacidade.html'), 'utf8');
   ok(!/não envia nada para servidor nenhum/.test(priv) && /envia o pedido direto para o sistema da oficina/.test(priv) && /placa/.test(priv) && /horários livres/i.test(priv), 'privacidade diz a verdade: o formulário envia o pedido ao sistema da oficina (placa, horário, hash de rede) e os horários só mostram dia e hora');

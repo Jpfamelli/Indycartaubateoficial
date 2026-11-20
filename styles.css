@@ -34,7 +34,7 @@
    tela; o navegador guarda o tamanho real depois da primeira vez (auto), então a rolagem não pula. */
 main > section.section, main > section.final-cta { content-visibility: auto; contain-intrinsic-size: auto 900px; }
 /* Pulo para uma âncora (#contato, #faq...): tudo volta a ter o tamanho real antes, para o pulo cair no lugar certo. */
-html.cv-off main > section { content-visibility: visible; }
+html.cv-off main > section, html.cv-off .footer { content-visibility: visible; }
 
 /* ===== DESIGN TOKENS ===== */
 :root {
