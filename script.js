@@ -1069,7 +1069,8 @@
     if (wa) { ligarWhatsApp(wa, textoWa, servicoWa); wa.textContent = resposta.direto ? 'Abrir no WhatsApp' : 'Quer adiantar? Abrir no WhatsApp'; }
     formOk.hidden = false;
     formOk.focus?.();
-    $('.form-ok-fechar', formOk)?.focus();
+    // Rodada 9: sem rede, o que falta fazer é mandar no WhatsApp: o foco vai para esse botão, não para o "Fechar"
+    (resposta.direto ? $('#formOkWa') : $('.form-ok-fechar', formOk))?.focus();
   }
   // Copiar o protocolo (para colar no WhatsApp se a pessoa quiser adiantar a conversa).
   (function () {

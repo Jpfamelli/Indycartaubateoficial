@@ -212,6 +212,7 @@ try {
     const foi = await ate(() => page.evaluate(() => !document.getElementById('formOk').hidden), 8000);
     const corpo = page.__posts.map(p => { try { return JSON.parse(p); } catch (_) { return {}; } }).find(p => p.telefone) || {};
     ok(foi && corpo.telefone === '12996830272', '"012 99683-0272" (com o zero do interurbano) é aceito e vai como 12996830272');
+    ok(await page.evaluate(() => document.activeElement && document.activeElement.classList.contains('form-ok-fechar')), 'pedido que chegou: o foco fica no "Fechar" (não há nada a fazer)');
     await fechar(page);
   }
   {
@@ -226,6 +227,7 @@ try {
     await espera(300);
     const r = await page.evaluate(() => ({ titulo: document.getElementById('formOkTitulo').textContent, ico: document.querySelector('.form-ok-ico').hidden, faiscas: window.__faiscas }));
     ok(r.titulo === 'Falta só mandar no WhatsApp' && r.ico && r.faiscas <= 8, `sem rede o pedido não diz "Pedido enviado!": "${r.titulo}", sem o ✓ e sem a festa de concluído (${r.faiscas} faíscas, só as do clique)`);
+    ok(await page.evaluate(() => document.activeElement && document.activeElement.id === 'formOkWa'), 'sem rede o foco vai para "Abrir no WhatsApp" (o que falta fazer), não para "Fechar"');
     await fechar(page);
   }
 
