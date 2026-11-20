@@ -2497,7 +2497,8 @@
       f.title = 'Mapa da IndyCar Centro Automotivo, Av. Bandeirantes 875, Taubaté';
       f.src = box.dataset.mapSrc;
       f.loading = 'lazy';
-      f.referrerPolicy = 'no-referrer-when-downgrade';
+      // Rodada 9: o Google recebe só o endereço do site, não a URL inteira (antes ia junto o que veio do anúncio: gclid, fbclid, utm)
+      f.referrerPolicy = 'strict-origin-when-cross-origin';
       box.classList.add('map-on');
       box.appendChild(f);
       f.focus();
