@@ -1699,7 +1699,9 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
   .warranty-link { display: inline-flex; align-items: center; min-height: 44px; }
   .btn.sm { min-height: 44px; }
   .sp-close { width: 44px; height: 44px; top: 0; right: 0; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
-  .form-mini a, .form-ok-dica a { display: inline-flex; align-items: center; min-height: 44px; }
+  /* rodada 9: links no meio da frase seguem na linha (o inline-flex de 44 px abria vãos de ~20 px entre as linhas);
+     o preenchimento de 15 px em cima e embaixo mantém a área de toque de 44 px sem mexer na altura da linha */
+  .form-mini a, .form-ok-dica a { display: inline; padding: 15px 0; }
 }
 /* Rodada 9: no computador (mouse) os links soltos têm pelo menos 24 px de altura, o mínimo da WCAG 2.2 (2.5.8):
    antes "Privacidade" do rodapé tinha 15 px, "Tirar dúvida sobre a garantia" 17 px, os "Agende pelo WhatsApp" 21 px
