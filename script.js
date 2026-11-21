@@ -60,10 +60,19 @@
   const POUPAR = REDE.saveData === true || /(^|-)2g$/.test(REDE.effectiveType || '');
   const sessao = {
     get(k) { try { return sessionStorage.getItem(k); } catch (_) { return null; } },
-    set(k, v) { try { sessionStorage.setItem(k, v); } catch (_) {} }
+    set(k, v) { try { sessionStorage.setItem(k, v); } catch (_) {} },
+    del(k) { try { sessionStorage.removeItem(k); } catch (_) {} },
   };
-  // Rodada 5: a campanha que trouxe a pessoa (utm_*, gclid, fbclid) fica guardada na sessão e vai junto no pedido
-  // do formulário e no código dos links de WhatsApp — o CRM enxerga "site" e, se houver, o anúncio de origem.
+  // chaves do que a sessão guarda: o rascunho do formulário e "o convite já apareceu (ou não precisa mais)"
+  const RASCUNHO = 'indycar_rascunho', PROMO = 'indycar_promo';
+  // O mesmo para o que fica no aparelho (modo privado ou armazenamento bloqueado não derrubam a página).
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (_) {} },
+  };
+  // Rodada 5: a campanha que trouxe a pessoa (utm_*, gclid, fbclid) vai junto no pedido do formulário e no código dos
+  // links de WhatsApp — o CRM enxerga "site" e, se houver, o anúncio de origem. Rodada 8: ver "rastreio" logo abaixo.
   const PARAMS = new URLSearchParams(location.search);
   // Rodada 7: /s/<serviço>, /agendar e /orcamento (netlify.toml) chegam como /#agendar[-serviço] com a query intacta
   // (utm_*, gclid, fbclid): abrem o formulário já com o serviço, sem rolar para lugar nenhum.
@@ -80,58 +89,174 @@
   // Horário que o Atendimento sugeriu: /s/freios?h=2026-10-27T10:00 (só data e hora, nada de pessoa)
   let slotPedido = null, avisoSlot = '';
   { const m = /^(\d{4}-\d{2}-\d{2})[T_ ](\d{2}:\d{2})$/.exec(PARAMS.get('h') || ''); if (m) slotPedido = { data: m[1], hora: m[2] }; }
-  const UTM = (() => {
-    const u = {};
-    for (const k of ['source', 'medium', 'campaign', 'content', 'term']) { const v = PARAMS.get('utm_' + k); if (v) u[k] = v.slice(0, 80); }
-    for (const k of ['gclid', 'fbclid']) { const v = PARAMS.get(k); if (v) u[k] = v.slice(0, 80); }
-    if (Object.keys(u).length) { sessao.set('indycar_utm', JSON.stringify(u)); return u; }
-    try { return JSON.parse(sessao.get('indycar_utm') || '{}') || {}; } catch (_) { return {}; }
-  })();
-  const slug = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  // Código de origem com a campanha paga anexada: "(site/cambio--meta)" (o gatilho do banco aceita [a-z0-9_-]{1,40}).
-  function codigoComCampanha(codigo) {
-    if (!UTM.source) return codigo;
-    return (codigo + '--' + slug(UTM.source)).slice(0, 40).replace(/-+$/, '');
-  }
-  if (UTM.source) {
-    $$('a[href*="wa.me"]').forEach(a => {
-      try {
-        const u = new URL(a.href);
-        const c = u.searchParams.get('utm_campaign');
-        const t = u.searchParams.get('text') || '';
-        if (!c || !t.endsWith('(site/' + c + ')')) return;
-        const novo = codigoComCampanha(c);
-        u.searchParams.set('text', t.slice(0, -(c.length + 7)) + '(site/' + novo + ')');
-        u.searchParams.set('utm_campaign', novo);
-        a.href = u.toString();
-      } catch (_) {}
+  /* ================================================================
+     RODADA 8 — rastreio do anúncio até o WhatsApp (indycar-ferramentas/r8/CONTRATO-RASTREIO.md)
+     O site guarda por 30 dias, neste aparelho, por qual anúncio ou link a pessoa chegou; registra a visita no banco da
+     oficina (sem nome, telefone nem e-mail) e recebe um código de 5 letras, que vai no fim da mensagem do WhatsApp e
+     no pedido do formulário. Sem armazenamento, sem rede ou sem chave, tudo segue como antes.
+     ================================================================ */
+  // Endereço e chave pública do banco: SÓ aqui. A chave é a "publishable/anon" do Supabase (feita para ficar à vista
+  // no site; quem protege é o banco). Vazia = o site não registra nada e as mensagens saem no formato antigo.
+  const RASTREIO_URL = 'https://nppfqhavqahapmugnyng.supabase.co/rest/v1/rpc/trafego_rastreio_registrar';
+  const RASTREIO_CHAVE = '';
+  const RASTREIO = 'indycar_rastreio';
+  const MARCAS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'gbraid', 'wbraid', 'fbclid', 'ttclid', 'msclkid'];
+  const CODIGO_RE = /^[A-HJKMNP-Z2-9]{5}$/; // 5 caracteres de ABCDEFGHJKMNPQRSTUVWXYZ23456789
+  // Só os campos do contrato, só texto e com tamanho máximo: o que vem do endereço ou do aparelho não é de confiança.
+  // (Identificador de clique vai inteiro, até 255 caracteres: cortado ele não serve para nada.)
+  function limparOrigem(o) {
+    const d = {};
+    MARCAS.concat('pagina', 'referencia', 'referencia_tipo').forEach((k, i) => {
+      const v = o && o[k];
+      if (v && typeof v === 'string') d[k] = v.slice(0, i < 5 ? 100 : i < 11 ? 255 : i < 12 ? 120 : 80);
     });
+    return d;
+  }
+  // Formato da rodada 5 (source, medium…, gclid, fbclid, até 80 caracteres): continua na sessão e no pedido do formulário.
+  const ANTIGAS = MARCAS.filter(k => !/braid|ttclid|msclkid/.test(k));
+  const paraAntigo = (d) => { const u = {}; ANTIGAS.forEach(k => { if (d[k]) u[k.replace('utm_', '')] = d[k].slice(0, 80); }); return u; };
+  // Quanto a chegada diz de onde veio: 2 = link marcado (anúncio ou utm), 1 = só o site de onde veio, 0 = nada (direto).
+  const forcaDaOrigem = (d) => (MARCAS.some(k => d[k]) ? 2 : d.referencia ? 1 : 0);
+  const marcaDaOrigem = (d) => MARCAS.concat('referencia').map(k => d[k] || '').join('\n');
+  // R = o que vale agora: { dados (campos do contrato §6.1), codigo (do registro no banco), quando (a chegada) }.
+  let R = null, rastreioNovo = false;
+  try {
+    const g = JSON.parse(store.get(RASTREIO));
+    const idade = g ? Date.now() - g.quando : -1;
+    if (idade >= 0 && idade < 2592e6) R = { dados: limparOrigem(g.dados), codigo: typeof g.codigo === 'string' && CODIGO_RE.test(g.codigo) ? g.codigo : '', quando: +g.quando }; // 30 dias
+  } catch (_) {}
+  const salvarRastreio = () => store.set(RASTREIO, JSON.stringify(R));
+  {
+    const bruto = {};
+    MARCAS.forEach(k => { bruto[k] = PARAMS.get(k); });
+    const veioMarcada = MARCAS.some(k => bruto[k]);
+    // Sem nada guardado (página aberta desde a versão antiga, ou aparelho sem armazenamento): vale a campanha desta sessão.
+    if (!veioMarcada && !R) { try { const u = JSON.parse(sessao.get('indycar_utm')) || {}; ANTIGAS.forEach(k => { bruto[k] = u[k.replace('utm_', '')]; }); } catch (_) {} }
+    const d = limparOrigem(bruto);
+    if (veioMarcada) sessao.set('indycar_utm', JSON.stringify(paraAntigo(d)));
+    let ref = '';
+    try { ref = new URL(document.referrer).hostname.replace(/^www\./, ''); } catch (_) {}
+    if (ref === location.hostname.replace(/^www\./, '')) ref = ''; // andar dentro do próprio site não é chegada
+    if (ref) d.referencia = ref.slice(0, 80);
+    d.pagina = location.pathname.slice(0, 120);
+    const de = (ref || d.utm_source || '').toLowerCase();
+    // "comunicar" e "atendimento" são os links que a própria oficina manda pelo WhatsApp (réguas e conversa).
+    d.referencia_tipo = MARCAS.slice(5).some(k => d[k]) || /cpc|ppc|cpm|cpv|paid|pago|pmax|display|remarket|retarget|anunc|^ads?$/i.test(d.utm_medium || '') ? 'anuncio'
+      : /instagram|^ig$/.test(de) ? 'instagram' : /facebook|^fb\b|^meta$/.test(de) ? 'facebook' : /whatsapp|^wa\b|^zap|wl\.co$|^comunicar$|^atendimento$/.test(de) ? 'whatsapp'
+        : /google|\bbing\b|yahoo|duckduckgo|ecosia|yandex|baidu|\bbrave\b/.test(de) ? 'busca' : de && de !== 'pwa' ? 'outro_site' : 'direto';
+    // Regra de troca: link marcado (anúncio ou utm) substitui o que estava guardado; chegada sem marca não apaga um link
+    // marcado (quem clicou no anúncio ontem e voltou hoje direto, ou pela busca, continua sendo do anúncio); chegada
+    // direta não apaga nada; a mesma chegada de novo (recarregar a página) não conta como outra. O atalho do app
+    // instalado (utm_source=pwa) vale como chegada direta: não apaga o anúncio de quem instalou o site.
+    const f = d.utm_source === 'pwa' ? 0 : forcaDaOrigem(d);
+    if (!R || (f && f >= forcaDaOrigem(R.dados) && marcaDaOrigem(d) !== marcaDaOrigem(R.dados))) {
+      R = { dados: d, codigo: '', quando: Date.now() };
+      rastreioNovo = true;
+      salvarRastreio();
+    }
+  }
+  const UTM = paraAntigo(R.dados);
+  const slug = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  // O que vai dentro de "(site/…)" no fim da mensagem (o banco lê da primeira mensagem; só [a-z0-9_-], no máximo 40).
+  // Com código do rastreio: "<serviço>--<fonte>--r-<código>", em minúsculas (fonte = utm_source ou "direto", só
+  // [a-z0-9_], até 20; se não couber, corta o serviço). Sem código, como sempre foi: "<serviço>" ou "<serviço>--<fonte>".
+  function codigoDeOrigem(servico) {
+    if (!R.codigo) return UTM.source ? (servico + '--' + slug(UTM.source)).slice(0, 40).replace(/-+$/, '') : servico;
+    const cauda = '--' + (slug(UTM.source || '').replace(/-/g, '_').slice(0, 20).replace(/_+$/, '') || 'direto') + '--r-' + R.codigo.toLowerCase();
+    return servico.slice(0, 40 - cauda.length).replace(/-+$/, '') + cauda;
   }
   // Mensagem padrão ao atendimento. O prefixo é o contrato com a IA do Atendimento (identifica o serviço por "quero orçar:").
   const PREFIXO_WA = 'Olá! Vim pelo site';
-  function linkWhatsApp(texto, codigo) {
+  function linkWhatsApp(texto, servico) {
+    const codigo = codigoDeOrigem(servico);
     return 'https://wa.me/5512996830272?text=' + encodeURIComponent(texto + ' (site/' + codigo + ')') +
       '&utm_source=site&utm_medium=whatsapp&utm_campaign=' + encodeURIComponent(codigo);
   }
+  // Todo link de WhatsApp montado ou remarcado pelo script passa por aqui; o serviço inteiro do botão fica lembrado
+  // (no texto ele pode sair cortado) para o registro do clique.
+  const servicoDoLink = new WeakMap();
+  function ligarWhatsApp(a, texto, servico) { servicoDoLink.set(a, servico); a.href = linkWhatsApp(texto, servico); }
+  function marcarLinks() {
+    $$('a[href*="wa.me"]').forEach(a => {
+      try {
+        const t = new URL(a.href).searchParams.get('text') || '';
+        const m = /\s*\(site\/([a-z0-9_-]+)\)$/.exec(t);
+        if (m) ligarWhatsApp(a, t.slice(0, m.index), servicoDoLink.get(a) || m[1].split('--')[0]);
+      } catch (_) {}
+    });
+  }
+  if (R.codigo || UTM.source) marcarLinks();
+  // Registro no banco (contrato §6.2 e §6.3). Nunca segura nada: quem chama não espera a resposta.
+  const enviarRastreio = (dados, aoSair) => fetch(RASTREIO_URL, {
+    method: 'POST', keepalive: !!aoSair,
+    headers: { apikey: RASTREIO_CHAVE, Authorization: 'Bearer ' + RASTREIO_CHAVE, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_dados: dados }),
+  });
+  // Uma vez por sessão (e por chegada), na primeira interação da pessoa ou depois de 4 s com a página à vista: robô que
+  // só baixa a página não gera registro, e navegador comandado por programa (teste, Lighthouse) também não.
+  if (RASTREIO_CHAVE && !navigator.webdriver && sessao.get(RASTREIO) !== String(R.quando)) {
+    const sinais = ['pointerdown', 'keydown', 'scroll', 'touchstart'];
+    let relogio, jaRepetiu = false;
+    const registrar = () => {
+      sinais.forEach(s => removeEventListener(s, registrar, true));
+      document.removeEventListener('visibilitychange', armar);
+      clearTimeout(relogio);
+      sessao.set(RASTREIO, String(R.quando));
+      try {
+        // Rodada 10: se a chamada nem saiu do aparelho (sem rede), a visita não fica marcada como registrada e o site
+        // tenta mais uma vez quando a internet voltar. Antes, a visita de quem abriu a página num sinal ruim ficava sem
+        // código e o contato chegava ao WhatsApp sem dizer de qual anúncio veio. Resposta que chegou não é repetida.
+        enviarRastreio(Object.assign({ evento: 'visita' }, R.dados)).then(r => r.json(), () => {
+          if (jaRepetiu) return null;
+          jaRepetiu = true;
+          sessao.set(RASTREIO, '');
+          addEventListener('online', registrar, { once: true });
+          return null;
+        }).then((j) => {
+          const c = String((j && j.codigo) || '').toUpperCase();
+          if (!CODIGO_RE.test(c)) return; // sem código válido, o site segue no formato antigo
+          R.codigo = c;
+          salvarRastreio();
+          marcarLinks();
+        }).catch(() => {});
+      } catch (_) {}
+    };
+    const armar = () => { clearTimeout(relogio); if (!document.hidden) relogio = setTimeout(registrar, 4000); };
+    sinais.forEach(s => addEventListener(s, registrar, { capture: true, passive: true }));
+    document.addEventListener('visibilitychange', armar);
+    armar();
+  }
+  // Clique num botão de WhatsApp: segundo registro (evento "clique"), com keepalive. Não espera resposta, não cancela
+  // nem atrasa a abertura do WhatsApp.
+  function rastrearClique(servico) {
+    if (!R.codigo || !RASTREIO_CHAVE) return;
+    try { enviarRastreio({ codigo: R.codigo, evento: 'clique', servico }, true).catch(() => {}); } catch (_) {}
+  }
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('a[href*="wa.me"]');
+    if (a) rastrearClique(servicoDoLink.get(a) || '');
+  }, true);
   // As seções abaixo da dobra usam content-visibility (styles.css). Antes de pular para uma âncora, todas ganham o
   // tamanho real (html.cv-off), senão o pulo cairia no lugar errado. Com âncora já no endereço, vale desde o início.
   const semAtalhoDeLayout = () => document.documentElement.classList.add('cv-off');
   if (location.hash.length > 1 && !ATALHO_RE.test(location.hash)) semAtalhoDeLayout();
+  // Rodada 8: o pulo lembra o alvo por 4 s. Se a caixa de horários mudar de altura no meio do caminho (semana de
+  // feriado: o aviso deixa a lista 82 px maior que o espaço reservado; Agenda fora do ar: a caixa some), o pulo é
+  // refeito e a pessoa cai no título certo. Qualquer toque, tecla ou roda do mouse depois do clique cancela.
+  let puloAlvo = null, puloEm = 0;
+  const retomarPulo = () => { if (puloAlvo && Date.now() - puloEm < 4000) puloAlvo.scrollIntoView({ block: 'start' }); };
+  ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(ev => addEventListener(ev, () => { puloAlvo = null; }, { capture: true, passive: true }));
   document.addEventListener('click', (e) => {
     const a = e.target.closest && e.target.closest('a[href^="#"]');
-    if (a && a.getAttribute('href').length > 1) semAtalhoDeLayout();
+    if (!a || a.getAttribute('href').length < 2) return;
+    semAtalhoDeLayout();
+    try { puloAlvo = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1))); puloEm = Date.now(); } catch (_) {}
   }, true);
   window.addEventListener('hashchange', semAtalhoDeLayout);
 
   /* ================================================================
      0. CSP sem script embutido: o que antes era onload/onerror no HTML
      ================================================================ */
-  // Desde a rodada 4 as fontes ficam no próprio site (styles.css). Se alguma página ainda tiver um link
-  // data-fontes (media=print), ele vira "all" aqui.
-  $$('link[data-fontes]').forEach(l => {
-    const ligar = () => { l.media = 'all'; };
-    if (l.sheet) ligar(); else { l.addEventListener('load', ligar); setTimeout(ligar, 3000); }
-  });
   // Imagem que não carregou: troca pela reserva (data-reserva) ou some com o bloco (data-reserva-remover).
   function reservaDaImagem(img) {
     if (img.dataset.reserva && !img.dataset.reservaUsada) {
@@ -188,12 +313,15 @@
     hamburger.classList.remove('open');
     navLinks.classList.remove('open');
     hamburger.setAttribute('aria-expanded', 'false');
+    hamburger.setAttribute('aria-label', 'Abrir menu'); // rodada 9: fechando por Esc ou por um link, o botão dizia "Fechar menu"
   }
   hamburger.addEventListener('click', () => {
     const open = hamburger.classList.toggle('open');
     navLinks.classList.toggle('open', open);
     hamburger.setAttribute('aria-expanded', String(open));
     hamburger.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+    // Rodada 9: aberto pelo teclado, o foco entra no menu (os links vêm antes do botão no HTML; com Tab o foco saía do menu)
+    if (open && hamburger.matches(':focus-visible')) { const primeiro = $('.nav-link', navLinks); if (primeiro) primeiro.focus(); }
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && navLinks.classList.contains('open')) { closeMenu(); hamburger.focus(); } });
   // fecha ao clicar num link
@@ -236,14 +364,19 @@
   /* ================================================================
      4. CONTADORES ANIMADOS (dispara quando entra na tela)
      ================================================================ */
-  const counters = $$('.counter-num');
+  // Rodada 9: o HTML já traz o número certo (sem JavaScript, leitor de tela e Google leem 4,8 · 1.200 · 18, não 0).
+  // A contagem só roda para quem não pediu menos movimento; ela começa do zero quando o número entra na tela.
+  // Rodada 9: o número certo fica no HTML até o contador entrar na tela; só aí ele volta a 0 e conta. Antes era zerado
+  // no carregamento e, se o contador nunca chegasse a 60% visível (rolagem rápida, pulo por âncora, impressão,
+  // captura da página inteira), ficava "0★", "+0 avaliações", "+0 anos".
+  const counters = reduceMotion ? [] : $$('.counter-num');
   const counterIO = new IntersectionObserver((entries) => {
     entries.forEach(e => {
       if (!e.isIntersecting) return;
-      animateCount(e.target);
       counterIO.unobserve(e.target);
+      animateCount(e.target);
     });
-  }, { threshold: 0.6 });
+  }, { threshold: 0 });
   counters.forEach(c => counterIO.observe(c));
 
   function animateCount(el) {
@@ -559,7 +692,7 @@
         }
         /* coroa de fagulhas do splash */
         for (var bi = borrifos.length - 1; bi >= 0; bi--) {
-          var b = borrifos[bi], pb = (now - b.t) / 900;
+          var b = borrifos[bi], pb = Math.max(0, now - b.t) / 900;
           if (pb >= 1) { borrifos.splice(bi, 1); continue; }
           var bx = b.x + b.vx * pb, by = b.y + b.vy * pb + 260 * pb * pb;
           var ab = (1 - pb) * (1 - pb) * 0.8;
@@ -633,7 +766,8 @@
       }
       /* aneis do splash avancam e esmaecem */
       for (var i = ondas.length - 1; i >= 0; i--) {
-        var od = ondas[i], p = (now - od.t) / SPLASH_MS;
+        // O clique pode ter chegado depois do timestamp do quadro já agendado.
+        var od = ondas[i], p = Math.max(0, now - od.t) / SPLASH_MS;
         if (p >= 1) { ondas.splice(i, 1); continue; }
         var ease = 1 - (1 - p) * (1 - p);
         od.R = 36 + (SPLASH_R - 36) * ease;
@@ -752,6 +886,7 @@
     $$('#navbar, main, footer, aside[aria-label="Atalhos de contato"]').forEach(e => { if (aberto) e.setAttribute('inert', ''); else e.removeAttribute('inert'); });
   }
   const openEl = (el) => {
+    if (el === formBackdrop) sessao.set(PROMO, '1'); // rodada 9: quem já abriu o formulário não recebe o convite
     if (!el.classList.contains('open')) lastFocus = document.activeElement;
     el.classList.add('open');
     fundoInerte();
@@ -815,7 +950,12 @@
       }
     } else if (atalho) escolherServico('diagnostico');
     // o CRM fica sabendo por qual atalho a pessoa chegou (ex.: /s/freios mandado pelo Atendimento ou pelo Comunicar)
-    if (atalho) sessao.set('indycar_entrada', servico && /^[a-z0-9-]{1,30}$/.test(servico) ? '/s/' + servico : '/agendar');
+    if (atalho) {
+      const entrada = servico && /^[a-z0-9-]{1,30}$/.test(servico) ? '/s/' + servico : '/agendar';
+      sessao.set('indycar_entrada', entrada);
+      // rodada 8: o rastreio desta chegada também mostra o atalho (a Netlify entrega /s/freios como /#agendar-freios)
+      if (rastreioNovo) { R.dados.pagina = entrada; salvarRastreio(); }
+    }
     if (slotPedido) setTimeout(() => montarHorarios(), 400);
     if (atalho || PARAMS.get('abrir') === 'form') setTimeout(() => openEl(formBackdrop), atalho ? 300 : 600);
     if (servico || atalho || PARAMS.has('abrir')) {
@@ -824,6 +964,7 @@
     }
   }
   entradaPorEndereco();
+  rastreioNovo = false; // daqui em diante (âncora trocada com a página aberta) a página de chegada do rastreio não muda mais
   window.addEventListener('hashchange', () => { if (ATALHO_RE.test(location.hash)) entradaPorEndereco(); });
   // Rodada 7: quem chega por #contato, #faq... cai no lugar certo mesmo quando imagens, fontes e horários mudam a altura
   // da página depois da primeira pintura (antes o #contato podia parar 20 px acima do título no celular).
@@ -859,14 +1000,21 @@
   // promo aparece após 8s (uma vez por sessão)
   // quem já clicou no WhatsApp não precisa do convite
   document.addEventListener('click', e => {
-    if (e.target.closest && e.target.closest('a[href*="wa.me"]')) sessao.set('indycar_promo', '1');
+    if (e.target.closest && e.target.closest('a[href*="wa.me"]')) sessao.set(PROMO, '1');
   });
-  if (!sessao.get('indycar_promo')) {
-    setTimeout(() => {
-      if (sessao.get('indycar_promo')) return;
-      const algoAberto = formBackdrop.classList.contains('open') || ($('#revPop') && !$('#revPop').hidden);
-      if (!algoAberto) openEl(promoBackdrop);
-      sessao.set('indycar_promo', '1');
+  // Rodada 9: o convite não interrompe quem está digitando (antes roubava o foco do campo no meio da palavra), nem
+  // quem está com o menu aberto: espera mais 6 s (até 3 vezes) e desiste. Também não aparece para quem já abriu o
+  // formulário nesta visita ou mandou um pedido nas últimas 36 h neste aparelho (o protocolo está guardado).
+  const pedidoRecente = () => { try { const p = JSON.parse(store.get('indycar_pedido') || 'null'); return !!(p && p.protocolo && Date.now() - p.em < 36 * 3600000); } catch (_) { return false; } };
+  const ocupado = () => formBackdrop.classList.contains('open') || hamburger.classList.contains('open') ||
+    !!(document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName));
+  if (!sessao.get(PROMO) && !pedidoRecente()) {
+    let tentativas = 0;
+    setTimeout(function convidar() {
+      if (sessao.get(PROMO) || pedidoRecente()) return;
+      if (ocupado()) { if (++tentativas <= 3) setTimeout(convidar, 6000); return; }
+      openEl(promoBackdrop);
+      sessao.set(PROMO, '1');
     }, 8000);
   }
 
@@ -874,10 +1022,14 @@
      9. FORMULÁRIO → monta mensagem e envia para o WhatsApp
      ================================================================ */
   const form = $('#leadForm');
-  const WPHONE = '5512996830272';
   // Rodada 5: o pedido vai para o banco da oficina pela Edge Function site-lead (lead no CRM + tarefa para a equipe).
   // Se a rede falhar, o caminho antigo continua valendo: abre o WhatsApp com a mesma mensagem — nada se perde.
   const SITE_LEAD_URL = 'https://nppfqhavqahapmugnyng.supabase.co/functions/v1/site-lead';
+  // O pedido vai ao servidor do mesmo jeito no envio e no reenvio da fila: POST com limite de 9 s.
+  const postarPedido = (pedido) => {
+    const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), 9000);
+    return fetch(SITE_LEAD_URL, { method: 'POST', mode: 'cors', signal: ctrl.signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify(pedido) }).finally(() => clearTimeout(t));
+  };
   const formOk = $('#formOk');
   const formHead = $('.form-modal-head');
 
@@ -888,18 +1040,20 @@
   form.addEventListener('input', () => { if (!comecouEm) comecouEm = Date.now(); });
 
   // Máscara leve do telefone: só dígitos, formatados como (12) 99683-0272 enquanto digita.
+  // Rodada 9: o zero na frente do DDD ("012 99683-0272", costume do interurbano) sai; nenhum DDD começa com 0.
+  const digitosDoFone = (v) => String(v || '').replace(/\D/g, '').replace(/^0+/, '').replace(/^55(?=\d{10,11}$)/, '');
   $('#fPhone').addEventListener('input', (e) => {
     const el = e.target;
-    let d = el.value.replace(/\D/g, '').replace(/^55(?=\d{10,11})/, '').slice(0, 11);
+    let d = el.value.replace(/\D/g, '').replace(/^0+/, '').replace(/^55(?=\d{10,11})/, '').slice(0, 11);
     let v = d;
     if (d.length > 2) v = '(' + d.slice(0, 2) + ') ' + d.slice(2);
     if (d.length > 6) v = '(' + d.slice(0, 2) + ') ' + d.slice(2, d.length > 10 ? 7 : 6) + '-' + d.slice(d.length > 10 ? 7 : 6);
     if (el.value !== v && /^[\d\s()\-+]*$/.test(el.value)) el.value = v;
   });
 
-  function mostrarAviso(texto) {
+  function mostrarAviso(texto, neutro) {
     const aviso = $('#fEnvioMsg');
-    if (aviso) { aviso.textContent = texto; aviso.hidden = !texto; }
+    if (aviso) { aviso.textContent = texto; aviso.hidden = !texto; aviso.classList.toggle('neutro', !!neutro); } // neutro = aviso que não é erro (rodada 10)
   }
   function estadoEnviando(on) {
     enviando = on;
@@ -910,21 +1064,24 @@
     if (on) { b.dataset.rotulo = b.dataset.rotulo || b.textContent.trim(); b.lastChild.textContent = ' Enviando…'; }
     else if (b.dataset.rotulo) b.lastChild.textContent = ' ' + b.dataset.rotulo;
   }
-  function mostrarSucesso(resposta, waHref) {
+  function mostrarSucesso(resposta, textoWa, servicoWa) {
     if (!formOk) return;
     form.hidden = true;
     if (formHead) formHead.hidden = true;
-    $('#formOkTitulo').textContent = resposta.repetido ? 'Já estamos com o seu pedido!' : 'Pedido enviado!';
+    // Rodada 9: quando a rede falhou e o WhatsApp abriu, o pedido ainda NÃO chegou: o título não diz "Pedido enviado!"
+    const ico = $('.form-ok-ico', formOk); if (ico) ico.hidden = !!resposta.direto; // sem o ✓ de concluído enquanto falta mandar
+    $('#formOkTitulo').textContent = resposta.direto ? 'Falta só mandar no WhatsApp' : resposta.repetido ? 'Já estamos com o seu pedido!' : 'Pedido enviado!';
     $('#formOkTexto').textContent = (resposta.mensagem || 'A equipe confirma o horário com você pelo WhatsApp, de segunda a sábado, das 8h às 17h30.') + (resposta.horarioPedido ? ' Horário pedido: ' + resposta.horarioPedido + '.' : '');
     const proto = $('#formOkProto');
     if (proto) { proto.hidden = !resposta.protocolo; if (resposta.protocolo) $('b', proto).textContent = resposta.protocolo; }
     const copiar = $('#formOkCopiar');
     if (copiar) { copiar.hidden = !resposta.protocolo; copiar.textContent = 'Copiar protocolo'; }
     const wa = $('#formOkWa');
-    if (wa) { wa.href = waHref; wa.textContent = resposta.direto ? 'Abrir no WhatsApp' : 'Quer adiantar? Abrir no WhatsApp'; }
+    if (wa) { ligarWhatsApp(wa, textoWa, servicoWa); wa.textContent = resposta.direto ? 'Abrir no WhatsApp' : 'Quer adiantar? Abrir no WhatsApp'; }
     formOk.hidden = false;
     formOk.focus?.();
-    $('.form-ok-fechar', formOk)?.focus();
+    // Rodada 9: sem rede, o que falta fazer é mandar no WhatsApp: o foco vai para esse botão, não para o "Fechar"
+    (resposta.direto ? $('#formOkWa') : $('.form-ok-fechar', formOk))?.focus();
   }
   // Copiar o protocolo (para colar no WhatsApp se a pessoa quiser adiantar a conversa).
   (function () {
@@ -949,16 +1106,9 @@
     if (enviando) return;
     const name = $('#fName'), phone = $('#fPhone'), service = $('#fService');
 
-    // Robô preencheu o campo-isca: finge que deu certo e não abre nada.
-    if ($('#fEmpresa') && $('#fEmpresa').value.trim()) {
-      closeEl(formBackdrop); form.reset(); comecouEm = 0;
-      showToast('✅', 'Pedido enviado!', 'Continue a conversa pelo WhatsApp.');
-      return;
-    }
-
     // validação simples com feedback visual
     let ok = true;
-    const digitos = phone.value.replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
+    const digitos = digitosDoFone(phone.value);
     const foneOk = (digitos.length === 10 || digitos.length === 11) && !/^(\d)\1+$/.test(digitos) && /^[1-9][1-9]/.test(digitos) && digitos[2] !== '0' && (digitos.length === 10 || digitos[2] === '9'); // mesma regra da Edge Function
     [name, phone, service].forEach(f => {
       const bad = !f.value.trim() || (f === phone && !foneOk) || (f === name && !/[A-Za-zÀ-ÿ]{2}/.test(f.value));
@@ -966,7 +1116,10 @@
       f.setAttribute('aria-invalid', String(bad));
       if (bad) ok = false;
     });
-    $('#fPhoneErr').hidden = foneOk || !phone.value.trim();
+    // Rodada 9: telefone em branco também diz o porquê (antes só ficava vermelho, sem mensagem)
+    const errFone = $('#fPhoneErr');
+    errFone.textContent = phone.value.trim() ? 'Confira o número com DDD (10 ou 11 dígitos).' : 'Precisamos do seu WhatsApp com DDD para confirmar o horário.';
+    errFone.hidden = foneOk;
     $('#fNameErr').hidden = !name.classList.contains('invalid');
     $('#fServiceErr').hidden = !service.classList.contains('invalid');
     if (!ok) {
@@ -988,53 +1141,91 @@
     const mensagem = (($('#fMsg') || {}).value || '').trim();
     const placa = placaDoForm();
     const horario = horarioEscolhido ? { data: horarioEscolhido.data, hora: horarioEscolhido.hora } : null;
+    const horarioRotulo = horarioEscolhido?.rotulo || '';
     // Código de origem por serviço: o Atendimento lê "(site/formulario-freios)" e marca a UTM do lead.
     const codigoServico = (service.selectedOptions[0] && service.selectedOptions[0].dataset.codigo) || 'servico';
-    const codigo = codigoComCampanha('formulario-' + codigoServico);
+    const servicoWa = 'formulario-' + codigoServico;
     const textoWa = PREFIXO_WA + ', quero orçar: ' + service.value + '.\n' +
       'Nome: ' + name.value.trim() + ' · Telefone: ' + phone.value.trim() +
-      (car ? ' · Carro: ' + car : '') + (placa ? ' · Placa: ' + placa : '') + (horario ? ' · Horário: ' + horarioEscolhido.rotulo : quando ? ' · Quando: ' + quando : '') +
+      (car ? ' · Carro: ' + car : '') + (placa ? ' · Placa: ' + placa : '') + (horario ? ' · Horário: ' + horarioRotulo : quando ? ' · Quando: ' + quando : '') +
       (mensagem ? '\nO carro está: ' + mensagem : '');
-    const waHref = linkWhatsApp(textoWa, codigo);
+
+    // Campo-isca preenchido: nada vai para o banco e nenhuma janela abre sozinha. Rodada 10: em vez de fingir "Pedido
+    // enviado!" e fechar (o preenchimento automático do navegador às vezes escreve em campo escondido, e aí o pedido de
+    // um cliente de verdade sumia calado), fica a mensagem pronta com o botão do WhatsApp. Robô não ganha nada com isso.
+    const isca = $('#fRef');
+    if (isca && isca.value.trim()) {
+      sessao.del(RASCUNHO);
+      mostrarSucesso({ ok: true, direto: true, mensagem: 'Falta mandar a mensagem pronta pelo WhatsApp: é só tocar no botão abaixo.' }, textoWa, servicoWa);
+      form.reset(); limparHorario(); comecouEm = 0;
+      return;
+    }
 
     estadoEnviando(true);
-    let resposta = null;
+    let resposta = null, motivo = 'rede', textoDoServidor = '', lento = 0;
+    // Rodada 8: "rastreio" leva de onde a pessoa veio (campos do contrato §6.1) e o código do registro, quando existe.
+    // O campo "codigo" do pedido continua sendo o código do SERVIÇO; "utm" é o formato antigo, mantido para a função publicada.
     const pedido = {
       nome: name.value.trim(), telefone: digitos, servico: service.value, codigo: codigoServico, carro: car || null,
       preferencia: quando || null, placa, horario, mensagem: mensagem || null, pagina: (sessao.get('indycar_entrada') || (location.pathname + location.search)).slice(0, 200),
-      utm: UTM, decorrido: Date.now() - comecouEm, empresa: ($('#fEmpresa') || {}).value || '',
+      utm: UTM, rastreio: R.codigo ? Object.assign({ codigo: R.codigo }, R.dados) : R.dados,
+      decorrido: Date.now() - comecouEm, empresa: (isca || {}).value || '',
     };
     try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 9000);
-      const r = await fetch(SITE_LEAD_URL, {
-        method: 'POST', mode: 'cors', signal: ctrl.signal,
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(pedido),
-      });
-      clearTimeout(t);
+      // Rodada 10: internet lenta. Depois de 4 s sem resposta a pessoa fica sabendo que o site ainda está tentando
+      // (antes eram até 9 s só com "Enviando…", e dava vontade de fechar ou tocar de novo).
+      lento = setTimeout(() => mostrarAviso('Está demorando mais que o normal. Aguarde, não precisa tocar de novo.', true), 4000);
+      const r = await postarPedido(pedido);
       const corpo = await r.json().catch(() => ({}));
-      if (r.status === 400 && corpo.erro) { estadoEnviando(false); mostrarAviso(corpo.erro); return; } // campo errado: a pessoa corrige
+      if (r.status === 400 && corpo.erro) {
+        // Campo errado: a pessoa corrige. Rodada 10: o campo que o servidor recusou fica marcado e recebe o foco
+        // (antes só aparecia a frase no fim do formulário, longe do campo).
+        clearTimeout(lento); estadoEnviando(false); mostrarAviso(corpo.erro);
+        const campo = /nome/i.test(corpo.erro) ? name : /n[uú]mero|DDD|telefone/i.test(corpo.erro) ? phone : /servi[cç]o/i.test(corpo.erro) ? service : null;
+        if (campo) { campo.classList.add('invalid'); campo.setAttribute('aria-invalid', 'true'); campo.focus(); }
+        return;
+      }
       if (r.ok && corpo.ok) resposta = corpo;
+      // Rodada 10: o servidor respondeu, mas não registrou. 429 = limite de pedidos (o texto vem de lá); o resto = defeito de lá.
+      else motivo = r.status === 429 ? 'limite' : 'servidor', textoDoServidor = r.status === 429 && typeof corpo.erro === 'string' ? corpo.erro.slice(0, 200) : '';
     } catch (_) { /* sem rede ou servidor fora: segue pelo WhatsApp */ }
+    clearTimeout(lento); mostrarAviso('');
     estadoEnviando(false);
 
-    launchConfetti();                 // 🎉 bandeira quadriculada
+    if (resposta) launchConfetti();   // 🎉 bandeira quadriculada, só quando o pedido chegou de verdade (rodada 9)
     if (!resposta) {
       // O banco não respondeu: abre o WhatsApp com a mesma mensagem (comportamento das rodadas anteriores).
-      window.open(waHref, '_blank', 'noopener');
-      resposta = { ok: true, direto: true, mensagem: 'Seu pedido abriu no WhatsApp da oficina. Se a janela não apareceu, toque no botão abaixo.' };
-      // Rodada 7: o pedido também fica numa fila no aparelho e é reenviado ao banco quando a rede volta (nada se perde)
-      window.dispatchEvent(new CustomEvent('indycar:pedido-offline', { detail: { pedido } }));
+      window.open(linkWhatsApp(textoWa, servicoWa), '_blank', 'noopener');
+      rastrearClique(servicoWa);
+      // Rodada 10: a mensagem diz o que aconteceu de verdade (antes, limite de pedidos e defeito do servidor também
+      // apareciam como "a internet não deixou", e a pessoa ia conferir o Wi-Fi à toa).
+      const SEGUE = ' Abrimos o WhatsApp da oficina com a mensagem pronta: é só tocar em enviar. Se a janela não apareceu, use o botão abaixo.';
+      resposta = { ok: true, direto: true, mensagem:
+        motivo === 'limite' ? (textoDoServidor || 'Recebemos vários pedidos deste aparelho agora.') + SEGUE
+        : (motivo === 'servidor' ? 'O sistema da oficina não respondeu agora.' : 'A internet não deixou o pedido chegar pelo site.') + SEGUE + ' O site tenta registrar de novo sozinho.' };
+      // Rodada 7: o pedido também fica numa fila no aparelho e é reenviado ao banco quando a rede volta (nada se perde).
+      // Rodada 10: menos o que bateu no limite de pedidos; reenviar sozinho só bateria no limite de novo.
+      if (motivo !== 'limite') window.dispatchEvent(new CustomEvent('indycar:pedido-offline', { detail: { pedido } }));
     }
-    sessao.set('indycar_promo', '1');
-    resposta.horarioPedido = horario ? horarioEscolhido.rotulo : '';
+    sessao.set(PROMO, '1');
+    resposta.horarioPedido = horarioRotulo;
     horariosPromessa = null; horariosEm = 0; // a Agenda mudou: a próxima consulta traz a lista nova
-    window.dispatchEvent(new CustomEvent('indycar:pedido', { detail: { resposta, pedido, horarioRotulo: horario ? horarioEscolhido.rotulo : '' } }));
-    mostrarSucesso(resposta, waHref);
+    window.dispatchEvent(new CustomEvent('indycar:pedido', { detail: { resposta, pedido, horarioRotulo } }));
+    mostrarSucesso(resposta, textoWa, servicoWa);
     form.reset();
     limparHorario();
     comecouEm = 0;
+  });
+
+  // Rodada 9: o teclado do celular mostra "próximo" (enterkeyhint) no nome, no WhatsApp, no carro e na placa, mas o Enter
+  // enviava o formulário pela metade (sem o "quando" e sem a mensagem). Agora o Enter nesses campos leva ao próximo campo.
+  form.addEventListener('keydown', (e) => {
+    const alvo = e.target;
+    if (e.key !== 'Enter' || e.isComposing || !alvo.matches('input[type=text], input[type=tel]')) return;
+    const campos = $$('input:not([type=hidden]):not([type=checkbox]), select, textarea', form)
+      .filter(c => !c.disabled && !c.closest('.campo-isca, [hidden]'));
+    const prox = campos[campos.indexOf(alvo) + 1];
+    if (prox) { e.preventDefault(); prox.focus(); }
   });
 
   // limpa o estado inválido ao digitar
@@ -1076,7 +1267,7 @@
     corpo.dias.slice(0, modo === 'form' && window.innerWidth <= 480 ? 2 : 3).forEach(dia => {
       const linha = document.createElement('div'); linha.className = 'horarios-dia';
       const rot = document.createElement('span'); rot.className = 'horarios-dia-rot'; rot.textContent = dia.rotulo;
-      const feriadoDia = FERIADOS[dia.data];
+      const feriadoDia = feriado(dia.data);
       if (feriadoDia) { const f = document.createElement('small'); f.className = 'feriado'; f.textContent = 'feriado'; rot.appendChild(f); temFeriado = true; }
       const horas = document.createElement('div'); horas.className = 'horarios-horas';
       dia.horas.slice(0, 4).forEach(hora => {
@@ -1109,20 +1300,40 @@
     if (q) q.disabled = !!horarioEscolhido; // o horário escolhido já diz quando; o campo volta se a pessoa desmarcar
   }
   function limparHorario() { horarioEscolhido = null; marcarHorario(); }
+  // Rodada 10: a pessoa chegou pelo link que a equipe mandou com um horário (/s/freios?h=2026-11-24T10:00) e a Agenda
+  // não respondeu. Antes o horário sumia calado; agora vai no "Quando prefere?" e segue no pedido para a equipe confirmar.
+  function sugestaoSemAgenda() {
+    const q = $('#fQuando');
+    if (!slotPedido || !q || $('option[data-sugerido]', q) || isNaN(Date.parse(slotPedido.data + 'T' + slotPedido.hora))) return;
+    const [, mes, dia] = slotPedido.data.split('-');
+    const o = document.createElement('option');
+    o.dataset.sugerido = '1';
+    o.value = o.textContent = dia + '/' + mes + ' às ' + slotPedido.hora + ' (sugerido pela equipe)';
+    q.appendChild(o); q.value = o.value;
+  }
   async function montarHorarios() {
     const corpo = await carregarHorarios();
     const caixa = $('#horarios');
-    if (!corpo) { if (caixa) caixa.hidden = true; $$('[data-so-horarios]').forEach(e => { e.hidden = true; }); return; } // Agenda não respondeu: a caixa some, o formulário segue igual
+    // Agenda não respondeu: a caixa some, o formulário segue igual. Rodada 10: a falha é passageira; a próxima resposta
+    // boa pinta tudo de novo (antes, a mesma lista de um minuto atrás não era repintada e a caixa ficava sumida).
+    if (!corpo) { horariosPintados = ''; if (caixa) caixa.hidden = true; $$('[data-so-horarios]').forEach(e => { e.hidden = true; }); sugestaoSemAgenda(); retomarPulo(); return; }
+    $$('[data-so-horarios]').forEach(e => { e.hidden = false; });
+    { const o = $('#fQuando option[data-sugerido]'); if (o) o.remove(); } // a Agenda respondeu: o horário sugerido volta a ser um botão de horário
     if (caixa && !corpo.dias.length) {
       const l = $('#horariosLista'); l.textContent = '';
+      // Rodada 9: "Chame a gente no WhatsApp" virou link (antes era só texto: agenda cheia e nenhum caminho para seguir)
       const p = document.createElement('p'); p.className = 'horarios-carregando';
-      p.textContent = 'A agenda está cheia nos próximos dias. Chame a gente no WhatsApp que a equipe encaixa o seu carro.';
-      l.appendChild(p); caixa.hidden = false; caixa.removeAttribute('aria-busy');
+      const wa = document.createElement('a'); wa.target = '_blank'; wa.rel = 'noopener'; wa.textContent = 'Chame a gente no WhatsApp';
+      ligarWhatsApp(wa, 'Olá! Vim pelo site, quero agendar um horário.', 'agendar');
+      p.append('A agenda está cheia nos próximos dias. ', wa, ' que a equipe encaixa o seu carro.');
+      const sub = $('.horarios-sub', caixa); if (sub) sub.hidden = true; // sem horário, o "Toque num horário" não faz sentido
+      l.appendChild(p); caixa.hidden = false; caixa.removeAttribute('aria-busy'); retomarPulo();
     } else if (caixa && corpo.atualizado_em !== horariosPintados) {
       pintarHorarios($('#horariosLista'), corpo, 'secao');
+      const sub = $('.horarios-sub', caixa); if (sub) sub.hidden = false; // voltou a ter horário (a lista se atualiza com a página aberta)
       const hh = new Date(corpo.atualizado_em);
       if (!isNaN(hh)) $('#horariosAtualizado').textContent = 'Atualizado às ' + hh.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) + '.';
-      caixa.hidden = false; caixa.removeAttribute('aria-busy');
+      caixa.hidden = false; caixa.removeAttribute('aria-busy'); retomarPulo(); // a altura da caixa pode ter mudado: quem estava a caminho de uma âncora cai no lugar certo
     }
     const f = $('#fHorarios');
     if (f && corpo.dias.length && corpo.atualizado_em !== horariosPintados) { pintarHorarios($('#fHorariosLista'), corpo, 'form'); f.hidden = false; }
@@ -1144,6 +1355,20 @@
     marcarHorario();
     preencherPromo(corpo);
   }
+  // Rodada 10: a internet voltou. Se a caixa de horários tinha sumido por falta de rede (ou o formulário está aberto),
+  // a consulta é refeita na hora, sem esperar a pessoa recarregar a página.
+  window.addEventListener('online', () => {
+    const caixa = $('#horarios');
+    if (!(caixa && caixa.hidden) && !formBackdrop.classList.contains('open')) return;
+    horariosPromessa = null; horariosEm = 0;
+    montarHorarios();
+  });
+  // Rodada 10: sem internet, o formulário avisa antes de a pessoa preencher que o pedido vai sair pelo WhatsApp.
+  (function () {
+    const aviso = $('#fSemRede'); if (!aviso) return;
+    const pintar = () => { aviso.hidden = navigator.onLine !== false; };
+    window.addEventListener('online', pintar); window.addEventListener('offline', pintar); pintar();
+  })();
   document.addEventListener('click', (e) => {
     const b = e.target.closest && e.target.closest('.horario-chip');
     if (!b) return;
@@ -1180,6 +1405,10 @@
     const tirar = (txt) => { const o = $$('option', q).find(x => x.textContent.trim() === txt); if (o) o.remove(); };
     if (dia === 'Sun' || minutos >= 1050) tirar('Hoje');
     if (dia === 'Sat') tirar('Amanhã');
+    // Rodada 9: sábado depois das 17h30 e domingo, "Esta semana" já acabou: vira "Semana que vem" (no texto e no que vai para a equipe)
+    // Rodada 9: no sábado, "Sábado" era hoje mesmo (já coberto pelo "Hoje") ou um dia que já passou: vira "Sábado que vem"
+    if (dia === 'Sat') $$('option', q).forEach(o => { if (o.textContent.trim() === 'Sábado') o.textContent = o.value = 'Sábado que vem'; });
+    if (dia === 'Sun' || (dia === 'Sat' && minutos >= 1050)) $$('option', q).forEach(o => { if (/^Esta semana/.test(o.textContent.trim())) { o.textContent = o.value = o.textContent.trim().replace(/^Esta semana/, 'Semana que vem'); } });
   })();
   // A caixa já nasce com o tamanho final (esqueleto com altura reservada): quando os horários chegam nada pula na tela,
   // e quem entra por #contato ou #faq não perde o lugar. Sem JavaScript ela fica escondida.
@@ -1256,43 +1485,44 @@
       const r = rotearCodigo(campo.value);
       if (!r) {
         campo.setAttribute('aria-invalid', 'true'); msg.classList.add('erro');
-        msg.textContent = 'Não reconheci esse link ou código. Confira se copiou inteiro, ou peça outro pelo WhatsApp.';
+        // Rodada 9: com o campo vazio, "Não reconheci esse link" não fazia sentido
+        msg.textContent = campo.value.trim() ? 'Não reconheci esse link ou código. Confira se copiou inteiro, ou peça outro pelo WhatsApp.'
+          : 'Cole aqui o link ou o código que a oficina mandou pelo WhatsApp.';
         campo.focus(); return;
       }
-      msg.textContent = 'Abrindo ' + r.rotulo + '…';
+      // Rodada 9: se o navegador barrar a janela nova (bloqueador de pop-up, app do Instagram), fica um link para tocar
+      msg.textContent = 'Abrindo ' + r.rotulo + '. Se não abriu, ';
+      const link = document.createElement('a');
+      link.href = r.url; link.target = '_blank'; link.rel = 'noopener'; link.textContent = 'toque aqui';
+      msg.append(link, '.');
       window.open(r.url, '_blank', 'noopener');
       campo.value = '';
     });
   })();
 
   /* ================================================================
-     10. PROVA SOCIAL — notificações rotativas (canto inferior esq.)
+     10. AVISO no canto (só o retorno do formulário). Rodada 9: a rotação de "prova social" saiu: ela repetia o que a
+     página já diz (diagnóstico, garantia, horário), cobria o conteúdo no celular e o leitor de tela anunciava cada troca.
      ================================================================ */
   const sp = $('#socialProof');
   const spEmoji = $('#spEmoji'), spName = $('#spName'), spAction = $('#spAction');
   const spClose = $('#spClose');
 
-  const proofs = [
-    ['🔎', 'Diagnóstico digital gratuito', 'Scanner + foto · cerca de 30 minutos'],
-    ['🛠️', 'Garantia de 12 meses', 'Em peças e mão de obra'],
-    ['🕗', 'Segunda a sábado', '8h às 17h30 · agende pelo WhatsApp'],
-  ];
-  let proofIdx = 0, proofDismissed = false, toastActive = false;
-
   // Rodada 7: feriados nacionais 2026–2027 (a mesma lista do Comunicar, dados.js › FERIADOS). A oficina pode ou não abrir
   // nesses dias: o site não promete nada, só avisa e manda confirmar pelo WhatsApp.
-  const FERIADOS = {
-    '2026-01-01': 'Confraternização Universal', '2026-02-16': 'Carnaval', '2026-02-17': 'Carnaval',
-    '2026-04-03': 'Sexta-feira Santa', '2026-04-21': 'Tiradentes', '2026-05-01': 'Dia do Trabalho',
-    '2026-06-04': 'Corpus Christi', '2026-09-07': 'Independência', '2026-10-12': 'Nossa Senhora Aparecida',
-    '2026-11-02': 'Finados', '2026-11-15': 'Proclamação da República', '2026-11-20': 'Consciência Negra',
-    '2026-12-25': 'Natal',
-    '2027-01-01': 'Confraternização Universal', '2027-02-08': 'Carnaval', '2027-02-09': 'Carnaval',
-    '2027-03-26': 'Sexta-feira Santa', '2027-04-21': 'Tiradentes', '2027-05-01': 'Dia do Trabalho',
-    '2027-05-27': 'Corpus Christi', '2027-09-07': 'Independência', '2027-10-12': 'Nossa Senhora Aparecida',
-    '2027-11-02': 'Finados', '2027-11-15': 'Proclamação da República', '2027-11-20': 'Consciência Negra',
-    '2027-12-25': 'Natal',
+  const FERIADOS_FIXOS = {
+    '01-01': 'Confraternização Universal', '04-21': 'Tiradentes', '05-01': 'Dia do Trabalho', '09-07': 'Independência',
+    '10-12': 'Nossa Senhora Aparecida', '11-02': 'Finados', '11-15': 'Proclamação da República', '11-20': 'Consciência Negra',
+    '12-25': 'Natal',
   };
+  const FERIADOS_MOVEIS = {
+    '2026-02-16': 'Carnaval', '2026-02-17': 'Carnaval', '2026-04-03': 'Sexta-feira Santa', '2026-06-04': 'Corpus Christi',
+    '2027-02-08': 'Carnaval', '2027-02-09': 'Carnaval', '2027-03-26': 'Sexta-feira Santa', '2027-05-27': 'Corpus Christi',
+  };
+  const feriado = iso => FERIADOS_MOVEIS[iso] || FERIADOS_FIXOS[iso.slice(5)];
+  // dia do calendário + n dias, no mesmo formato AAAA-MM-DD
+  const maisDias = (iso, n) => { const [a, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(a, m - 1, d + n)); };
+  const emIso = dt => dt.toISOString().slice(0, 10);
   // Horário comercial: Seg–Sáb 8h–17h30 · Dom fechado (sempre no fuso de Taubaté)
   function agoraSP() {
     const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
@@ -1312,7 +1542,7 @@
       const { dia, minutos, data } = agoraSP();
       const aberto = isBusinessHours();
       // Rodada 7: em feriado nacional o site não afirma "Aberto agora" (a equipe confirma pelo WhatsApp se abre)
-      const feriadoHoje = FERIADOS[data];
+      const feriadoHoje = feriado(data);
       chip.classList.toggle('feriado', !!feriadoHoje && dia !== 'Sun');
       if (feriadoHoje && dia !== 'Sun') {
         chip.classList.remove('fechado');
@@ -1324,46 +1554,61 @@
       chip.classList.toggle('fechado', !aberto);
       rotulo.textContent = aberto ? 'Aberto agora' : 'Fechado agora';
       if (aberto) detalhe.textContent = minutos >= 990 ? 'fecha às 17h30' : 'até 17h30';
-      else if (dia === 'Sat' && minutos >= 1050) detalhe.textContent = 'abre segunda, 8h';
-      else if (dia === 'Sun') detalhe.textContent = 'abre segunda, 8h';
-      else detalhe.textContent = minutos < 480 ? 'abre hoje, 8h' : 'abre amanhã, 8h';
+      else {
+        // Rodada 9: o próximo dia de abertura pode ser feriado (de 19/11 para 20/11, Consciência Negra; de sábado para a segunda
+        // de Carnaval): aí o chip não promete "abre amanhã, 8h", avisa e manda confirmar, como o chip de hoje já fazia.
+        const passo = dia === 'Sat' && minutos >= 1050 ? 2 : dia === 'Sun' || minutos >= 1050 ? 1 : 0;
+        const quando = passo === 0 ? 'hoje' : dia === 'Sat' || dia === 'Sun' ? 'segunda' : 'amanhã';
+        const proximo = emIso(maisDias(data, passo));
+        detalhe.textContent = feriado(proximo) ? quando + ' é feriado' : 'abre ' + quando + ', 8h';
+      }
       chip.hidden = false;
     }
     pintar();
     setInterval(pintar, 60000);
   })();
+  // Rodada 9: em feriado o "Hoje" do "Quando prefere?" avisa, e na véspera o "Amanhã" também (a oficina pode não abrir e a
+  // equipe confirma pelo WhatsApp), como o chip do topo e os horários livres já faziam. O valor enviado continua o mesmo.
+  (function quandoEmFeriado() {
+    const q = $('#fQuando'); if (!q) return;
+    const { data } = agoraSP();
+    const amanha = emIso(maisDias(data, 1));
+    for (const [txt, dia] of [['Hoje', data], ['Amanhã', amanha]]) {
+      const o = $$('option', q).find(x => x.textContent.trim() === txt);
+      if (o && feriado(dia)) { o.value = txt; o.textContent = txt + ' (feriado: a equipe confirma)'; }
+    }
+  })();
 
-  function showNextProof() {
-    if (proofDismissed || toastActive || document.hidden || reduceMotion) return;
-    // FORA do horário comercial: não mostra "fulano agendou tal coisa"
-    if (!isBusinessHours()) return;
-    const [emoji, name, action] = proofs[proofIdx % proofs.length];
-    spEmoji.textContent = emoji;
-    spName.textContent = name;
-    spAction.textContent = action;
-    sp.classList.add('show');
-    proofIdx++;
-    setTimeout(() => sp.classList.remove('show'), 5000); // some após 5s
-  }
-  // primeiro após 12s, depois a cada 24s (mais lento, só dispara dentro do horário)
-  setTimeout(function loop() {
-    showNextProof();
-    if (!proofDismissed) setTimeout(loop, 24000);
-  }, 12000);
+  // Rodada 9: o horário do contato avisa o feriado dos próximos 7 dias (a oficina pode não abrir: a equipe confirma), como o
+  // chip do topo e os horários livres já faziam. Antes, "Segunda a sábado: 8h às 17h30" valia até para a véspera do feriado.
+  (function feriadoNoContato() {
+    const p = $$('.contact-list p').find(x => x.textContent.includes('Domingo: fechado')); if (!p) return;
+    const { data } = agoraSP();
+    const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+    for (let i = 0; i <= 7; i++) {
+      const dt = maisDias(data, i), iso = emIso(dt);
+      if (!feriado(iso) || dt.getUTCDay() === 0) continue;
+      const quando = i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : DIAS[dt.getUTCDay()].replace(/^./, c => c.toUpperCase()) + ', ' + iso.slice(8) + '/' + iso.slice(5, 7) + ',';
+      const s = document.createElement('small'); s.className = 'contato-feriado';
+      s.textContent = quando + ' é feriado (' + feriado(iso) + '): confirme no WhatsApp se a oficina abre.';
+      p.after(s); break;
+    }
+  })();
 
-  // fechar é definitivo: a rotação não volta nesta visita
-  spClose.addEventListener('click', () => { proofDismissed = true; sp.classList.remove('show'); });
+  spClose.addEventListener('click', () => { sp.classList.remove('show'); });
 
   /* ================================================================
-     11. TOAST genérico (reaproveita o componente de prova social)
+     11. TOAST genérico (usa o mesmo aviso do canto)
      ================================================================ */
+  let toastRelogio = 0;
   function showToast(emoji, title, text) {
-    toastActive = true;             // pausa a rotação sem anular o fechamento
+    sp.classList.add('show'); // visível antes do texto: o leitor de tela anuncia a troca
     spEmoji.textContent = emoji;
     spName.textContent = title;
     spAction.textContent = text;
-    sp.classList.add('show');
-    setTimeout(() => { sp.classList.remove('show'); toastActive = false; }, 5000);
+    // Rodada 10: cada aviso fica os seus 5 s (antes o relógio do aviso anterior apagava o novo antes da hora)
+    clearTimeout(toastRelogio);
+    toastRelogio = setTimeout(() => { sp.classList.remove('show'); }, 5000);
   }
 
   /* ================================================================
@@ -1704,13 +1949,19 @@
     // Rodada 4: a largura do grupo é medida só quando muda (antes, a cada quadro forçava o layout da página).
     let larguraGrupo = group.offsetWidth;
     if ('ResizeObserver' in window) new ResizeObserver(() => { larguraGrupo = group.offsetWidth; }).observe(group);
+    // Rodada 9: com o JS no comando, o "para quando o mouse passa por cima" do CSS tinha deixado de valer: volta aqui.
+    // No celular, um toque na faixa para e outro retoma (texto em movimento precisa de um jeito de pausar).
+    let parado = false;
+    bar.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') parado = true; });
+    bar.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') parado = false; });
+    bar.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') parado = !parado; });
 
     function frame() {
       const y = window.scrollY;
       vel += ((y - lastY) - vel) * 0.1;   // lerp do delta de scroll
       lastY = y;
 
-      offset -= 0.6 + Math.abs(vel) * 0.15;
+      if (!parado) offset -= 0.6 + Math.abs(vel) * 0.15;
       const w = larguraGrupo;
       if (w > 0) offset = ((offset % w) + w) % w - w;   // wrap pelo módulo de um grupo
 
@@ -1951,7 +2202,7 @@
      ================================================================ */
   if (hasFinePointer && !reduceMotion) {
     // 3º passe: o glare também varre as fotos (sobre e diferenciais)
-    $$('.service-card, .about-photo, .why-image').forEach(card => {
+    $$('.service-card, .why-image').forEach(card => {
       const g = document.createElement('i');
       g.className = 'tile-glare';
       g.setAttribute('aria-hidden', 'true');
@@ -2086,6 +2337,7 @@
     const badge = $('#yearsBadge');
     if (!badge || reduceMotion) return;
     const TARGET = Number(document.body.dataset.anos) || 18, DUR = 1400;
+    const alvo = $('[data-num]', badge) || badge;
     new IntersectionObserver(([e], obs) => {
       if (!e.isIntersecting) return;
       obs.disconnect();
@@ -2093,7 +2345,8 @@
       (function tick(now) {
         const p = Math.min((now - t0) / DUR, 1);
         const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
-        badge.textContent = Math.round(TARGET * eased) + '+';
+        // rodada 9: conta dentro da marca data-num (o '+' fica fora), para a marca do número não sumir da página
+        if (alvo !== badge) alvo.textContent = Math.round(TARGET * eased); else badge.textContent = Math.round(TARGET * eased) + '+';
         if (p < 1) requestAnimationFrame(tick);
       })(t0);
     }, { threshold: 0.5 }).observe(badge);
@@ -2298,7 +2551,7 @@
     }
     if (hasFinePointer) {
       document.addEventListener('pointerover', e => {
-        const light = !!(e.target.closest && e.target.closest('.sec-light, .rev-pop-card'));
+        const light = !!(e.target.closest && e.target.closest('.sec-light'));
         document.body.classList.toggle('tc-light', light);
       });
     }
@@ -2347,75 +2600,7 @@
     frame();
   });
 
-  /* ================================================================
-     37. AVALIAÇÕES POR SERVIÇO — popover acessível.
-         REGRA INEGOCIÁVEL: nada é inventado. A fonte é o próprio
-         carrossel de depoimentos REAIS do site; o mapeamento liga
-         cada serviço apenas a quem citou aquele assunto. Serviço sem
-         depoimento correspondente mostra a nota agregada REAL (4,8 ·
-         +1.200 avaliações no Google) + convite para ver no Google ou
-         contar a experiência pelo WhatsApp.
-     ================================================================ */
-  (function serviceReviews() {
-    const pop = $('#revPop');
-    if (!pop) return;
-    const body = $('#revPopBody');
-    const title = $('#revPopTitle');
-    const waLink = $('#revPopWa');
-    const closeBtn = $('#revPopClose');
-    let trigger = null;
-
-    function render(key, serviceName) {
-      title.textContent = 'Avaliações — ' + serviceName;
-      const slug = 'avaliacao-' + (key || 'servico');
-      waLink.href = 'https://wa.me/' + WPHONE + '?text=' +
-        encodeURIComponent('Olá! Vim pelo site. Já fiz ' + serviceName + ' na IndyCar e quero contar como foi. (site/' + slug + ')') +
-        '&utm_source=site&utm_medium=whatsapp&utm_campaign=' + slug;
-      body.textContent = '';
-      const box = document.createElement('div');
-      box.className = 'rev-pop-empty';
-      const big = document.createElement('span');
-      big.className = 'rp-big';
-      big.textContent = document.body.dataset.nota || '4,8'; const de5 = document.createElement('small'); de5.textContent = ' / 5'; big.appendChild(de5);
-      const p = document.createElement('p');
-      p.textContent = 'Nossa nota no Google é ' + (document.body.dataset.nota || '4,8') + ', com mais de ' + (document.body.dataset.avaliacoes || '1.200') + ' avaliações. Não publicamos depoimento por serviço aqui: leia as avaliações reais direto no Google.';
-      box.append(big, p);
-      body.appendChild(box);
-    }
-
-    function openPop(btn) {
-      trigger = btn;
-      render(btn.dataset.reviews, btn.dataset.serviceName || 'este serviço');
-      pop.hidden = false;
-      document.body.style.overflow = 'hidden';
-      btn.setAttribute('aria-expanded', 'true');
-      closeBtn.focus();
-    }
-    function closePop() {
-      if (pop.hidden) return;
-      pop.hidden = true;
-      if (!promoBackdrop.classList.contains('open') && !formBackdrop.classList.contains('open'))
-        document.body.style.overflow = '';
-      if (trigger) {
-        trigger.setAttribute('aria-expanded', 'false');
-        if (document.contains(trigger)) trigger.focus();
-        trigger = null;
-      }
-    }
-
-    $$('.svc-rev').forEach(b => b.addEventListener('click', () => openPop(b)));
-    closeBtn.addEventListener('click', closePop);
-    pop.addEventListener('click', e => { if (e.target === pop) closePop(); });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { closePop(); return; }
-      if (e.key !== 'Tab' || pop.hidden) return;
-      const f = $$('button, [href]', pop).filter(x => !x.disabled);
-      if (!f.length) return;
-      const first = f[0], last = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    });
-  })();
+  /* 37. (popover de avaliações por serviço removido na rodada 9: a nota e o caminho para o Google ficam na seção #avaliacoes) */
 
   /* ================================================================
      40. MAPA SOB DEMANDA — nada do Google carrega antes do clique.
@@ -2423,16 +2608,30 @@
   (function mapaSobDemanda() {
     const box = $('#mapBox'), btn = $('#mapLoad');
     if (!box || !btn) return;
+    let aberto = false;
     btn.addEventListener('click', () => {
+      if (aberto) return;
+      // Rodada 10: sem internet o quadro do mapa abria uma página de erro do navegador no lugar do endereço. Agora a
+      // capa fica (com o endereço escrito) e avisa; quando a rede voltar, o mesmo botão abre o mapa.
+      if (navigator.onLine === false) {
+        const nota = $('.map-ph small', box);
+        if (nota) { nota.setAttribute('role', 'status'); nota.textContent = 'Sem internet: o mapa abre quando a rede voltar. O endereço está aqui em cima.'; }
+        return;
+      }
+      aberto = true;
       const f = document.createElement('iframe');
       f.title = 'Mapa da IndyCar Centro Automotivo, Av. Bandeirantes 875, Taubaté';
       f.src = box.dataset.mapSrc;
       f.loading = 'lazy';
-      f.referrerPolicy = 'no-referrer-when-downgrade';
+      // Rodada 9: o Google recebe só o endereço do site, não a URL inteira (antes ia junto o que veio do anúncio: gclid, fbclid, utm)
+      f.referrerPolicy = 'strict-origin-when-cross-origin';
       box.classList.add('map-on');
       box.appendChild(f);
+      // Rodada 9: com o mapa aberto o "Traçar rota" sumia junto com a capa; fica por cima do mapa, no canto
+      const rota = $('.map-ph a[href*="/maps/dir/"]', box);
+      if (rota) { const r = rota.cloneNode(true); r.className = 'btn btn-light sm map-rota'; box.appendChild(r); }
       f.focus();
-    }, { once: true });
+    });
   })();
 
   /* ================================================================
@@ -2470,11 +2669,6 @@
          fila de reenvio sem rede, pedido recente e economia de dados
      ================================================================ */
   (function rodada7() {
-    const store = {
-      get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
-      set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
-      del(k) { try { localStorage.removeItem(k); } catch (_) {} },
-    };
     const lerJson = (txt) => { try { return JSON.parse(txt || 'null'); } catch (_) { return null; } };
     const DIA = 86400000;
     const CAMPOS = { nome: '#fName', tel: '#fPhone', carro: '#fCar', placa: '#fPlaca', msg: '#fMsg' };
@@ -2499,11 +2693,11 @@
     }
     function salvarRascunho() {
       const v = valores();
-      if (Object.entries(v).some(([k, x]) => k !== 'servico' && String(x).trim())) sessao.set('indycar_rascunho', JSON.stringify(v));
+      if (Object.entries(v).some(([k, x]) => k !== 'servico' && String(x).trim())) sessao.set(RASCUNHO, JSON.stringify(v));
     }
     form.addEventListener('input', salvarRascunho);
     form.addEventListener('change', salvarRascunho);
-    const rascunho = lerJson(sessao.get('indycar_rascunho'));
+    const rascunho = lerJson(sessao.get(RASCUNHO));
     if (rascunho) preencher(rascunho);
 
     // --- Lembrar meus dados neste aparelho (localStorage, só se a pessoa marcar) ---
@@ -2520,7 +2714,7 @@
     if (esquecer) esquecer.addEventListener('click', () => {
       store.del(EU);
       for (const sel of Object.values(CAMPOS)) { const el = $(sel); if (el) { el.value = ''; if (el.id === 'fMsg') el.dispatchEvent(new Event('input')); } }
-      try { sessionStorage.removeItem('indycar_rascunho'); } catch (_) {}
+      sessao.del(RASCUNHO);
       if (chk) chk.checked = false;
       esquecer.hidden = true;
       const aviso = $('#fHorarioEscolhido'); if (aviso) aviso.textContent = 'Seus dados foram apagados deste aparelho.';
@@ -2544,7 +2738,7 @@
     }
     window.addEventListener('indycar:pedido', (e) => {
       const { resposta, pedido, horarioRotulo } = e.detail || {};
-      try { sessionStorage.removeItem('indycar_rascunho'); } catch (_) {}
+      sessao.del(RASCUNHO);
       if (chk && chk.checked && pedido) {
         store.set(EU, JSON.stringify({ em: Date.now(), nome: pedido.nome, tel: ($('#fPhone') || {}).value || '', carro: pedido.carro || '', placa: pedido.placa || '' }));
       } else if (chk && !chk.checked) store.del(EU);
@@ -2552,32 +2746,64 @@
         store.set(PEDIDO, JSON.stringify({ em: Date.now(), protocolo: String(resposta.protocolo).slice(0, 12), servico: pedido ? pedido.servico : '', horario: horarioRotulo || '' }));
         pintarPedidoRecente();
       }
+      // Rodada 10: o pedido chegou agora. Se o mesmo (telefone e serviço) ainda esperava na fila de uma tentativa sem
+      // rede, sai de lá: senão ele seria reenviado depois e a ficha do contato ganharia um "novo envio" repetido.
+      if (resposta && !resposta.direto && pedido) {
+        const resto = filaSem(pedido);
+        if (resto.length) store.set(FILA, JSON.stringify(resto)); else store.del(FILA);
+      }
     });
     pintarPedidoRecente();
 
     // --- Fila de reenvio: sem rede o pedido abre o WhatsApp E fica guardado; quando a rede volta, vai ao banco ---
     const FILA = 'indycar_fila';
-    const lerFila = () => (lerJson(store.get(FILA)) || []).filter(x => x && x.em && x.pedido && Date.now() - x.em < DIA);
+    // Rodada 10: o que está guardado no aparelho não é de confiança. Valor estragado (não é lista, item sem pedido) vale como fila
+    // vazia; antes um valor torto derrubava o reenvio e o pedido sem rede seguinte não era guardado.
+    const lerFila = () => { const v = lerJson(store.get(FILA)); return (Array.isArray(v) ? v : []).filter(x => x && x.em && x.pedido && typeof x.pedido === 'object' && Date.now() - x.em < DIA); };
+    const filaSem = p => lerFila().filter(x => !(x.pedido.telefone === p.telefone && x.pedido.servico === p.servico)); // a fila sem este mesmo pedido (telefone e serviço)
     window.addEventListener('indycar:pedido-offline', (e) => {
       const pedido = e.detail && e.detail.pedido;
       if (!pedido) return;
-      const f = lerFila(); f.push({ em: Date.now(), pedido });
+      // Rodada 10: o mesmo pedido de novo (mesmo telefone e serviço, a pessoa tocou em enviar duas vezes sem rede)
+      // troca o que estava guardado em vez de entrar duas vezes na fila.
+      const f = filaSem(pedido);
+      f.push({ em: Date.now(), pedido });
       store.set(FILA, JSON.stringify(f.slice(-3)));
     });
     let esvaziando = false;
-    async function esvaziarFila() {
+    // Rodada 10: duas abas do site abertas reenviavam a mesma fila ao mesmo tempo (dois pedidos iguais chegando juntos
+    // ao servidor). Só uma aba por vez esvazia a fila (Web Locks); navegador sem esse recurso segue como antes.
+    function esvaziarFila() {
+      const L = navigator.locks;
+      return L ? L.request(FILA, { ifAvailable: true }, trava => trava && esvaziarFilaAgora()).catch(() => {}) : esvaziarFilaAgora();
+    }
+    async function esvaziarFilaAgora() {
       if (esvaziando || navigator.onLine === false) return;
       const f = lerFila();
       if (!f.length) { store.del(FILA); return; }
       esvaziando = true;
-      const restantes = [];
+      const processados = [];
       for (const item of f) {
         try {
-          const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 9000);
-          const r = await fetch(SITE_LEAD_URL, { method: 'POST', mode: 'cors', signal: ctrl.signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify(item.pedido) });
-          clearTimeout(t);
-          if (r.status >= 500 || r.status === 429) restantes.push(item); // servidor ocupado: tenta de novo depois
-        } catch (_) { restantes.push(item); }
+          const r = await postarPedido(item.pedido);
+          if (r.status < 500 && r.status !== 429) processados.push(JSON.stringify(item));
+          // Rodada 9: o pedido que esperava a rede chegou: a pessoa fica sabendo (antes o reenvio era mudo e o
+          // "Seu pedido está com a equipe" nunca aparecia para ele)
+          if (r.ok) {
+            const j = await r.json().catch(() => null);
+            if (j && j.protocolo) {
+              store.set(PEDIDO, JSON.stringify({ em: Date.now(), protocolo: String(j.protocolo).slice(0, 12), servico: item.pedido.servico || '', horario: '' }));
+              pintarPedidoRecente();
+              showToast('✓', 'Seu pedido chegou à oficina', 'Protocolo ' + String(j.protocolo).slice(0, 12) + '. A equipe confirma pelo WhatsApp.');
+            }
+          }
+        } catch (_) { /* sem resposta: mantém o pedido para tentar de novo */ }
+      }
+      // A fila pode ter recebido pedidos enquanto a rede respondia. Remova só os itens processados.
+      const restantes = lerFila();
+      for (const processado of processados) {
+        const indice = restantes.findIndex(item => JSON.stringify(item) === processado);
+        if (indice !== -1) restantes.splice(indice, 1);
       }
       if (restantes.length) store.set(FILA, JSON.stringify(restantes)); else store.del(FILA);
       esvaziando = false;

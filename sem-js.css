@@ -1,0 +1,5 @@
+/* Só carrega com o JavaScript desligado (<noscript> do index.html). Rodada 9: sem JavaScript, as seções que surgem ao
+   rolar ficavam invisíveis, o aviso ficava atrás do menu fixo e o botão do menu não abria nada. */
+.reveal{opacity:1!important;transform:none!important}
+.sem-js{position:relative;z-index:950}
+.hamburger{display:none}

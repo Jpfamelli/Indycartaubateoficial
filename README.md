@@ -13,7 +13,7 @@ HTML, CSS e JavaScript puros — site estático, sem build (o `npm run publicar`
 - `manifest.webmanifest`, `robots.txt`, `sitemap.xml`, `netlify.toml` (cabeçalhos, cache e atalhos)
 - `scripts/mensagens-whatsapp.mjs` — **a** tabela das mensagens prontas do WhatsApp (`npm run whatsapp` reescreve o HTML)
 - `scripts/dados-oficina.mjs` — **o** lugar dos números da oficina: nota 4,8 · +1.200 avaliações · +18 anos (`npm run numeros` reescreve o HTML)
-- `scripts/qa.mjs` (`npm test`), `scripts/vitais.mjs` (`npm run vitais`, Lighthouse), `scripts/publicar.mjs` — não vão para o ar
+- `scripts/qa.mjs`, `scripts/qa-r7.mjs` e `scripts/qa-r8.mjs` (`npm test`), `scripts/vitais.mjs` (`npm run vitais`, Lighthouse), `scripts/publicar.mjs` — não vão para o ar
 - `supabase/functions/site-lead/index.ts` — Edge Function que recebe o formulário (publicada no Supabase da oficina); `scripts/sql/` — migrações
 
 ## Rodar localmente
@@ -28,7 +28,7 @@ Atalhos no ar (netlify.toml): `/acompanhar` e `/minha` → Área do Cliente (ind
 
 ## Testar
 `npm install` uma vez e:
-- `npm test`: abre o site no Chrome instalado (puppeteer-core) em 375 e 1440 px e confere rolagem horizontal, erros de console, CSP, links de WhatsApp (prefixo + tabela + código + UTM), JSON-LD, FAQ, imagens (AVIF), mapa sob demanda, formulário (com **fetch falso** da Edge Function: nada vai para o banco; caminho sem rede abre o WhatsApp), entradas por endereço (`/?servico=`, `/?abrir=form`, UTM), Área do Cliente, status aberto/fechado, menu atual, tabelas de mensagens/números iguais ao HTML, `dist/` minificado, 404, axe-core. Capturas em `qa-out/`.
+- `npm test` (logica + qa + qa-r7 + qa-r8 + qa-r9): abre o site no Chrome instalado (puppeteer-core) em 375 e 1440 px e confere rolagem horizontal, erros de console, CSP, links de WhatsApp (prefixo + tabela + código + UTM), JSON-LD, FAQ, imagens (AVIF), mapa sob demanda, formulário (com **fetch falso** da Edge Function: nada vai para o banco; caminho sem rede abre o WhatsApp), entradas por endereço (`/?servico=`, `/?abrir=form`, UTM), Área do Cliente, status aberto/fechado, menu atual, tabelas de mensagens/números iguais ao HTML, `dist/` minificado, 404, axe-core. Capturas em `qa-out/`.
 - `npm run vitais`: Lighthouse (celular e computador) sobre o `dist/` local; `-- --prod` mede o site no ar. Falha se alguma nota ficar abaixo de 95. Relatórios em `qa-out/lighthouse-*.json`.
 
 ## Formulário → banco da oficina (rodada 5)
@@ -53,8 +53,9 @@ A tabela única está em `scripts/mensagens-whatsapp.mjs`; `npm run whatsapp` re
 | `cambio` `scanner` `motor` `oleo-motor` `freios` `amortecedores` `suspensao` `correia` `pneus` `alinhamento` `embreagem` `bicos` | cards de serviço (ids `#svc-<código>`) |
 | `cambio-dialise` · `nao-fazemos` · `garantia` · `pagamento` · `acompanhar` · `duvida` · `agendar` | FAQ, garantia e topo do FAQ |
 | `outro-servico` | faixa "Também fazemos" |
-| `avaliacao` · `avaliacao-<serviço>` (popover) | avaliações |
+| `avaliacao` | avaliações (o botão "Avaliações" de cada card e a janela dele saíram na rodada 9) |
 | `contato` · `rodape` · `area-cliente` | seção de contato, rodapé e "não recebeu o seu link?" |
+| `privacidade` | página de privacidade (LGPD), rodada 9 |
 | `formulario-<serviço>` | formulário (montado pelo script.js; também é o `utm_campaign` do lead criado pela Edge Function) |
 
 Entradas por endereço: `/?servico=freios` rola até o card e deixa o serviço escolhido no formulário; `/?abrir=form` abre o formulário; `utm_*`, `gclid` e `fbclid` ficam na sessão e vão no pedido.
@@ -64,7 +65,7 @@ Links fixos para https://indycar-patio.netlify.app/acompanhar/ (etapa do carro n
 
 ## Segurança
 - Cabeçalhos no `netlify.toml` (o `npm test` aplica os mesmos no servidor local, então uma CSP que quebre algo falha o teste): CSP completa (script, estilos e fontes só do próprio site; `connect-src` só o Supabase da oficina; mapa do Google só em iframe; `frame-ancestors 'self'`), HSTS de 1 ano com preload, Permissions-Policy fechando câmera, microfone, localização, pagamento, sensores e rastreio, COOP `same-origin-allow-popups` (o wa.me abre em janela própria), nosniff e Referrer-Policy.
-- Nenhum script embutido nem `onload`/`onerror` no HTML; nenhuma chave no site.
+- Nenhum script embutido nem `onload`/`onerror` no HTML; nenhuma chave secreta no site (a única é a chave pública do banco, `RASTREIO_CHAVE` no `script.js`, feita para ficar à vista: ver rodada 8).
 - Formulário: campo-isca, tempo mínimo (2,5 s no site, 1,5 s na função), validação no site e na função, freios por IP e telefone.
 - Desempenho: fontes no próprio site com preload, AVIF→WebP→JPG/PNG com `sizes`, efeitos de canvas depois do `load`, aurora/grão/manchas de fundo sem animação contínua, no celular o mar de metal fica num quadro só e título/botões sem pulso, `content-visibility: auto` abaixo da dobra, CSS/JS minificados e versionados.
 
@@ -89,3 +90,25 @@ Contrato para o Atendimento, o Comunicar, o Pátio, o Orçador e o balcão (QR).
 Fragmento interno: `/#agendar[-serviço]` (é o que os atalhos viram). Os links antigos `/?servico=&abrir=form` seguem valendo.
 Neste aparelho (nada sai dele): rascunho do formulário (aba), "Lembrar meus dados" (opcional, 180 dias), protocolo do último pedido (36 h) e fila de reenvio sem rede (24 h). A página de privacidade explica.
 Testes: `npm test` roda `qa.mjs` e `qa-r7.mjs` (emula os redirecionamentos do netlify.toml). `npm run css-morto` lista/remove CSS de classe inexistente. `npm run publicar` enxuga o HTML, aplica orçamento de peso e versiona o 404.js.
+
+## Rodada 8 (19/11/2026): de qual anúncio veio o contato
+Especificação: `indycar-ferramentas/r8/CONTRATO-RASTREIO.md`. Sem biblioteca, sem pixel e sem cookie: tudo fica no bloco "RODADA 8" do `script.js`, perto do topo.
+- **Na chegada** o site lê `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `gclid`, `gbraid`, `wbraid`, `fbclid`, `ttclid` e `msclkid`, a página de chegada (sem a parte depois de `?`; pelos atalhos fica `/s/<serviço>` ou `/agendar`), o domínio de onde a pessoa veio e o tipo (`anuncio`, `busca`, `instagram`, `facebook`, `whatsapp`, `outro_site`, `direto`). Guarda em `localStorage['indycar_rastreio']` por 30 dias, como `{ dados, codigo, quando }`. O `sessionStorage['indycar_utm']` das rodadas 5 a 7 continua sendo gravado e lido.
+- **Quem substitui quem**: link marcado (identificador de clique ou qualquer `utm_*`) substitui o que estava guardado; chegada só com site de origem não apaga link marcado; chegada direta não apaga nada; recarregar não conta como outra chegada; `utm_source=pwa` (atalho do app instalado) vale como direta. Os 30 dias contam da chegada pelo link, não da última visita.
+- **Registro no banco**: uma vez por sessão e por chegada, na primeira interação (`pointerdown`, `keydown`, `scroll`, `touchstart`) ou depois de 4 s com a página à vista: `POST https://nppfqhavqahapmugnyng.supabase.co/rest/v1/rpc/trafego_rastreio_registrar` com `{ "p_dados": { "evento": "visita", ...campos } }`. A resposta `{ ok, codigo }` (5 caracteres) fica guardada. Sem armazenamento no aparelho tudo funciona só com a memória da página (uma vez por página). Navegador comandado por programa (`navigator.webdriver`: as suítes antigas e o Lighthouse) não registra.
+- **Chave**: o endereço e a chave pública do banco ficam em duas linhas do `script.js` (`RASTREIO_URL` e `RASTREIO_CHAVE`) e em nenhum outro lugar. Com a chave vazia o site não registra nada e tudo sai no formato antigo. Só serve a chave pública (`sb_publishable_...` ou a `anon`); o `npm test` reprova qualquer outra.
+- **WhatsApp**: com código, todo botão termina com `(site/<serviço>--<fonte>--r-<código>)`, em minúsculas (`<fonte>` é o `utm_source` só com `[a-z0-9_]`, até 20, ou `direto`; no máximo 40 caracteres dentro dos parênteses, cortando o serviço se precisar). Sem código fica como era: `(site/<serviço>)` ou `(site/<serviço>--<fonte>)`. No clique vai um segundo registro, `{ codigo, evento: "clique", servico }`, com `keepalive`, sem segurar a abertura do WhatsApp; o serviço vai inteiro mesmo quando o texto foi cortado.
+- **Formulário**: o pedido leva `rastreio: { codigo?, ...campos }` (o `utm` antigo continua indo). A função `site-lead` limpa o que chegou (`origemDoPedido`, em `logica.ts`) e chama `trafego_aplicar_origem(lead, dados, 'formulario')` logo depois de criar o lead; se a função do banco ainda não existir, demorar mais de 4 s ou falhar, o pedido segue igual (`aplicarOrigem`).
+- **Privacidade**: nada de nome, telefone ou e-mail no rastreio. A página de privacidade diz o que é guardado (30 dias no aparelho; no sistema some em até 90 dias se não virar contato).
+- **Pulo do menu**: o pulo para uma âncora é refeito se a caixa de horários mudar de altura no meio do caminho (semana de feriado, Agenda fora do ar) e é cancelado se a pessoa tocar, teclar ou rolar.
+- **Testes**: `npm test` roda também `scripts/qa-r8.mjs`. Ele sobe um banco de mentira em 127.0.0.1, serve o `script.js` com o endereço e a chave trocados e abre o Chrome sem resolver nomes (nada sai da máquina) e sem a marca de navegador comandado. Sempre testa os arquivos locais, mesmo com `QA_URL` definido.
+
+Pôr no ar, nesta ordem: 1) aplicar no banco a migração que cria `trafego_rastreio_registrar` e `trafego_aplicar_origem`; 2) publicar a função `site-lead` (pode ir antes ou depois da migração); 3) preencher `RASTREIO_CHAVE` com a chave pública e rodar `npm run publicar`. Com a chave preenchida antes da migração, cada visita deixa um erro 404 no console do navegador (o site segue funcionando no formato antigo).
+
+## Rodada 9 (19-20/11/2026): repaginar, enxugar e acertar os estados
+100 melhorias (`R9-SITE-001` a `100` no MELHORIAS.md), ramo `claude/r9`, sem publicar. O principal:
+- Topo: o botão "Agendar diagnóstico grátis" aparece sem rolar (360x740 a 1440x900); contadores com o número real no HTML.
+- Enxugar: saíram a rotação de "prova social", o botão "Avaliações" de cada card (e a janela), os quadros "Foto em breve" da equipe (escondidos até as fotos reais), repetições e chavões; a fonte Inter saiu (o corpo usa a Archivo).
+- Estados: sem rede o pedido não diz "Pedido enviado!" e o foco vai para o WhatsApp; o reenvio da fila avisa quando chega; agenda cheia leva ao WhatsApp; sem JavaScript a página aparece; feriados no chip do topo, no "Quando prefere?" e no horário do contato.
+- Acessibilidade: menu do celular pelo teclado, contraste do rótulo das seções e dos botões de WhatsApp (verde sólido #0f7a41), glifos decorativos fora do leitor de tela, alvos de 24 px no computador e 44 px no celular.
+- Teste novo `scripts/qa-r9.mjs` (entra no `npm test`): Chrome com a rede de fora desligada, horários e envio respondidos dentro da página, datas fixas para os feriados.

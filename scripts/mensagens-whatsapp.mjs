@@ -44,6 +44,8 @@ export const MENSAGENS = {
   contato: PREFIXO + '.',
   rodape: PREFIXO + '.',
   'area-cliente': PREFIXO + ', já sou cliente e quero o link da minha área (Minha IndyCar).',
+  // Rodada 9: o link da página de Privacidade estava fora da tabela e sem o prefixo do contrato
+  privacidade: PREFIXO + ', quero falar sobre os meus dados (LGPD).',
   atalho: ORCAR + SERVICOS.diagnostico + '.',
   'sem-js': ORCAR + SERVICOS.diagnostico + '.',
 };

@@ -5,10 +5,12 @@
    ==================================================================== */
 
 /* ===== FONTES NO PRÓPRIO SITE (rodada 4, 14/10/2026) =====
-   Archivo e Inter variáveis + Barlow Condensed, só o subconjunto latino (cobre o português).
+   Archivo variável + Barlow Condensed, só o subconjunto latino (cobre o português).
+   Rodada 9: a Inter saiu; o corpo do texto usa a própria Archivo na largura normal (uma fonte a menos para baixar,
+   48 KB, e um relayout a menos quando ela chegava depois da Archivo; a Inter também é a fonte "de modelo pronto" que o guia veta).
    Sem ir ao Google: a página não espera outro servidor e nada do visitante sai para terceiros. */
 @font-face { font-family: 'Archivo'; font-style: normal; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; src: url('fontes/archivo-variavel.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('fontes/inter-variavel.woff2') format('woff2'); }
+
 /* Barlow (rótulos e botões): font-display optional — se não chegar a tempo na 1ª visita, fica a reserva calibrada e a página
    NÃO refaz o layout inteiro quando a fonte chega (no celular cada relayout custava ~0,5 s); da 2ª visita em diante vem do cache. */
 @font-face { font-family: 'Barlow Condensed'; font-style: normal; font-weight: 600; font-display: optional; src: url('fontes/barlow-condensed-600.woff2') format('woff2'); }
@@ -20,7 +22,7 @@
    no mesmo lugar e o hero não pula quando a fonte troca (CLS). */
 @font-face { font-family: 'Archivo Fallback'; src: local('Arial Black'), local('ArialBlack'), local('Arial-Black'); size-adjust: 117%; }
 @font-face { font-family: 'Archivo Fallback 2'; src: local('Arial Bold'), local('Arial-BoldMT'); size-adjust: 134%; }
-@font-face { font-family: 'Inter Fallback'; src: local('Arial'), local('ArialMT'); size-adjust: 106%; }
+
 @font-face { font-family: 'Archivo Text Fallback'; src: local('Arial'), local('ArialMT'); size-adjust: 99%; }
 @font-face { font-family: 'Barlow Fallback'; src: local('Arial Narrow Bold'), local('ArialNarrow-Bold'), local('Arial Narrow'); size-adjust: 91%; }
 @font-face { font-family: 'Barlow Fallback 2'; src: local('Arial Bold'), local('Arial-BoldMT'); size-adjust: 74%; }
@@ -32,7 +34,7 @@
    tela; o navegador guarda o tamanho real depois da primeira vez (auto), então a rolagem não pula. */
 main > section.section, main > section.final-cta { content-visibility: auto; contain-intrinsic-size: auto 900px; }
 /* Pulo para uma âncora (#contato, #faq...): tudo volta a ter o tamanho real antes, para o pulo cair no lugar certo. */
-html.cv-off main > section { content-visibility: visible; }
+html.cv-off main > section, html.cv-off .footer { content-visibility: visible; }
 
 /* ===== DESIGN TOKENS ===== */
 :root {
@@ -52,9 +54,9 @@ html.cv-off main > section { content-visibility: visible; }
   --gray-2:     #6c6c72;
   --wa:         #25d366;
 
-  --font-display: 'Archivo', 'Archivo Fallback', 'Archivo Fallback 2', 'Inter', sans-serif;
+  --font-display: 'Archivo', 'Archivo Fallback', 'Archivo Fallback 2', sans-serif;
   --font-cond:    'Barlow Condensed', 'Barlow Fallback', 'Barlow Fallback 2', sans-serif;
-  --font-body:    'Inter', 'Inter Fallback', sans-serif;
+  --font-body:    'Archivo', 'Archivo Text Fallback', sans-serif;
 
   /* tema claro (seções .sec-light) */
   --lt-bg:      #fafafa;
@@ -100,8 +102,7 @@ body {
 /* toda a família display (Archivo) roda na largura expandida (125%) */
 .hero-title, .section-title, .final-cta h2, .promo-modal h3, .form-modal-head h3,
 .rating-badge-info strong, .counter-num, .counter-prefix, .counter-suffix,
-.why-badge-num, .team-title, .team-mono, .service-card--star h3,
-.rev-pop-head strong, .rev-pop-empty .rp-big { font-stretch: 125%; }
+.why-badge-num, .team-title, .team-mono, .service-card--star h3 { font-stretch: 125%; }
 a { color: inherit; text-decoration: none; }
 ul { list-style: none; }
 img, svg, iframe { display: block; max-width: 100%; }
@@ -213,7 +214,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .btn-light { background: #fff; color: var(--black); }
 .btn-light:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(255,255,255,.3); }
 
-.btn-whatsapp { background: linear-gradient(135deg, #2ee06f, #128c4b); color: #fff; }
+/* Rodada 9: verde sólido escuro; o branco sobre o degradê verde-claro tinha contraste de 1,8 a 2,6 (mínimo 4,5); este dá 5,4 */
+.btn-whatsapp { background: #0f7a41; color: #fff; }
 .btn-whatsapp:hover { transform: translateY(-3px); box-shadow: 0 12px 34px rgba(37,211,102,.45); }
 .btn-whatsapp .wa { width: 24px; height: 24px; }
 
@@ -271,6 +273,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .nav-link::after { content: ''; position: absolute; left: 0; bottom: -6px; width: 0; height: 2px; background: var(--red); transition: width .3s var(--ease); }
 .nav-link:hover { color: var(--red); }
 .nav-link:hover::after { width: 100%; }
+/* Rodada 9: "Área do cliente" nunca quebra em duas linhas nem encosta no logo, mesmo com a fonte de reserva (1ª visita) */
+.nav-link { white-space: nowrap; }
+@media (min-width: 1101px) { .nav-links { gap: clamp(12px, 1.5vw, 22px); } }
 
 .hamburger { display: none; flex-direction: column; gap: 5px; padding: 6px; z-index: 950; }
 .hamburger span { width: 26px; height: 3px; background: #fff; border-radius: 3px; transition: .3s var(--ease); }
@@ -392,7 +397,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .section { padding: 100px 0; position: relative; z-index: 5; }
 .section-head { text-align: center; max-width: 720px; margin: 0 auto 60px; }
 .section-head.left { text-align: left; margin: 0 0 36px; }
-.section-tag { display: inline-block; font-family: var(--font-cond); font-weight: 700; letter-spacing: .3em; font-size: .85rem; color: var(--red); margin-bottom: 14px; text-transform: uppercase; }
+/* Rodada 9: o rótulo pequeno em vermelho puro não passava no contraste mínimo (AA, 4,5:1) em 7 lugares:
+   4,0:1 no fundo escuro (e no formulário) e 4,3:1 no cinza claro. No escuro vai o vermelho claro do guia (5,9:1),
+   nas seções claras o vermelho fechado que a FAQ já usava (5,6 a 5,9:1). Títulos grandes e superfícies seguem no --red. */
+.section-tag { display: inline-block; font-family: var(--font-cond); font-weight: 700; letter-spacing: .3em; font-size: .85rem; color: #ff4d5e; margin-bottom: 14px; text-transform: uppercase; }
+.sec-light .section-tag { color: #c40812; }
 .section-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.9rem, 4vw, 3.1rem); line-height: 1.05; letter-spacing: -.012em; }
 .section-desc { color: var(--gray); margin-top: 16px; font-size: 1.08rem; }
 
@@ -400,8 +409,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
 .about-lead { font-size: 1.18rem; color: #d8d8dc; margin-bottom: 18px; line-height: 1.6; }
 .about-lead strong { color: #fff; font-weight: 700; }
-.about-text { color: var(--gray); margin-bottom: 26px; line-height: 1.6; }
-.about-text strong { color: var(--white); }
 .about-pillars { display: grid; gap: 18px; }
 .about-pillar { display: flex; gap: 18px; padding: 22px; border-radius: var(--radius); background: linear-gradient(160deg, var(--card), var(--graphite)); border: 1px solid var(--line); transition: transform .35s var(--ease), border-color .35s, box-shadow .35s; }
 .about-pillar:hover { transform: translateX(6px); border-color: rgba(229,9,20,.5); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
@@ -410,15 +417,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .about-pillar h4, .about-pillar .h-sub { font-family: var(--font-cond); font-weight: 700; font-size: 1.25rem; letter-spacing: .01em; margin-bottom: 5px; }
 .about-pillar p { color: var(--gray); font-size: .95rem; }
 .about-cta { margin-top: 6px; }
-.about-photo {
-  position: relative; margin-top: 34px; border-radius: var(--radius); overflow: hidden;
-  border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.5);
-}
-.about-photo img { width: 100%; height: 240px; object-fit: cover; transition: transform .6s var(--ease); }
-.about-photo:hover img { transform: scale(1.05); }
-.about-photo::after { content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(180deg, rgba(10,10,11,.12), rgba(10,10,11,.05) 45%, rgba(10,10,11,.5)),
-              linear-gradient(120deg, rgba(229,9,20,.14), transparent 55%); }
 
 /* ========================= SERVIÇOS (bento editorial) ========================= */
 .services-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
@@ -442,7 +440,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .service-ico { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 14px; background: rgba(229,9,20,.1); color: var(--red); margin-bottom: 20px; transition: transform .35s var(--ease), background .35s; }
 .service-ico svg { width: 30px; height: 30px; }
 .service-card:hover .service-ico { transform: rotate(-8deg) scale(1.08); background: var(--red); color: #fff; }
-.service-card h3 { font-family: var(--font-cond); font-weight: 700; font-size: 1.4rem; letter-spacing: .01em; margin-bottom: 10px; }
+.service-card h3 { font-family: var(--font-cond); font-weight: 700; font-size: 1.4rem; line-height: 1.2; letter-spacing: .01em; margin-bottom: 10px; }
 .service-card p { color: var(--gray); font-size: .94rem; margin-bottom: 16px; }
 .service-link { font-family: var(--font-cond); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--gold); font-size: .92rem; cursor: pointer; transition: gap .25s, color .25s; display: inline-flex; gap: 4px; }
 .service-link:hover { color: var(--red); gap: 10px; }
@@ -458,6 +456,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* tiles horizontais (2x1, compactos 1x1 e faixa 4x1) */
 .service-card--wide, .service-card--mini, .service-card--strip { display: flex; align-items: center; gap: 18px; }
+/* Rodada 9: nos cards com texto o ícone fica alinhado ao título, não solto no meio da altura do card */
+.service-card--wide, .service-card--mini { align-items: flex-start; }
 .service-card--wide .service-ico, .service-card--mini .service-ico, .service-card--strip .service-ico { margin-bottom: 0; flex: none; }
 .service-body { min-width: 0; }
 .service-card--wide { padding: 26px; }
@@ -529,7 +529,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .contact-map iframe { width: 100%; height: 100%; min-height: 440px; border: 0; filter: invert(.92) hue-rotate(180deg) saturate(.7) contrast(.95); }
 
 /* hierarquia tipográfica profissional: label caps pequeno com tracking
-   (Barlow Condensed 600) em cima, valor em Inter regular embaixo */
+   (Barlow Condensed 600) em cima, valor em Archivo regular embaixo */
 .contact-list { display: grid; gap: 24px; margin-bottom: 30px; }
 .contact-list li { display: flex; gap: 16px; align-items: flex-start; }
 .ci-ico { flex: none; width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; background: rgba(229,9,20,.1); color: var(--red); border: 1px solid rgba(229,9,20,.2); }
@@ -576,7 +576,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .footer-brand p { color: var(--gray); font-size: .95rem; margin: 16px 0; max-width: 320px; }
 .footer-brand .logo { margin-bottom: 4px; }
 .footer-rating { color: var(--gold); letter-spacing: 2px; }
-.footer-rating span { color: var(--gray); font-size: .85rem; letter-spacing: 0; margin-left: 8px; }
+/* rodada 9: só o texto ao lado das estrelas (antes valia também para os números dentro dele e abria um vão em "+ 1.200");
+   as estrelas ficam num span próprio, escondido do leitor de tela, e seguem na cor e no espaçamento de antes */
+.footer-rating > span + span { color: var(--gray); font-size: .85rem; letter-spacing: 0; margin-left: 8px; }
+/* Rodada 9: a nota do rodapé leva ao perfil da oficina no Google (com as avaliações); 44 px de toque no celular, 24 no computador */
+.footer-rating a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,.3); text-underline-offset: 3px; display: inline-block; padding: 5px 0; }
+.footer-rating a:hover { color: #fff; }
+@media (pointer: coarse), (max-width: 860px) { .footer-rating a { padding: 15px 0; } }
 .footer-col h5, .footer-col .footer-h { font-family: var(--font-cond); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 1rem; margin-bottom: 18px; color: #fff; }
 .footer-col a, .footer-col span { display: block; color: var(--gray); font-size: .94rem; margin-bottom: 11px; transition: color .2s; }
 .footer-col a:hover { color: var(--red); }
@@ -586,7 +592,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .wa-float {
   position: fixed; right: 24px; bottom: 24px; z-index: 800;
   width: 62px; height: 62px; border-radius: 50%;
-  background: linear-gradient(135deg, #2ee06f, #128c4b); color: #fff;
+  background: #0f7a41; color: #fff;
   display: grid; place-items: center; box-shadow: 0 10px 30px rgba(37,211,102,.5);
   animation: waBounce 2.4s ease-in-out infinite;
 }
@@ -601,6 +607,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* botão voltar ao topo */
 .to-top { position: fixed; right: 28px; bottom: 96px; z-index: 799; width: 46px; height: 46px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); color: #fff; font-size: 1.3rem; display: grid; place-items: center; opacity: 0; pointer-events: none; transform: translateY(12px); transition: .3s var(--ease); }
 .to-top.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+/* Rodada 9: escondido (no topo da página) ele não recebe o foco do Tab nem é lido; some depois do fade */
+.to-top:not(.show) { visibility: hidden; transition: .3s var(--ease), visibility 0s linear .3s; }
 .to-top:hover { background: var(--red); border-color: var(--red); transform: translateY(-3px); box-shadow: 0 8px 22px var(--red-glow); }
 
 /* ========================= PROVA SOCIAL POPUP ========================= */
@@ -610,14 +618,15 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   padding: 14px 16px; border-radius: 14px;
   background: rgba(20,20,23,.96); border: 1px solid var(--line);
   box-shadow: 0 16px 44px rgba(0,0,0,.55); backdrop-filter: blur(10px);
-  transform: translateX(-130%); transition: transform .5s var(--ease);
+  transform: translateX(calc(-100% - 40px)); visibility: hidden; transition: transform .5s var(--ease), visibility 0s .5s;
 }
-.social-proof.show { transform: translateX(0); }
+.social-proof.show { transform: translateX(0); visibility: visible; transition: transform .5s var(--ease); }
 .sp-emoji { font-size: 1.6rem; flex: none; }
 .sp-text { display: flex; flex-direction: column; line-height: 1.3; }
 .sp-text strong { font-size: .95rem; }
 .sp-text span { font-size: .82rem; color: var(--gray); }
-.sp-close { position: absolute; top: 6px; right: 9px; color: var(--gray-2); font-size: 1.1rem; line-height: 1; }
+/* Rodada 9: o "×" tinha 12x18 px no computador; agora 28 px (WCAG 2.5.8 pede 24) e cinza mais legível */
+.sp-close { position: absolute; top: 2px; right: 2px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--gray); font-size: 1.1rem; line-height: 1; }
 .sp-close:hover { color: #fff; }
 
 /* ========================= MODAIS ========================= */
@@ -637,7 +646,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .modal-backdrop.open .promo-modal, .modal-backdrop.open .form-modal { transform: translateY(0) scale(1); }
 .promo-modal::before, .form-modal::before { content: ''; position: absolute; top: -60px; right: -60px; width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, rgba(229,9,20,.4), transparent 70%); }
-.modal-close { position: absolute; top: 14px; right: 16px; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.06); color: var(--gray); font-size: 1.3rem; display: grid; place-items: center; z-index: 2; transition: .2s; }
+/* Rodada 9: 44 px (era 34 px): o "×" do formulário e do convite fica fácil de acertar com o polegar */
+.modal-close { position: absolute; top: 10px; right: 12px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.06); color: var(--gray); font-size: 1.3rem; display: grid; place-items: center; z-index: 2; transition: .2s; }
 .modal-close:hover { background: var(--red); color: #fff; transform: rotate(90deg); }
 
 .promo-modal { text-align: center; }
@@ -714,12 +724,10 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background: linear-gradient(180deg, transparent, var(--red) 30% 70%, transparent);
   box-shadow: 0 0 18px var(--red-glow); opacity: 0; pointer-events: none;
 }
-.about-photo.in img,
 .why-visual.in .img-sweep img {
   clip-path: inset(-1% 0% -1% 0);
   transition: transform .6s var(--ease), clip-path 1.1s var(--ease) .2s;
 }
-.about-photo.in::before,
 .why-visual.in .img-sweep::before { animation: sweepBar 1.1s var(--ease) .2s both; }
 @keyframes sweepBar {
   0%   { left: -4px; opacity: 0; }
@@ -737,7 +745,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .why-grid { grid-template-columns: 1fr; gap: 40px; }
   .why-image { aspect-ratio: 16/10; max-height: 360px; width: 100%; }
   .contact-grid { grid-template-columns: 1fr; }
-  .review-card { flex-basis: calc((100% - 24px) / 2); }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .counters { grid-template-columns: repeat(2, 1fr); gap: 30px 10px; }
   .counter:nth-child(2)::after { display: none; }
@@ -1039,7 +1046,6 @@ body.fx-paused .hero-highlights .hl::after { animation-play-state: paused; }
 .sr-done .sr-word { animation: none; opacity: 1; filter: none; transform: none; }
 
 /* ---- GlareHover nas fotos (sobre e diferenciais): mesmo glare do bento ---- */
-.about-photo:hover .tile-glare,
 .why-image:hover .tile-glare { left: 145%; transition: left .75s var(--ease) .05s; }
 
 /* ---- Faíscas de pit lane no CTA final (canvas 2D via JS) ---- */
@@ -1094,8 +1100,6 @@ body.perf-lite .cta-embers { display: none; }
 /* SOBRE em claro */
 .sec-light .about-lead { color: #33353d; }
 .sec-light .about-lead strong { color: var(--lt-ink); }
-.sec-light .about-text { color: var(--lt-ink-2); }
-.sec-light .about-text strong { color: var(--lt-ink); }
 .sec-light .about-pillar {
   background: var(--lt-card); border-color: var(--lt-line);
   box-shadow: 0 10px 30px rgba(23,24,28,.06);
@@ -1193,59 +1197,9 @@ body.perf-lite .cta-embers { display: none; }
 .team-slot figcaption span { display: block; font-family: var(--font-cond); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; font-size: .78rem; color: var(--lt-ink-3); margin-top: 2px; }
 @media (max-width: 720px) { .team-grid { grid-template-columns: 1fr; } .team { margin-top: 56px; } }
 
-/* ========== GATILHO "AVALIAÇÕES DESTE SERVIÇO" nos cards ========== */
+/* ========== ações dos cards de serviço ========== */
 .service-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .service-actions--strip { margin-left: auto; flex: none; }
-.svc-rev {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--font-cond); font-weight: 600; font-size: .86rem; letter-spacing: .05em;
-  color: var(--gray); border: 1px solid var(--line); border-radius: 30px; padding: 6px 13px;
-  transition: color .25s, border-color .25s, background .25s, transform .25s var(--ease);
-  white-space: nowrap;
-}
-.svc-rev > span { color: var(--red); }
-.svc-rev:hover, .svc-rev[aria-expanded="true"] { color: var(--red); border-color: rgba(229,9,20,.55); background: rgba(229,9,20,.06); transform: translateY(-1px); }
-.svc-rev--sm { padding: 5px 10px; font-size: .8rem; }
-.sec-light .svc-rev { color: var(--lt-ink-2); border-color: var(--lt-line); background: #fff; }
-.sec-light .svc-rev:hover, .sec-light .svc-rev[aria-expanded="true"] { color: var(--red); border-color: rgba(229,9,20,.5); background: #fdf1f2; }
-
-/* ========== POPOVER DE AVALIAÇÕES POR SERVIÇO ========== */
-.rev-pop {
-  position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 20px;
-  background: rgba(8,8,10,.6); backdrop-filter: blur(5px);
-}
-.rev-pop-card {
-  position: relative; width: 100%; max-width: 440px; max-height: min(84vh, 640px);
-  display: flex; flex-direction: column;
-  background: #fff; color: var(--lt-ink);
-  border: 1px solid var(--lt-line); border-radius: 18px; padding: 26px 24px 20px;
-  box-shadow: 0 40px 90px rgba(0,0,0,.4);
-  animation: revPopIn .38s var(--ease);
-}
-@keyframes revPopIn { from { opacity: 0; transform: translateY(22px) scale(.97); } to { opacity: 1; transform: none; } }
-.rev-pop-close { position: absolute; top: 12px; right: 14px; width: 32px; height: 32px; border-radius: 50%; background: #f2f3f5; color: var(--lt-ink-2); font-size: 1.2rem; display: grid; place-items: center; transition: .2s; }
-.rev-pop-close:hover { background: var(--red); color: #fff; transform: rotate(90deg); }
-.rev-pop-head { padding-right: 30px; margin-bottom: 14px; }
-.rev-pop-stars { display: block; color: var(--red); letter-spacing: 3px; font-size: 1rem; }
-.rev-pop-head strong { display: block; font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; letter-spacing: -.01em; line-height: 1.15; margin: 6px 0 4px; }
-.rev-pop-note { font-size: .86rem; color: var(--lt-ink-2); }
-.rev-pop-note b { color: var(--lt-ink); }
-.rev-pop-body { overflow-y: auto; display: grid; gap: 12px; padding: 2px; margin-bottom: 16px; }
-.rev-pop-empty { text-align: center; padding: 10px 6px 4px; }
-.rev-pop-empty .rp-big { font-family: var(--font-display); font-weight: 800; font-size: 2.8rem; letter-spacing: -.02em; color: var(--lt-ink); line-height: 1; }
-.rev-pop-empty .rp-big small { font-size: 1.1rem; color: var(--lt-ink-3); font-weight: 700; }
-.rev-pop-empty p { font-size: .9rem; color: var(--lt-ink-2); margin-top: 8px; line-height: 1.5; }
-.rev-pop-actions { display: grid; gap: 9px; }
-.rev-pop-link {
-  display: block; text-align: center; font-family: var(--font-cond); font-weight: 700;
-  letter-spacing: .05em; text-transform: uppercase; font-size: .92rem;
-  border: 1px solid var(--lt-line); color: var(--lt-ink); border-radius: 11px; padding: 11px 14px;
-  transition: .25s;
-}
-.rev-pop-link:hover { border-color: var(--lt-ink); transform: translateY(-1px); }
-.rev-pop-link--wa { background: linear-gradient(135deg, #2ee06f, #128c4b); border-color: transparent; color: #fff; }
-.rev-pop-link--wa:hover { border-color: transparent; box-shadow: 0 10px 26px rgba(37,211,102,.4); }
-
 /* ========== FOTO TRATADA NO RODAPÉ (duotone grafite + toque vermelho) ========== */
 .footer-photo { margin-top: 20px; max-width: 240px; position: relative; }
 .footer-photo img { filter: grayscale(1) brightness(.92) contrast(1.05) drop-shadow(0 8px 18px rgba(0,0,0,.5)); transition: filter .5s var(--ease); }
@@ -1278,13 +1232,11 @@ body.tc-light .tc-dot { background: #17181c; box-shadow: none; }
 
 /* ========== responsivo / reduced-motion da 4ª rodada ========== */
 @media (max-width: 720px) {
-  .rev-pop-card { max-height: 80vh; padding: 22px 18px 16px; }
   .cutout-frame { box-shadow: 14px 16px 0 rgba(23,24,28,.07); }
 }
 @media (prefers-reduced-motion: reduce) {
   .footer-brand .logo::after { display: none; }
   .counter.pulsed .counter-num { animation: none; }
-  .rev-pop-card { animation: none; }
   [data-parallax] { transform: none !important; }
   .sec-light::before, .why::before, .contact::before { transform: scaleX(1); transition: none; }
 }
@@ -1375,6 +1327,10 @@ body.tc-light .tc-dot { background: #17181c; box-shadow: none; }
   transition: text-decoration-color .25s;
 }
 .faq-a p a:hover, .faq-desc-link:hover { text-decoration-color: var(--red); }
+/* rodada 9: "pelo formulário aqui do site" na resposta da FAQ abre o formulário; botão com cara do link ao lado */
+.faq-a p .faq-form { font: inherit; font-weight: 600; color: var(--red-txt, var(--red)); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(229,9,20,.35); }
+.faq-a p .faq-form:hover { text-decoration-color: var(--red); }
+.faq-a p .faq-form:focus-visible { outline: 3px solid #ffbf47; outline-offset: 3px; border-radius: 2px; }
 
 @media (max-width: 720px) {
   .faq-q { gap: 12px; padding: 18px 2px; font-size: 1rem; }
@@ -1393,14 +1349,18 @@ body.tc-light .tc-dot { background: #17181c; box-shadow: none; }
   .nav-link { font-size: .98rem; }
   .btn-cta-nav { padding: 10px 16px; font-size: .9rem; }
 }
-/* a gaveta mobile assume mais cedo (920px) para a nav nunca estourar */
-@media (max-width: 920px) {
+/* a gaveta mobile assume mais cedo (1100px, rodada 9) para a nav nunca estourar nem encostar no logo */
+@media (max-width: 1100px) {
   .nav-links {
     position: fixed; inset: 0 0 0 auto; width: min(80vw, 320px); flex-direction: column;
     justify-content: center; gap: 30px; background: rgba(12,12,14,.98); backdrop-filter: blur(16px);
     transform: translateX(100%); transition: transform .4s var(--ease); border-left: 1px solid var(--line);
   }
   .nav-links.open { transform: translateX(0); }
+  /* Rodada 9: fechada, a gaveta sai da ordem do Tab e do leitor de tela (antes o teclado passava por 8 links fora da
+     tela antes de chegar ao botão do menu); o visibility só muda depois que ela termina de deslizar para fora. */
+  .nav-links { visibility: hidden; transition: transform .4s var(--ease), visibility 0s linear .4s; }
+  .nav-links.open { visibility: visible; transition: transform .4s var(--ease); }
   .nav-link { font-size: 1.5rem; }
   .btn-cta-nav { padding: 11px 22px; font-size: .95rem; }
   .hamburger { display: flex; }
@@ -1475,7 +1435,7 @@ main:focus { outline: none; }
 /* AVALIAÇÕES — placa de nota + caminhos para o Google */
 .rv-card { max-width: 920px; margin: 0 auto; display: grid; grid-template-columns: auto 1fr; gap: 40px; align-items: center;
   padding: 34px 40px; background: var(--lt-card); border: 1px solid var(--lt-line); border-radius: 18px; box-shadow: 0 18px 50px rgba(23,24,28,.08); position: relative; overflow: hidden; }
-.rv-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--red); }
+/* Rodada 9: sem a faixa vermelha grossa na lateral do cartão (guia visual do ecossistema) */
 .rv-score { display: grid; grid-template-columns: auto auto; column-gap: 16px; align-items: center; }
 .rv-stars { grid-column: 1 / -1; color: var(--red); letter-spacing: 4px; font-size: 1.1rem; }
 .rv-num { font-family: var(--font-display); font-weight: 900; font-stretch: 125%; font-size: 4.6rem; line-height: 1; color: var(--lt-ink); }
@@ -1485,6 +1445,8 @@ main:focus { outline: none; }
 .btn-ink { background: var(--lt-ink); color: #fff; }
 .btn-ink:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(23,24,28,.3); }
 .rv-wa { flex-basis: 100%; font-size: .92rem; }
+/* a seta (aria-hidden, rodada 9) é um item separado: no celular estes links viram inline-flex e o espaço antes dela sumia */
+.warranty-link, .rv-wa { gap: .35em; }
 
 /* MAPA SOB DEMANDA */
 .contact-map { background: #111216; display: grid; }
@@ -1501,6 +1463,7 @@ main:focus { outline: none; }
 .map-ph-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 14px 0 6px; }
 .map-ph small { color: #a4a4aa; font-size: .8rem; }
 .contact-map.map-on .map-ph { display: none; }
+.map-rota { position: absolute; left: 12px; bottom: 12px; z-index: 2; box-shadow: 0 6px 18px rgba(0,0,0,.45); }
 .contact-map.map-on iframe { width: 100%; height: 100%; min-height: 440px; }
 
 /* formulário: erro do telefone */
@@ -1523,7 +1486,7 @@ main:focus { outline: none; }
   .warranty-num { grid-auto-flow: column; align-items: end; justify-content: start; gap: 14px; }
   .warranty-num b { font-size: 6.4rem; }
   .warranty-num span { margin: 0 0 10px; }
-  .rv-card { grid-template-columns: 1fr; gap: 22px; padding: 26px 22px 26px 28px; }
+  .rv-card { grid-template-columns: 1fr; gap: 22px; padding: 26px 22px; }
   .rv-actions .btn { width: 100%; justify-content: center; }
   .svc-more .service-link { white-space: normal; }
   .map-ph, .contact-map.map-on iframe { min-height: 340px; }
@@ -1602,7 +1565,7 @@ main:focus { outline: none; }
 .btn.enviando .btn-ico { animation: giraIco 1s linear infinite; }
 @keyframes giraIco { to { transform: rotate(360deg); } }
 .form-ok { position: relative; z-index: 2; text-align: center; display: grid; gap: 12px; justify-items: center; padding: 8px 0 4px; }
-.form-ok-ico { font-size: 2.6rem; line-height: 1; }
+.form-ok-ico { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--red); color: #fff; }
 .form-ok h4 { font-family: var(--font-display); font-weight: 800; font-size: 1.8rem; letter-spacing: -.015em; line-height: 1.05; }
 .form-ok p { color: #d8d8dc; font-size: .98rem; line-height: 1.55; max-width: 36ch; }
 .form-ok-proto { font-family: var(--font-cond); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; font-size: .85rem; color: var(--gray) !important; }
@@ -1631,8 +1594,8 @@ main:focus { outline: none; }
 @media print {
   html, body { background: #fff !important; color: #000 !important; }
   #bgLive, .bg-fx, .cursor-glow, .scroll-progress, .navbar .btn, .hamburger, .wa-float, .to-top, .social-proof, .modal-backdrop,
-  .rev-pop, .trust-bar, .brands, .final-cta, .circular-seal, .hero-rays, .diagonal-lines, .hero-overlay, .scroll-indicator,
-  .cutout-frame, .speed-streak, .cta-embers, .svc-rev, .target-cursor, .map-ph-actions, .skip-link, .team, .area-go { display: none !important; }
+  .trust-bar, .brands, .final-cta, .circular-seal, .hero-rays, .diagonal-lines, .hero-overlay, .scroll-indicator,
+  .cutout-frame, .speed-streak, .cta-embers, .target-cursor, .map-ph-actions, .skip-link, .team, .area-go { display: none !important; }
   main > section { content-visibility: visible !important; padding: 18px 0 !important; break-inside: avoid; }
   .hero { min-height: 0 !important; padding-top: 20px !important; background: none !important; }
   .reveal { opacity: 1 !important; transform: none !important; }
@@ -1690,6 +1653,7 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
 .area-cola-linha input:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rgba(229,9,20,.18); }
 .area-cola-msg { color: var(--gray); font-size: .85rem; line-height: 1.4; }
 .area-cola-msg.erro { color: #ff8a8f; }
+.area-cola-msg a { color: #fff; font-weight: 600; text-decoration: underline; text-decoration-color: rgba(229,9,20,.7); text-underline-offset: 3px; }
 @media (max-width: 480px) {
   .horarios-dia, .horarios-form .horarios-dia { grid-template-columns: 1fr; gap: 6px; }
   .horarios-vivo { padding: 20px 16px; }
@@ -1704,6 +1668,7 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
 
 .horarios-vivo #horariosLista { min-height: 168px; align-content: start; }
 .horarios-carregando { color: var(--gray); font-size: .95rem; }
+.horarios-carregando a { color: #fff; font-weight: 600; text-decoration: underline; text-decoration-color: rgba(229,9,20,.7); text-underline-offset: 3px; padding: 13px 0; }
 @media (max-width: 480px) { .horarios-vivo #horariosLista { min-height: 252px; } }
 .form-ok-copiar { color: #fff; font-family: var(--font-cond); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: .85rem; padding: 8px 14px; min-height: 40px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,.05); cursor: pointer; }
 .form-ok-copiar:hover { border-color: rgba(229,9,20,.6); }
@@ -1728,17 +1693,38 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
   .hamburger { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; margin-right: -6px; }
   .nav-link, .btn-cta-nav { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
   .service-link { min-height: 44px; align-items: center; }
-  .svc-rev, .svc-rev--sm { min-height: 44px; }
   .footer-col a { display: flex; align-items: center; min-height: 44px; margin-bottom: 0; }
   .footer-bottom a { display: inline-flex; align-items: center; min-height: 44px; }
   .contact-list a { display: inline-flex; align-items: center; min-height: 44px; border-bottom: 0; text-decoration: underline; text-decoration-color: rgba(255,255,255,.35); text-underline-offset: 4px; }
   .warranty-link { display: inline-flex; align-items: center; min-height: 44px; }
   .btn.sm { min-height: 44px; }
   .sp-close { width: 44px; height: 44px; top: 0; right: 0; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
-  .form-mini a, .form-ok-dica a { display: inline-flex; align-items: center; min-height: 44px; }
+  /* rodada 9: links no meio da frase seguem na linha (o inline-flex de 44 px abria vãos de ~20 px entre as linhas);
+     o preenchimento de 15 px em cima e embaixo mantém a área de toque de 44 px sem mexer na altura da linha */
+  .form-mini a, .form-ok-dica a { display: inline; padding: 15px 0; }
+  /* rodada 9: o mesmo nos links do meio das respostas do FAQ e das notas da área do cliente (tinham 17 px de altura
+     quando cabiam numa linha só); o botão do formulário no FAQ ganha a área sem empurrar as linhas (margem negativa) */
+  .faq-a p a, .area-nota a { display: inline; padding: 14px 0; }
+  .faq-a p .faq-form { padding: 9px 0; margin: -9px 0; }
+}
+/* Rodada 9: no computador (mouse) os links soltos têm pelo menos 24 px de altura, o mínimo da WCAG 2.2 (2.5.8):
+   antes "Privacidade" do rodapé tinha 15 px, "Tirar dúvida sobre a garantia" 17 px, os "Agende pelo WhatsApp" 21 px
+   e os links do contato ("Ver horários livres agora", Instagram) 19 px. */
+@media (pointer: fine) and (min-width: 861px) {
+  .service-link, .warranty-link, .footer-bottom a, .contact-list a { display: inline-flex; align-items: center; min-height: 24px; }
 }
 .sr-only { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 .hero-cliente { margin-top: 14px; font-size: .95rem; color: #d8d8dc; }
+/* Rodada 9: no celular os dois links quebram juntos, sem o "·" sobrando no fim da linha */
+@media (max-width: 480px) { .hero-cliente .hero-sep { display: none; } .hero-cliente a + .hero-sep + a { margin-left: 8px; } }
+/* Rodada 9: o botão principal do topo cabe na primeira tela (375x812, 360x740, 1280x720 e 1440x900) */
+@media (min-width: 900px) { .hero-content { max-width: 1010px; } }
+@media (min-width: 1200px) { .hero-content { max-width: 1120px; } }
+@media (max-width: 480px) { .hero-eyebrow .eb-sep { display: none; } .hero-eyebrow { row-gap: 2px; } }
+@media (min-width: 900px) and (max-height: 780px) { .hero { padding-top: 104px; padding-bottom: 56px; } .hero-title { font-size: clamp(2.4rem, 4.9vw, 4.2rem); margin-bottom: 18px; } .hero-subtitle { margin-bottom: 20px; } .hero-highlights { margin-bottom: 24px; } }
+@media (max-width: 400px) { .hero { padding-top: 88px; } .hero-title { font-size: 2.15rem; } .hero-eyebrow { margin-bottom: 18px; } .hero-highlights { margin-bottom: 24px; } }
+/* Rodada 9: grupo do selo do topo que nunca se parte no meio ("+ / 18 ANOS") */
+.junto { white-space: nowrap; }
 .hero-cliente a { color: #fff; font-weight: 600; text-decoration: underline; text-decoration-color: rgba(229,9,20,.7); text-underline-offset: 4px; display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; }
 .hero-cliente a:hover { color: var(--red); }
 .area-pedido { margin: 18px auto 0; max-width: 640px; padding: 14px 18px; border: 1px solid rgba(229,9,20,.45); border-radius: 12px; background: rgba(229,9,20,.08); color: #e9e9ee; display: grid; gap: 4px; }
@@ -1752,6 +1738,10 @@ html:not(.interagiu) .hero-highlights .hl::before, html:not(.interagiu) .hero-hi
 .horarios-nota { grid-column: 1 / -1; margin-top: 6px; font-size: .88rem; color: var(--gray); }
 .horarios-dia-rot .feriado { display: block; font-size: .78rem; color: #ffcf6e; letter-spacing: .04em; }
 .hl-status.feriado .hl-dot { background: #ffcf6e; box-shadow: none; animation: none; }
+.contato-feriado { display: block; margin-top: 6px; color: #ffcf6e; font-size: .9rem; line-height: 1.45; }
+/* Rodada 9: em feriado o chip tem texto longo ("Hoje é feriado (Consciência Negra)" + "confirme no WhatsApp se abrimos")
+   e saía cortado no celular: agora quebra em duas linhas dentro do próprio chip */
+.hero-highlights .hl-status.feriado { white-space: normal; flex-wrap: wrap; row-gap: 2px; border-radius: 22px; }
 @media (prefers-contrast: more) {
   .hero-cliente, .promo-proximo, .area-pedido, .lembrar, .horarios-nota { color: #fff; }
   .field-dica, .form-mini, .horarios-sub, .field-conta { color: #fff !important; }
@@ -1805,3 +1795,22 @@ a, button, [role="button"], label, select, summary { touch-action: manipulation;
 @media print { .area-pedido, .field-lembrar, .hero-cliente { display: none !important; } }
 
 .modal-backdrop { color-scheme: dark; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.3) transparent; }
+/* Rodada 9: em celular de 320 px o selo da nota passava 17 px da tela (borda direita cortada) */
+@media (max-width: 360px) { .rating-badge { max-width: 100%; gap: 10px; padding: 12px 14px; } }
+
+/* ====================================================================
+   RODADA 10 (20/11/2026)
+   ==================================================================== */
+/* Desempenho: o formulário e o convite (fechados) e o rodapé (longe da tela) não entram no primeiro leiaute nem no
+   releiaute de quando a fonte chega. Medido no Lighthouse celular (4 pares alternados): bloqueio da página (TBT) de
+   340 para 280 ms na mediana. Aberto o modal, tudo volta a existir antes do foco. */
+.modal-backdrop:not(.open) { content-visibility: hidden; }
+.footer { content-visibility: auto; contain-intrinsic-size: auto 760px; }
+@media (max-width: 720px) { .footer { contain-intrinsic-size: auto 1700px; } } /* no celular o rodapé empilha: o espaço reservado acompanha */
+/* Ao fechar, o conteúdo continua à vista enquanto o fundo some (navegador sem allow-discrete só corta o conteúdo na hora). */
+@supports (transition-behavior: allow-discrete) {
+  .modal-backdrop { transition: opacity .35s, visibility 0s .35s, content-visibility .35s allow-discrete; }
+}
+@media print { .footer { content-visibility: visible; } }
+/* Aviso que não é erro (internet lenta): mesma caixa do aviso do formulário, sem o vermelho de erro. */
+.form-aviso.neutro { color: var(--gray); }

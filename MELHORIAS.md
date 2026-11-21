@@ -449,3 +449,186 @@ Total: 81 melhorias (244–324), 29 com 🔗.
 ### Pendências
 - Edge Function `site-lead` não foi tocada (não publico função).
 - Pedido ao Orçador: aceitar `&placa=` em `#/cotacao`. Pedido a Atendimento/Comunicar: usar `/s/<serviço>?utm_source=...&h=...`, `/a/`, `/m/`, `/o/`.
+
+## Rodada 8 (19/11/2026): T4 Site, de qual anúncio veio o contato
+
+Numeração continua (325 em diante). 🔗 = conexão com outro sistema. Especificação: `indycar-ferramentas/r8/CONTRATO-RASTREIO.md`. Teste novo: `scripts/qa-r8.mjs` (143 conferências), último passo do `npm test`.
+
+### Chegada e guarda no aparelho
+325. 🔗 Na chegada o site lê os 11 marcadores do contrato (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `gclid`, `gbraid`, `wbraid`, `fbclid`, `ttclid`, `msclkid`), a página de chegada, o domínio de onde a pessoa veio e o tipo (`anuncio`, `busca`, `instagram`, `facebook`, `whatsapp`, `outro_site`, `direto`).
+326. Guarda em `localStorage['indycar_rastreio']` por 30 dias (`{ dados, codigo, quando }`); vencido, some.
+327. Regra de troca: link marcado substitui o guardado; chegada direta, pela busca ou só com site de origem não apaga um anúncio; recarregar não conta como chegada nova; `utm_source=pwa` (atalho do app instalado) vale como direta.
+328. Sem armazenamento (modo privado, bloqueado) tudo funciona com a memória da página; todo acesso a armazenamento e à rede fica em `try/catch`.
+329. O `sessionStorage['indycar_utm']` das rodadas 5 a 7 continua gravado e lido (quem estava com a página aberta não perde a campanha).
+330. Tudo que vem do endereço ou do aparelho passa por limpeza: só os campos do contrato, só texto, tamanho máximo (utm 100, identificador de clique 255, página 120, referência 80). Dado estragado no aparelho não derruba a página.
+331. 🔗 Pelos atalhos (`/s/<serviço>`, `/agendar`) a página de chegada fica `/s/<serviço>` ou `/agendar`, não `/`.
+
+### Registro no banco e código
+332. 🔗 Registro da visita em `trafego_rastreio_registrar` uma vez por sessão e por chegada, na primeira interação ou depois de 4 s com a página à vista (aba no fundo não conta).
+333. Navegador comandado por programa (`navigator.webdriver`: suítes antigas e Lighthouse) não registra nada.
+334. Só aceita código no formato do contrato (5 caracteres de `ABCDEFGHJKMNPQRSTUVWXYZ23456789`); erro 500, 404, resposta torta ou rede caída deixam o site no formato antigo, sem erro na página e sem segunda tentativa.
+335. Endereço e chave pública do banco num lugar só (`RASTREIO_URL` e `RASTREIO_CHAVE`, topo do `script.js`). Chave vazia = nada é registrado e tudo sai como antes. O `npm test` reprova chave que não seja a pública.
+
+### WhatsApp e formulário
+336. 🔗 Com código, os 30 botões de WhatsApp da página, o da janela de avaliações e o da confirmação do formulário terminam com `(site/<serviço>--<fonte>--r-<código>)`; sem código, como era.
+337. Limite de 40 caracteres dentro de `(site/…)`: quem é cortado é o serviço, nunca a fonte nem o código; a fonte vira só `[a-z0-9_]`, até 20.
+338. 🔗 No clique, segundo registro (`evento: "clique"`) com `keepalive`, sem esperar resposta e sem atrasar a abertura do WhatsApp; leva o serviço inteiro mesmo quando o texto foi cortado.
+339. Clique antes da resposta do registro sai no formato antigo; quando o código chega, os botões são remarcados.
+340. 🔗 O pedido do formulário leva `rastreio: { codigo?, ...campos }`; o `utm` antigo continua indo.
+341. 🔗 Função `site-lead`: `origemDoPedido` limpa o que chegou e `aplicarOrigem` chama `trafego_aplicar_origem(lead, dados, 'formulario')` com prazo de 4 s; sem a função no banco, lenta ou com erro, o pedido segue igual.
+
+### Privacidade e acabamento
+342. Privacidade: um item novo ("Guardamos por qual anúncio ou link você chegou ao site...") e um parágrafo sobre os 30 dias no aparelho; "sem cookie de rastreio" virou "sem cookie de publicidade" (o anterior deixaria de ser exato). Data da página: 19/11/2026.
+343. Pulo do menu no celular: refeito se a caixa de horários mudar de altura no caminho (semana de feriado deixa a lista 82 px mais alta) e cancelado se a pessoa tocar, teclar ou rolar. Consertou 3 falhas do `qa.mjs` em 375 px (`#contato`, `#faq`, `#garantia` paravam em 162 px) que já existiam no commit `9ac92c0` e só apareciam em semana de feriado.
+344. Teste da privacidade (`qa-r7-lote3.mjs`) confere que há data, não uma data fixa.
+
+### Como verifiquei
+- `scripts/qa-r8.mjs`: banco de mentira em 127.0.0.1, `script.js` servido com endereço e chave trocados, Chrome sem resolução de nomes (nada sai da máquina) e sem a marca de navegador comandado; um contexto novo por cenário. Cobre gclid, fbclid (375 px), utm de anúncio, chegada direta depois de anúncio, sem armazenamento, registro que falha (8 jeitos), registro que demora, limite de 40, formulário, 30 dias, dados estragados, 4 s à vista, pulo do menu com feriado.
+- Ensaio com estragos: 14 defeitos plantados numa cópia do site (pasta temporária, nunca na árvore), em 3 lotes; a suíte reprovou todos (15, 26 e 17 falhas).
+- `node --test scripts/logica-site-lead.test.mjs`: 21 testes da função (origem limpa, função do banco ausente, lenta ou com erro).
+- Peso do `script.js` minificado: 59.068 → 62.291 bytes (gzip +1.143, brotli +1.125; orçamento 64 KB).
+- `npm test` inteiro: 21 + 197 + 114 + 143, nenhuma falha. Lighthouse (`npm run vitais`, máquina dividida com outras frentes): celular 79 → 81 de desempenho, computador 100 → 99; acessibilidade, boas práticas e SEO 100 nos dois, antes e depois.
+
+### Pendências
+- `RASTREIO_CHAVE` vazia até a migração do banco ser aplicada (o orquestrador preenche e publica).
+- Função `site-lead` não publicada (só o orquestrador publica).
+
+## Rodada 9 (19-20/11/2026)
+
+Frente R9-site (ramo `claude/r9`). Uma linha por melhoria, com o commit que fez a mudança. Commits de ajuste de uma
+mudança anterior da própria rodada (02e878b, 8f0612c, 8e2f02b, 786808d) não contam linha.
+
+- **R9-SITE-001** · tela · O botão "Agendar diagnóstico grátis" aparece sem rolar (antes ficava em 912 px no 375x812 e em 935 px no 1440x900); título do topo curto e em caixa de frase · `dbbd014`
+- **R9-SITE-002** · conserto · Selo do topo não quebra mais entre o "+" e o "18" ("+18 anos" fica junto) · `dbbd014`
+- **R9-SITE-003** · celular · "Já é cliente?" sem o "·" sobrando no fim da linha no celular · `dbbd014`
+- **R9-SITE-004** · enxugar · Faixa de destaques do topo sem a nota 4,8 repetida (o selo logo abaixo já mostra) e sem "Pagamento consulte condições" · `08192c9`
+- **R9-SITE-005** · conserto · Menu do computador: "Área do cliente" não quebra em duas linhas e os links não encostam no logo (921 a 1440 px, com e sem as fontes do site) · `a33a9e8`
+- **R9-SITE-006** · conserto · Contadores nascem com 4,8 · 1.200 · 18 no HTML (sem JavaScript a página dizia "0★", "+0 avaliações", "+0 anos") · `b74a370`
+- **R9-SITE-007** · acessibilidade · Com "menos movimento" ligado, os contadores mostram o número direto, sem contar de 0 · `b74a370`
+- **R9-SITE-008** · texto · "100% Comprometidos" (número sem base) vira "12 meses de garantia" · `b74a370`
+- **R9-SITE-009** · texto · Títulos e subtítulos em caixa de frase do português ("Perguntas frequentes", "Onde estamos"), não no Title Case do inglês · `a668bea`
+- **R9-SITE-010** · texto · Sem travessão nos textos da página e nas respostas do FAQ (o JSON-LD acompanha) · `a668bea`
+- **R9-SITE-011** · texto · Os botões que abrem o mesmo formulário tinham 5 nomes; agora "Agendar diagnóstico grátis" (e "Agendar" no menu) · `a668bea`
+- **R9-SITE-012** · texto · Chamada final sem o superlativo sem prova "a oficina que Taubaté mais confia" · `a668bea`
+- **R9-SITE-013** · conserto · O formulário dizia "Agende seu Diagnóstico Grátis" até para quem chegou pedindo freios (/s/freios); agora "Peça seu horário" · `a668bea`
+- **R9-SITE-014** · enxugar · Os três quadros "Foto em breve" da equipe ficam escondidos até chegarem as fotos reais (pareciam site inacabado) · `a51cd7c`
+- **R9-SITE-015** · enxugar · "Por que a IndyCar?" deixa de repetir leva e traz, transparência e 12 meses das outras seções · `fe11107`
+- **R9-SITE-016** · enxugar · Sai a rotação de "prova social" no canto: repetia a página, cobria o conteúdo no celular e o leitor de tela anunciava cada troca · `fe53e5d`
+- **R9-SITE-017** · texto · Botão flutuante diz o que faz: "Chamar no WhatsApp" (era "Fale conosco! 👋") · `219bc0f`
+- **R9-SITE-018** · tela · Sem emoji decorativo no rodapé, no formulário, no convite e nos avisos; a confirmação do pedido usa um ✓ desenhado em SVG · `219bc0f`
+- **R9-SITE-019** · tela · Cartão das avaliações sem a faixa vermelha grossa na lateral (o guia visual proíbe) · `58e35ea`
+- **R9-SITE-020** · acessibilidade · "×" do formulário e do convite de 34 para 44 px; o do aviso do canto de 12x18 para 28x28 px e num cinza legível · `c39b074`
+- **R9-SITE-021** · enxugar · Sai o botão "Avaliações" dos 12 cards de serviço e a janela dele (repetia a seção de avaliações; o celular rola ~700 px a menos) · `56742a4`
+- **R9-SITE-022** · celular · Título dos cards de serviço sem o vão de 37 px entre as linhas no celular (altura de linha 1,2) · `6bfd243`
+- **R9-SITE-023** · tela · Ícone dos cards largos e pequenos alinhado ao título, não solto no meio do card · `6bfd243`
+- **R9-SITE-024** · acessibilidade · O aviso do canto escondido não recebe mais o foco do Tab nem deixa uma ponta de 8 px na borda · `e2447b1`
+- **R9-SITE-025** · conserto · Formulário: WhatsApp em branco agora diz o porquê ("Precisamos do seu WhatsApp com DDD..."); antes só ficava vermelho · `6e1107e`
+- **R9-SITE-026** · conserto · Formulário aceita o zero do interurbano ("012 99683-0272"); antes o número era barrado · `6e1107e`
+- **R9-SITE-027** · texto · Rótulo do telefone diz o que a oficina precisa: "Seu WhatsApp com DDD" · `6e1107e`
+- **R9-SITE-028** · celular · Exemplo do campo Carro não sai cortado no celular ("Ex: Civic 2018") · `6e1107e`
+- **R9-SITE-029** · conserto · O convite de 8 s não abre por cima de quem está digitando ou com o menu aberto (roubava o foco no meio da palavra) · `3195916`
+- **R9-SITE-030** · conserto · O convite não aparece para quem já abriu o formulário na visita ou mandou pedido nas últimas 36 h no aparelho · `3195916`
+- **R9-SITE-031** · conserto · "Cole aqui" da área do cliente: se o navegador barrar a janela nova, aparece "Se não abriu, toque aqui" com o link certo · `b41acaa`
+- **R9-SITE-032** · teste · O teste de números confere que nenhum 4,8 / 1.200 / 18 visível fica fora da marca data-num (antes só contava um mínimo de marcas) · `f5d3039`
+- **R9-SITE-033** · desempenho · A fonte Inter sai (48 KB a menos e um relayout a menos na primeira dobra do celular); o corpo usa a Archivo que a página já baixa · `824d636`
+- **R9-SITE-034** · acessibilidade · Rótulo vermelho pequeno das seções passa no contraste mínimo de 4,5 (escuro e claro) · `2c15c31`
+- **R9-SITE-035** · conserto · WhatsApp da LGPD na Privacidade segue o contrato com o Atendimento ("Olá! Vim pelo site" + código + UTM) e o gerar-whatsapp confere a página · `dec742e`
+- **R9-SITE-036** · texto · A página 404 começa pelo que aconteceu e o que fazer; a dica do código colado vem depois · `56b746a`
+- **R9-SITE-037** · tela · 404 e Privacidade com a tipografia do site (Archivo), não a fonte do sistema · `18845ab`
+- **R9-SITE-038** · acessibilidade · O leitor de tela não lê "seta para a direita" em 16 links; os 12 "Agende pelo WhatsApp" dizem o serviço e que abrem o WhatsApp · `c301e31`
+- **R9-SITE-039** · acessibilidade · 404 e Privacidade: link do rodapé com 44 px de toque (era 18 px) e seta do "Voltar ao site" fora do leitor de tela · `2f2001e`
+- **R9-SITE-040** · texto · O botão de "Como funciona" que abre o WhatsApp diz isso: "Agendar pelo WhatsApp", com o ícone (era "Agendar meu diagnóstico") · `bdd4a15`
+- **R9-SITE-041** · conserto · Contadores só voltam a 0 para animar quando entram na tela; até lá mostram os números reais · `e22a47d`
+- **R9-SITE-042** · texto · "Conheça a IndyCar" sem "referência em Taubaté" (superlativo sem prova) e sem o parágrafo que repetia o cartão logo abaixo · `51cc174`
+- **R9-SITE-043** · tela · Contato: o celular da oficina com duas ações claras, "WhatsApp · Ligar" (tocar no número abria o WhatsApp) · `9ecb2c1`
+- **R9-SITE-044** · conserto · Rodapé: "+1.200 avaliações" sem o vão de 8 px entre o "+" e o número · `1191d1e`
+- **R9-SITE-045** · acessibilidade · Estrelas e ✓ decorativos não são lidos em voz alta (selo, faixa, contadores, rodapé) · `0c71cc4`
+- **R9-SITE-046** · conserto · "Quando prefere?" avisa feriado no "Hoje" e, na véspera, no "Amanhã" (o valor enviado continua o mesmo) · `2664dde`
+- **R9-SITE-047** · tela · "Pedir meu horário" no vermelho de ação, não no verde do WhatsApp (o botão manda o pedido, não abre o WhatsApp) · `960c36b`
+- **R9-SITE-048** · segurança · O mapa do Google recebe só a origem do site (referrerPolicy), não a URL inteira com utm/gclid · `a1d4d35`
+- **R9-SITE-049** · acessibilidade · Menu do celular aberto pelo teclado leva o foco ao primeiro link da gaveta · `fdd5b35`
+- **R9-SITE-050** · acessibilidade · Gaveta do menu fechada sai da ordem do Tab (antes o teclado passava por 8 links invisíveis) · `183fa3f`
+- **R9-SITE-051** · acessibilidade · O botão do menu volta a dizer "Abrir menu" quando a gaveta fecha por Esc ou por um link · `00af1d5`
+- **R9-SITE-052** · acessibilidade · No computador os links soltos têm pelo menos 24 px de altura (WCAG 2.2, 2.5.8): eram 12 abaixo disso · `06e3446`
+- **R9-SITE-053** · texto · Convite de 8 s diz o caminho de verdade ("Você escolhe o horário aqui e a equipe confirma pelo WhatsApp") e sem "gratuito" três vezes · `7288b75`
+- **R9-SITE-054** · celular · Links no meio da frase do formulário ("Privacidade", "Acompanhar meu carro") sem abrir vãos de ~20 px entre as linhas, com 44 px de toque · `2618f7c`
+- **R9-SITE-055** · aviso · Agenda cheia: o aviso leva ao WhatsApp (link) e some o "Toque num horário" que não tinha horário · `4f97505`
+- **R9-SITE-056** · conserto · Formulário sem rede não diz mais "Pedido enviado!" (o pedido ainda não chegou): "Falta só mandar no WhatsApp", sem ✓ e sem festa · `e962c0c`
+- **R9-SITE-057** · texto · FAQ: "Preciso agendar?" oferece o formulário do site e "formas de pagamento" diz quando a pessoa fica sabendo, em vez de "consulte" · `e36b68d`
+- **R9-SITE-058** · celular · Links no meio das respostas do FAQ e das notas da área do cliente com 44 px de toque (tinham 17 px quando cabiam numa linha) · `c916de4`
+- **R9-SITE-059** · acessibilidade · Faixa vermelha que corre volta a parar com o mouse em cima e, no celular, para e retoma com um toque · `93e8af4`
+- **R9-SITE-060** · enxugar · Sai o item "Pagamento: consulte condições" da faixa vermelha que corre e o "pagamento sob consulta" da chamada final · `f2b643f`
+- **R9-SITE-061** · texto · Faixa vermelha: "Garantia de 12 meses em peças e mão de obra" (dizia só "12 meses em...") e "Mecânica em geral" (era "Especialista em Mecânica em Geral") · `c15e329`
+- **R9-SITE-062** · texto · Sem chavão: "Transparência absoluta" vira "Você aprova antes" e sai "scanners de última geração" (cartão e FAQ, com o JSON-LD) · `3225473`
+- **R9-SITE-063** · conserto · Formulário: o Enter ("próximo" do teclado do celular) vai ao campo seguinte; antes enviava o pedido pela metade, sem "Quando" e sem mensagem · `774df15`
+- **R9-SITE-064** · conserto · Sem JavaScript a página não fica vazia (10 dos 11 títulos sumiam); o aviso fica na frente do menu e o botão do menu, que não abriria, sai · `795e621`
+- **R9-SITE-065** · acessibilidade · O "Voltar ao topo" escondido no topo da página sai do Tab e do leitor de tela · `340ce4d`
+- **R9-SITE-066** · conserto · Chip "Fechado agora" não promete "abre amanhã, 8h" quando o próximo dia de abertura é feriado (hoje, 19/11, para 20/11) · `678e141`
+- **R9-SITE-067** · celular · Em feriado o chip do topo quebra em duas linhas e não sai cortado em "confirme no Wh" no celular · `e999791`
+- **R9-SITE-068** · conserto · "Cole aqui" com o campo vazio pede para colar, em vez de dizer "Não reconheci esse link ou código" · `ea43673`
+- **R9-SITE-069** · aviso · O horário do contato avisa o feriado dos próximos 7 dias ("Amanhã é feriado (Consciência Negra): confirme no WhatsApp se a oficina abre") · `b296050`
+- **R9-SITE-070** · acessibilidade · A caixa "Próximos horários livres" vira uma região com nome (o aria-labelledby num div sem papel era ignorado; o axe acusava) · `9009a5c`
+- **R9-SITE-071** · acessibilidade · Botões de WhatsApp (contato, depois do pedido, flutuante e 404) em verde sólido escuro: contraste do branco de 1,8 a 2,6 para 5,4 · `cd27056`
+- **R9-SITE-072** · teste · Novo qa-r9.mjs: o botão "Agendar diagnóstico grátis" inteiro na primeira tela em 375x812, 360x740, 1280x720 e 1440x900 · `80dd10f`
+- **R9-SITE-073** · teste · Contadores mostram 4,8 · 1.200 · 18 · 12 antes de rolar e depois de animar, com e sem "menos movimento" · `80dd10f`
+- **R9-SITE-074** · teste · Menu do celular pelo teclado: gaveta fechada fora do Tab, foco entra no primeiro link, Esc devolve o foco e o nome "Abrir menu" · `80dd10f`
+- **R9-SITE-075** · teste · Contraste de pelo menos 4,5 no rótulo vermelho de todas as seções e nos botões de WhatsApp (sem degradê) · `80dd10f`
+- **R9-SITE-076** · teste · Nenhuma estrela, ✓ ou seta decorativa exposta ao leitor de tela; a caixa de horários é região com nome · `80dd10f`
+- **R9-SITE-077** · teste · No computador, nenhum link ou botão solto com menos de 24x24 px · `80dd10f`
+- **R9-SITE-078** · teste · A faixa vermelha anda, para com o mouse (1440) e com um toque (375) e volta · `80dd10f`
+- **R9-SITE-079** · teste · Formulário: Enter vai ao próximo campo e nunca envia pela metade; WhatsApp em branco tem aviso próprio; "012 99683-0272" vai como 12996830272 · `80dd10f`
+- **R9-SITE-080** · teste · Pedido sem rede: título "Falta só mandar no WhatsApp", sem ✓ e sem a festa de concluído (faíscas contadas) · `80dd10f`
+- **R9-SITE-081** · teste · Convite de 8 s (tempo acelerado): espera quem está digitando, não aparece com pedido de 2 h e volta com pedido de 40 h · `80dd10f`
+- **R9-SITE-082** · teste · Agenda cheia (lista vazia): o aviso tem o link do WhatsApp e o "Toque num horário" some · `80dd10f`
+- **R9-SITE-083** · teste · Feriados com data fixa (19/11, 18/11, 20/11, 25/11 e sábado antes do Carnaval de 2027): "Quando prefere?", chip do topo e horário do contato · `80dd10f`
+- **R9-SITE-084** · teste · Mapa com referrerPolicy, "Cole aqui" vazio e "toque aqui" quando a janela é barrada, "Voltar ao topo" fora do Tab no topo · `80dd10f`
+- **R9-SITE-085** · teste · Página 404: ações antes da dica do código, link do rodapé com 44 px e fonte Archivo · `80dd10f`
+- **R9-SITE-086** · texto · Leva e traz sem o "pergunte... (consulte condições)": "pergunte no WhatsApp se o leva e traz vale para o seu caso" (passo 2 do diagnóstico e FAQ "Onde fica", com o JSON-LD) · `361ceb8`
+- **R9-SITE-087** · teste · O teste do chip do topo no qa.mjs aceita o aviso de feriado: em 20/11 (Consciência Negra) o npm test falhava sem defeito no site · `d803e35`
+- **R9-SITE-088** · conserto · A nota do rodapé e o ícone do Google Maps levam ao perfil da oficina com as avaliações (o ícone buscava só o endereço; a nota era texto) · `5b31d95`
+- **R9-SITE-089** · acessibilidade · Sem rede, o foco vai para "Abrir no WhatsApp" (o que falta fazer), não para "Fechar"; com o pedido entregue continua no "Fechar" · `97ea26f`
+- **R9-SITE-090** · conserto · Com o mapa do Google aberto, o "Traçar rota" continua à mão, por cima do mapa (sumia junto com a capa) · `5818bb7`
+- **R9-SITE-091** · tela · Rodapé de contato com o telefone fixo (12) 3624-5957 e "Traçar rota" embaixo do endereço · `675dec7`
+- **R9-SITE-092** · desempenho · Recorte da fachada com versão de 640 px e "sizes" com a largura real: o celular baixa 18 KB no lugar de 35 KB (o Lighthouse apontava ~30 KB sobrando) · `ff7a11d`
+- **R9-SITE-093** · celular · Em telas de 320 px o selo da nota do topo não passa mais 17 px da tela · `fa78c4e`
+- **R9-SITE-094** · acessibilidade · A seta do fim do topo leva a "Conheça a IndyCar" e se chama assim (apontava para a faixa que corre e era lida como "Rolar para baixo") · `fe2d2ea`
+- **R9-SITE-095** · conserto · "Quando prefere?" no sábado à noite e no domingo oferece "Semana que vem, de manhã/à tarde" (antes "Esta semana" chegava à equipe para uma semana que tinha acabado) · `00f877a`
+- **R9-SITE-096** · aviso · O pedido que esperava a rede, quando o reenvio chega, avisa "Seu pedido chegou à oficina (protocolo ...)" e aparece na área do cliente (o reenvio era mudo) · `4e29df0`
+- **R9-SITE-097** · conserto · O ícone do site também como arquivo PNG nas três páginas: o Google não usa o ícone embutido (data:) no resultado da busca · `ca0cd24`
+- **R9-SITE-098** · conserto · "Quando prefere?" no sábado: "Sábado" vira "Sábado que vem" (era o próprio dia ou um dia já passado) · `0d781c9`
+- **R9-SITE-099** · conserto · Atalhos do app instalado "Acompanhar meu carro" e "Minha IndyCar" apontavam para outro endereço (o navegador descarta): agora /acompanhar e /minha, que o site redireciona · `62c8459`
+- **R9-SITE-100** · acessibilidade · O "Abrir" visível dos cartões da área do cliente entra no nome do link (só a seta fica de fora): comando de voz "clicar em Abrir" passa a achar o link (WCAG 2.5.3) · `53099b3`
+
+## Rodada 10 (20/11/2026)
+
+Frente R10-site (ramo `claude/r9`). Uma linha por melhoria, cada uma com teste que falhava na árvore de antes (c2f11f5) e passa agora, e com o commit que fez a mudança. Ajustes de testes antigos e código morto não contam linha. O script.js minificado foi de 64.015 para 65.251 bytes (segue no orçamento de 64 KB; o commit d85a236 enxugou o que a rodada tinha somado, sem tirar função).
+
+- **R10-SITE-001** · segurança · Função site-lead: hora escolhida que não existe no relógio ("99:99", "24:00") não passa mais para a ficha do contato; a regra virou uma só, em logica.ts (teste r10-horario) · `bfb4265`
+- **R10-SITE-002** · segurança · Função site-lead: nome com endereço de site (robô plantando link no CRM) é recusado com "Conta pra gente o seu nome." (teste r10-nome-link) · `bfb4265`
+- **R10-SITE-003** · segurança · Função site-lead: pedido sem o tempo de preenchimento, ou com valor que não é número, é tratado como robô (antes bastava não mandar o campo para escapar do freio) (teste r10-decorrido) · `bfb4265`
+- **R10-SITE-004** · segurança · Função site-lead: o freio de rajadas tira da memória as chaves paradas; 5.000 IPs diferentes numa hora deixavam 5.000 entradas guardadas, agora ficam menos de 300 (teste r10-freio) · `bfb4265`
+- **R10-SITE-005** · aviso · Formulário: quando o servidor barra pelo limite de pedidos (429), a confirmação mostra o motivo que veio de lá e abre o WhatsApp, em vez de dizer "a internet não deixou" (teste r10-limite) · `d5f5219`
+- **R10-SITE-006** · conserto · Formulário: pedido barrado pelo limite não entra mais na fila de reenvio (reenviar sozinho só batia no limite de novo) (teste r10-limite-fila) · `d5f5219`
+- **R10-SITE-007** · aviso · Formulário: defeito do servidor (500) diz "O sistema da oficina não respondeu agora" e guarda o pedido para tentar de novo; a frase da internet ficou só para quando é a internet (teste r10-servidor) · `d5f5219`
+- **R10-SITE-008** · acessibilidade · Formulário: quando o servidor recusa um campo (nome, número ou serviço), o campo fica marcado como inválido e recebe o foco; antes só aparecia a frase no fim do formulário (teste r10-campo) · `d5f5219`
+- **R10-SITE-009** · conserto · Fila de reenvio: com duas abas do site abertas, o pedido que esperava a rede é reenviado uma vez só (eram dois envios iguais ao mesmo tempo) (teste r10-abas) · `b910533`
+- **R10-SITE-010** · conserto · Fila de reenvio: o mesmo pedido enviado duas vezes sem rede fica uma vez na fila (ficavam dois) (teste r10-fila-repetido) · `b910533`
+- **R10-SITE-011** · aviso · Formulário: sem internet, um aviso antes do botão diz que o pedido vai sair pelo WhatsApp e será registrado quando a rede voltar; some quando a rede volta (teste r10-semrede-aviso) · `b910533`
+- **R10-SITE-012** · conserto · Horários livres: quando a internet volta, a caixa que tinha sumido reaparece sozinha, com os links "Ver horários livres" (antes só recarregando a página) (teste r10-horarios-voltam) · `b910533`
+- **R10-SITE-013** · conserto · Horários livres: depois de uma falha passageira da consulta, a caixa voltava a ficar escondida mesmo com a Agenda respondendo (a lista igual à anterior não era repintada) (teste r10-horarios-repintam) · `b910533`
+- **R10-SITE-014** · aviso · Mapa: sem internet, "Ver mapa aqui" avisa e mantém o endereço à vista, em vez de trocar a capa por uma página de erro do navegador; com a rede de volta o mesmo botão abre o mapa (teste r10-mapa-semrede) · `b910533`
+- **R10-SITE-015** · segurança · CSP sem 'unsafe-inline' no estilo: 404, privacidade e o aviso de "sem JavaScript" ganharam arquivo .css próprio (com ?v= no ar) e nenhuma página tem mais <style> nem style="" (testes r10-csp-estilo, r10-css-versao e r10-csp) · `9eef7eb`
+- **R10-SITE-016** · segurança · CSP sem domínio sobrando: o mapa entra direto por www.google.com (maps.google.com só redirecionava e saiu do frame-src) e form-action ficou só 'self' (wa.me saiu: nenhum formulário envia para fora) (teste r10-csp-dominios) · `9eef7eb`
+- **R10-SITE-017** · segurança · netlify.toml publica dist/ e não mais a pasta do projeto: um deploy sem "--dir dist" punha no ar os testes, o código da função, os .sql e o MELHORIAS.md (teste r10-pasta-publicada) · `814e670`
+- **R10-SITE-018** · conserto · SEO: a ação "pedir horário" dos dados estruturados apontava para /agendar, que o robots.txt barra; agora aponta para /#agendar, que abre o formulário (teste r10-ld-robots) · `814e670`
+- **R10-SITE-019** · aviso · Formulário com internet lenta: depois de 4 s sem resposta aparece "Está demorando mais que o normal. Aguarde, não precisa tocar de novo." (eram até 9 s só com "Enviando…") (teste r10-demora) · `b489350`
+- **R10-SITE-020** · conserto · Fila de reenvio: o pedido que chegou pelo site sai da fila; antes, o mesmo pedido guardado de uma tentativa sem rede era reenviado depois e virava "novo envio" repetido na ficha do contato (teste r10-fila-chegou) · `b489350`
+- **R10-SITE-021** · desempenho · Formulário e convite fechados e o rodapé longe da tela ficam fora do primeiro leiaute (content-visibility): bloqueio da página (TBT) no Lighthouse celular de 340 para 280 ms, mediana de 4 pares alternados (teste r10-leiaute-adiado) · `b489350`
+- **R10-SITE-022** · enxugar · styles.css sem classe órfã: saíram .about-photo e .review-card, que nenhum elemento tem (115.487 para 114.750 caracteres), e o script parou de procurar .about-photo (teste r10-css-sem-dono) · `b489350`
+- **R10-SITE-023** · conserto · Rastreio do anúncio: a visita que não foi registrada por falta de rede é registrada quando a internet volta (uma tentativa a mais, só quando a chamada nem saiu do aparelho) e o WhatsApp passa a levar o código; antes esse contato chegava sem dizer de qual anúncio veio (teste r10-rastreio-volta) · `3094d72`
+- **R10-SITE-024** · conserto · Aviso do canto: cada aviso fica os seus 5 s; o relógio do aviso anterior apagava o seguinte antes da hora (dois pedidos da fila chegando em sequência) (teste r10-aviso-relogio) · `3094d72`
+- **R10-SITE-025** · conserto · Link da equipe com horário (/s/freios?h=...) e a Agenda fora do ar: o horário sugerido aparece em "Quando prefere?" e segue no pedido para a equipe confirmar; antes sumia calado (teste r10-sugerido-sem-agenda) · `3094d72`
+- **R10-SITE-026** · conserto · Campo-isca do formulário: se o preenchimento automático do navegador escrever nele, o cliente fica com a mensagem pronta e o botão do WhatsApp em vez de um "Pedido enviado!" de mentira (o pedido sumia calado); o campo trocou "Empresa" por nome e rótulo que o preenchimento automático não reconhece (teste r10-isca) · `586f08d`
+- **R10-SITE-027** · conserto · Fila de reenvio: valor estragado guardado no aparelho (não é lista, item sem pedido) vale como fila vazia; antes derrubava o reenvio com erro e o pedido sem rede seguinte não era guardado (teste r10-fila-estragada) · `586f08d`
+- **R10-SITE-028** · texto · Função site-lead: a ficha do contato mostra a campanha em palavras ("google · cpc · freios-novembro") e a página só com o caminho; saíram do texto o gclid/fbclid e o endereço com "?" (a origem completa continua em trafego_aplicar_origem) (teste r10-ficha-limpa) · `1ea1599`
+- **R10-SITE-029** · conserto · Feriados de data fixa (Natal, Tiradentes, 7 de setembro...) valem em qualquer ano; a lista acabava em 2027 e, de 2028 em diante, o topo diria "Aberto agora" no Natal. Carnaval, Sexta-feira Santa e Corpus Christi seguem por ano, até 2027 (teste r10-feriado-fixo) · `d85a236`

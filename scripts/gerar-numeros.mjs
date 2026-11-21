@@ -17,8 +17,10 @@ let depois = antes.replace(/(<(?:span|b|strong)[^>]*\bdata-num="(nota|avaliacoes
 // contadores animados e selos
 depois = depois
   .replace(/data-target="[\d.]+" data-decimals="1"/g, () => { n++; return `data-target="${NOTA_NUMERO}" data-decimals="1"`; })
-  .replace(/data-target="\d+"(?=>0<\/span>\s*\n\s*<span class="counter-label">Avaliações)/g, () => { n++; return `data-target="${AVALIACOES_NUMERO}"`; })
-  .replace(/data-target="\d+"(?=>0<\/span>\s*\n\s*<span class="counter-label">Anos)/g, () => { n++; return `data-target="${ANOS_NUMERO}"`; })
+  // Rodada 9: o contador já nasce com o número certo (sem JavaScript, para o Google e para o leitor de tela), não com 0
+  .replace(/(<span class="counter-num" data-target="[\d.]+" data-decimals="1">)[^<]*(?=<\/span>)/g, (m, abre) => { n++; return abre + NUMEROS.nota; })
+  .replace(/data-target="\d+">[^<]*(?=<\/span>\s*\n\s*<span class="counter-label">Avaliações)/g, () => { n++; return `data-target="${AVALIACOES_NUMERO}">${NUMEROS.avaliacoes}`; })
+  .replace(/data-target="\d+">[^<]*(?=<\/span>\s*\n\s*<span class="counter-label">Anos)/g, () => { n++; return `data-target="${ANOS_NUMERO}">${NUMEROS.anos}`; })
   .replace(/data-circular-text="OFICINA PREMIUM • TAUBATÉ • \+\d+ ANOS • "/g, () => { n++; return `data-circular-text="OFICINA PREMIUM • TAUBATÉ • +${NUMEROS.anos} ANOS • "`; })
   .replace(/<body data-nota="[^"]*" data-avaliacoes="[^"]*" data-anos="[^"]*">/, () => { n++; return `<body data-nota="${NUMEROS.nota}" data-avaliacoes="${NUMEROS.avaliacoes}" data-anos="${NUMEROS.anos}">`; });
 if (n < 20) throw new Error('poucos pontos encontrados (' + n + '): a marcação data-num do index.html mudou?');

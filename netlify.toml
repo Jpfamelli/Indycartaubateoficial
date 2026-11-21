@@ -1,19 +1,24 @@
+# Rodada 10: a pasta publicada é dist/ (o que o `npm run publicar` monta: só as páginas, imagens e fontes). Antes era ".":
+# um `netlify deploy` sem `--dir dist` (ou um build ligado ao repositório) punha no ar a pasta inteira, com scripts de teste,
+# o código da função do banco, os .sql e o MELHORIAS.md.
 [build]
-  publish = "."
+  publish = "dist"
 
 # Segurança (rodada 3, 13/10/2026). O deploy é `npm run publicar` (pasta dist/);
 # o netlify-cli lê estes cabeçalhos daqui mesmo assim. O teste (`npm test`) aplica
 # os MESMOS cabeçalhos no servidor local, então uma CSP que quebre algo falha o teste.
 #
-# CSP: script só daqui (sem script embutido nem onload/onerror no HTML);
-# estilos daqui ('unsafe-inline' só para estilo: 404 e privacidade
-# têm <style> próprio e o script mexe em style); fontes do próprio site (rodada 4); mapa do Google
-# só em iframe (frame-src); o formulário abre o wa.me por window.open (fora da CSP).
+# CSP: script só daqui (sem script embutido nem onload/onerror no HTML).
+# Rodada 10: estilo também só daqui, SEM 'unsafe-inline': nenhuma página tem <style> nem style="" (404, privacidade e o
+# aviso de "sem JavaScript" ganharam arquivo .css próprio; o script mexe em estilo pelo CSSOM, que o CSP não barra).
+# Sem domínio sobrando: o mapa do Google entra direto por www.google.com (antes passava por maps.google.com, que só
+# redirecionava) e nenhum formulário envia para fora (o WhatsApp abre por window.open, fora do CSP).
+# Fontes do próprio site (rodada 4).
 # connect-src (rodada 5): o formulário grava o pedido na Edge Function site-lead do Supabase da oficina.
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://nppfqhavqahapmugnyng.supabase.co; frame-src https://maps.google.com https://www.google.com; manifest-src 'self'; form-action 'self' https://wa.me; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://nppfqhavqahapmugnyng.supabase.co; frame-src https://www.google.com; manifest-src 'self'; form-action 'self'; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
@@ -153,11 +158,12 @@
   to = "https://indycar-patio.netlify.app/minha/#indique"
   status = 302
 
-# Rodada 6: o navegador já começa a baixar CSS e as duas fontes da primeira dobra com a resposta do HTML (dicas de pré-carregamento).
+# Rodada 6: o navegador já começa a baixar a fonte da primeira dobra com a resposta do HTML (dica de pré-carregamento).
+# Rodada 9: a Inter saiu do site (o corpo usa a Archivo), então só a Archivo vem aqui.
 [[headers]]
   for = "/"
   [headers.values]
-    Link = "</fontes/archivo-variavel.woff2>; rel=preload; as=font; type=font/woff2; crossorigin, </fontes/inter-variavel.woff2>; rel=preload; as=font; type=font/woff2; crossorigin"
+    Link = "</fontes/archivo-variavel.woff2>; rel=preload; as=font; type=font/woff2; crossorigin"
 
 # Rodada 7: links curtos no domínio da oficina para o Pátio, o Orçador e o Atendimento mandarem no WhatsApp
 # (mais curtos e com a cara da IndyCar). /a/<código> = Acompanhar meu carro; /m/<código> = Minha IndyCar; /o/<código> = orçamento.

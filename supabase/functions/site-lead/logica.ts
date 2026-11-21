@@ -153,3 +153,134 @@ export function semControle(s: string, quebras = false): string {
   const limpo = s.normalize('NFC').replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, (c) => (quebras && (c === '\n' || c === '\t') ? c : ' '));
   return quebras ? limpo.replace(/[ \t]+/g, ' ').replace(/\n[ \t]*/g, '\n').replace(/\n{3,}/g, '\n\n').trim() : limpo.replace(/\s+/g, ' ').trim();
 }
+
+/* ---------------- Rodada 8: de qual anúncio veio o contato (indycar-ferramentas/r8/CONTRATO-RASTREIO.md §6.1 e §6.4) ---------------- */
+
+/** Código que o banco devolve quando o site registra a visita: 5 caracteres de ABCDEFGHJKMNPQRSTUVWXYZ23456789. */
+export const CODIGO_RASTREIO = /^[A-HJKMNP-Z2-9]{5}$/;
+const UTMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
+/** Identificadores de clique das plataformas. Maiúscula e minúscula importam: passam como chegaram ou não passam. */
+const CLIQUES = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'ttclid', 'msclkid'] as const;
+export const TIPOS_DE_REFERENCIA: readonly string[] = ['anuncio', 'busca', 'instagram', 'facebook', 'whatsapp', 'outro_site', 'direto'];
+
+/**
+ * Origem do pedido do formulário, pronta para `trafego_aplicar_origem(lead, dados, 'formulario')`.
+ * `rastreio` é o que o site mandou (rodada 8) e não é de confiança: só passam os campos do contrato, cada um no seu
+ * formato e tamanho; o que vier fora disso é ignorado. Site ainda na versão antiga (sem `rastreio`): aproveita o `utm`
+ * da rodada 5 (source, medium, campaign, content, term, gclid, fbclid, já limpos por lerPedido).
+ * Nunca leva nome, telefone nem e-mail. `servico` é o código do site (`formulario-<serviço>`).
+ */
+export function origemDoPedido(o: { rastreio?: unknown; utm?: Record<string, unknown> | null; pagina?: string | null; servico?: string | null }): Record<string, string> {
+  const r = (o.rastreio && typeof o.rastreio === 'object' && !Array.isArray(o.rastreio) ? o.rastreio : null) as Record<string, unknown> | null;
+  const antigo = o.utm ?? {};
+  const texto = (v: unknown, max: number) => (typeof v === 'string' ? semControle(v).slice(0, max) : '');
+  const d: Record<string, string> = {};
+  for (const k of UTMS) {
+    const v = texto(r ? r[k] : antigo[k.slice(4)], 100);
+    if (v) d[k] = v;
+  }
+  for (const k of CLIQUES) {
+    const v = r ? r[k] : antigo[k];
+    // No formato antigo o identificador vinha cortado em 80: se bateu no limite, está incompleto e não serve para nada.
+    if (typeof v === 'string' && /^[\w.~-]{1,255}$/.test(v) && (r || v.length < 80)) d[k] = v;
+  }
+  const pagina = texto(r && typeof r.pagina === 'string' ? r.pagina : o.pagina, 200).split(/[?#]/)[0].slice(0, 120);
+  if (pagina.startsWith('/')) d.pagina = pagina;
+  if (r) {
+    const referencia = texto(r.referencia, 80).toLowerCase();
+    if (/^[a-z0-9.-]{1,80}$/.test(referencia)) d.referencia = referencia;
+    const tipo = texto(r.referencia_tipo, 12);
+    if (TIPOS_DE_REFERENCIA.includes(tipo)) d.referencia_tipo = tipo;
+    const codigo = texto(r.codigo, 8).toUpperCase();
+    if (CODIGO_RASTREIO.test(codigo)) d.codigo = codigo;
+  }
+  if (o.servico && /^[a-z0-9_-]{1,40}$/.test(o.servico)) d.servico = o.servico;
+  return d;
+}
+
+/** Nome e parâmetros da função do banco num lugar só (contrato r8 §1.3: trafego_aplicar_origem(p_lead uuid, p jsonb, p_como text)). */
+export const RPC_ORIGEM = 'trafego_aplicar_origem';
+
+/**
+ * Grava de qual anúncio veio o contato. A regra única mora no banco (força da evidência, plataforma pelo clique,
+ * campanha). Se a função ainda não existir (a migração pode ser aplicada depois desta função), demorar mais que
+ * `limiteMs` ou falhar, devolve `false` e NUNCA rejeita: isto não pode derrubar o envio do pedido.
+ * Os dados não vão para o log (identificador de clique ligado a um contato é dado pessoal).
+ * `sb` é o cliente do Supabase; em teste entra um dublê com `rpc(nome, args).abortSignal(sinal)`.
+ */
+// deno-lint-ignore no-explicit-any
+export async function aplicarOrigem(sb: { rpc: (...a: any[]) => any }, leadId: string, dados: Record<string, string>, limiteMs = 4000): Promise<boolean> {
+  let relogio: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const chamada = sb.rpc(RPC_ORIGEM, { p_lead: leadId, p: dados, p_como: 'formulario' }).abortSignal(AbortSignal.timeout(limiteMs));
+    const demorou = new Promise<{ error: { code?: string; message: string } }>((resolver) => {
+      relogio = setTimeout(() => resolver({ error: { code: 'tempo', message: `sem resposta em ${limiteMs} ms` } }), limiteMs + 50);
+    });
+    const { error } = (await Promise.race([chamada, demorou])) as { error: { code?: string; message?: string } | null };
+    if (error) { console.error(RPC_ORIGEM, error.code ?? '', error.message ?? ''); return false; }
+    return true;
+  } catch (e) {
+    console.error(RPC_ORIGEM, e instanceof Error ? e.name : 'erro');
+    return false;
+  } finally {
+    clearTimeout(relogio);
+  }
+}
+
+/* ---------------- Rodada 10: entrada do pedido conferida no servidor ---------------- */
+
+/** Horário escolhido no site: data de verdade e hora de relógio (antes "99:99" passava e ia parar na ficha do contato). */
+export function lerHorario(h: unknown): { data: string; hora: string } | null {
+  if (!h || typeof h !== 'object' || Array.isArray(h)) return null;
+  const { data, hora } = h as Record<string, unknown>;
+  if (!dataValida(data) || typeof hora !== 'string' || !/^\d{2}:\d{2}$/.test(hora) || minutos(hora) === null) return null;
+  return { data, hora };
+}
+
+/** Nome de gente não tem endereço de site: é a marca do pedido de robô que quer plantar link no CRM. */
+export const temLink = (s: string) => /:\/\/|\bwww\.|\.(com|net|org|br|ru|xyz|top|info|io)\b/i.test(s);
+
+/**
+ * O site mede o tempo entre começar a preencher e enviar e manda em `decorrido` (ms). Pessoa nenhuma preenche em menos
+ * de 1,5 s. Sem o campo (ou com valor que não é número) também é robô: o site manda sempre, desde a rodada 5.
+ */
+export function rapidoDemais(decorrido: unknown): boolean {
+  if (typeof decorrido !== 'number' || !Number.isFinite(decorrido)) return true;
+  return decorrido < 1500;
+}
+
+/**
+ * Freio de rajadas em memória (por instância): no máximo `porMinuto` chamadas por chave a cada 60 s.
+ * Rodada 10: as chaves paradas saem do mapa (antes cada IP que passava ficava guardado até a instância morrer).
+ * Devolve `false` quando a chave estourou o limite.
+ */
+export function criarFreio(o: { janelaMs?: number; faxinaACada?: number } = {}) {
+  const janela = o.janelaMs ?? 60_000, faxina = o.faxinaACada ?? 500;
+  const mapa = new Map<string, number[]>();
+  let chamadas = 0;
+  const passa = (chave: string, porMinuto: number, agora = Date.now()): boolean => {
+    if (++chamadas % faxina === 0) {
+      for (const [k, tempos] of mapa) if (!tempos.some((t) => agora - t < janela)) mapa.delete(k);
+    }
+    const lista = (mapa.get(chave) ?? []).filter((t) => agora - t < janela);
+    if (lista.length >= porMinuto) { mapa.set(chave, lista); return false; }
+    lista.push(agora);
+    mapa.set(chave, lista);
+    return true;
+  };
+  return { passa, tamanho: () => mapa.size };
+}
+
+/**
+ * O que a equipe lê na ficha do contato sobre a campanha: só origem, mídia e campanha, em palavras ("google · cpc ·
+ * freios-novembro"). Rodada 10: os identificadores de clique (gclid, fbclid: letras e números sem sentido para quem
+ * atende, e dado pessoal quando ligados a um contato) saíram do texto; quem guarda a origem completa é
+ * `trafego_aplicar_origem`. Sem nada para dizer, devolve null.
+ */
+export function campanhaParaAFicha(utm: Record<string, string>): string | null {
+  const partes = ['source', 'medium', 'campaign'].map((k) => utm[k]).filter(Boolean);
+  return partes.length ? partes.join(' · ') : null;
+}
+
+/** A página de entrada na ficha: só o caminho ("/s/freios"), sem o que vem depois de "?" (lá moram os identificadores de clique). */
+export const paginaParaAFicha = (pagina: string | null): string | null => (pagina ? pagina.split(/[?#]/)[0].slice(0, 120) || null : null);

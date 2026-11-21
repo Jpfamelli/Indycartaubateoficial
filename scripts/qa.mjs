@@ -6,6 +6,7 @@
 // validação do formulário, vocabulário proibido e páginas extras (privacidade, 404).
 // Capturas vão para qa-out/ (fora do git e do deploy).
 import http from 'node:http';
+import { protegerNavegador, relatarBarrados } from './barreira-banco.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -57,8 +58,9 @@ const BASE = (process.env.QA_URL || 'http://127.0.0.1:' + server.address().port)
 fs.mkdirSync(OUT, { recursive: true });
 
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, protocolTimeout: 240000, args: ['--no-first-run', '--no-default-browser-check'] });
+protegerNavegador(browser); // rodada 8: nenhum envio ao banco de verdade (scripts/barreira-banco.mjs)
 
-async function abrir(largura, altura, url = BASE + '/') {
+async function abrir(largura, altura, url = BASE + '/', antes = null) {
   const page = await browser.newPage();
   const erros = [];
   page.on('console', m => { if (m.type() === 'error') erros.push(m.text()); });
@@ -73,6 +75,7 @@ async function abrir(largura, altura, url = BASE + '/') {
       new PerformanceObserver(l => { const e = l.getEntries().pop(); if (e) window.__lcp = e.startTime; }).observe({ type: 'largest-contentful-paint', buffered: true });
     } catch (_) {}
   });
+  if (antes) await page.evaluateOnNewDocument(antes);
   await page.setViewport({ width: largura, height: altura, isMobile: largura < 768, hasTouch: largura < 768 });
   await page.goto(url, { waitUntil: 'networkidle2', timeout: 45000 });
   return { page, erros };
@@ -84,6 +87,24 @@ async function rolarTudo(page) {
     for (let y = 0; y < document.documentElement.scrollHeight; y += passo) { scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); }
     scrollTo(0, 0);
   });
+}
+
+if (!process.env.QA_URL) {
+  const { page, erros } = await abrir(1440, 900, BASE + '/', () => {
+    const agendar = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = callback => agendar(tempo => {
+      if (callback.name !== 'passo' || window.__cliqueNaForja) return callback(tempo);
+      window.__cliqueNaForja = true;
+      window.dispatchEvent(new PointerEvent('pointerdown', { clientX: 600, clientY: 700 }));
+      callback(tempo - 100);
+      window.__quadroDaForja = true;
+    });
+  });
+  await page.keyboard.press('Shift');
+  await page.waitForFunction(() => window.__cliqueNaForja);
+  ok(await page.evaluate(() => window.__quadroDaForja === true) && erros.length === 0,
+    'efeito da forja desenha mesmo quando o clique é mais recente que o quadro' + (erros.length ? ': ' + erros.join(' | ') : ''));
+  await page.close();
 }
 
 for (const [w, h] of [[375, 812], [1440, 900]]) {
@@ -148,7 +169,8 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     await page.waitForSelector('#mapBox iframe', { timeout: 5000 }).catch(() => {});
     ok(await page.$('#mapBox iframe') !== null, 'mapa carrega ao clicar em "Ver mapa aqui"');
 
-    const corpo = await page.evaluate(() => document.body.innerText);
+    // rodada 10: o rodapé longe da tela fica fora do leiaute e o innerText não o lê; cv-off devolve o tamanho real
+    const corpo = await page.evaluate(() => { document.documentElement.classList.add('cv-off'); return document.body.innerText; });
     const achadas = PROIBIDAS.filter(re => re.test(corpo)).map(String);
     ok(achadas.length === 0, 'vocabulário da casa (sem prezado/efetuar/comparecer/veículo/10x/leva e traz grátis)' + (achadas.length ? ': ' + achadas : ''));
     ok(/Quem conhece, Indyca!/.test(corpo) && /8h às 17h30/.test(corpo) && /12 meses/.test(corpo), 'slogan, horário e garantia presentes');
@@ -171,10 +193,25 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     ok(area.secao && area.acompanhar.length >= 3 && area.minha >= 2 && area.semNoopener === 0, `Área do Cliente: links para /acompanhar/ (${area.acompanhar.length}) e /minha/ (${area.minha}) na seção, no rodapé e na FAQ, todos com noopener`);
     ok(area.menu && area.faq && /Sem senha e sem cadastro/.test(area.texto), 'Área do Cliente no menu, explicada em uma frase (sem senha, link pelo WhatsApp) e citada na resposta da FAQ');
     const status = await page.evaluate(() => { const c = document.getElementById('statusAberto'); return { hidden: c.hidden, txt: c.innerText.replace(/\s+/g, ' ') }; });
-    ok(!status.hidden && /^(Aberto agora|Fechado agora) /.test(status.txt), 'chip "Aberto agora / Fechado agora" calculado no fuso de Taubaté: ' + status.txt);
+    // Rodada 9: em feriado nacional o chip diz "Hoje é feriado (...)" (desde a rodada 7); o teste quebrava todo feriado (20/11/2026)
+    ok(!status.hidden && /^(Aberto agora|Fechado agora|Hoje é feriado \([^)]+\)) /.test(status.txt), 'chip "Aberto agora / Fechado agora" (ou o aviso de feriado) calculado no fuso de Taubaté: ' + status.txt);
     ok(await page.$eval('meta[name="color-scheme"]', m => m.content) === 'dark', 'meta color-scheme=dark (campos nativos no tema do site)');
-    const marcados = await page.evaluate(() => document.querySelectorAll('[data-num]').length);
-    ok(marcados >= 14 && await page.evaluate(() => document.body.dataset.nota === '4,8' && document.body.dataset.avaliacoes === '1.200' && document.body.dataset.anos === '18'), `números da oficina (4,8 · +1.200 · +18) marcados em ${marcados} pontos e no <body>, trocáveis em scripts/dados-oficina.mjs`);
+    // Rodada 9: a página repete menos os números (saíram a rotação do canto, o popover e a lista repetida), então em vez de
+    // contar um mínimo de marcas a conferência agora é: nenhum 4,8 / 1.200 / 18 visível fica fora de uma marca data-num
+    // (ou do contador animado, que o gerar-numeros também reescreve).
+    const nums = await page.evaluate(() => {
+      const soltos = [];
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = w.nextNode(); n; n = w.nextNode()) {
+        // horas e datas (00:18, 18h, 18/11) não são o número da oficina: saem antes da conferência (falhava às 00:18 e às 18h)
+        const texto = n.nodeValue.replace(/\d{1,2}:\d{2}|\d{1,2}h\d{0,2}|\d{1,2}\/\d{1,2}/g, ' ');
+        if (!/(^|[^\d,.])(4,8|1\.200|18)(?![\d,.]*\d)/.test(texto)) continue;
+        if (n.parentElement.closest('[data-num], .counter-num, script, style, noscript')) continue;
+        soltos.push(n.nodeValue.trim().slice(0, 60));
+      }
+      return { marcados: document.querySelectorAll('[data-num]').length, soltos };
+    });
+    ok(nums.marcados >= 10 && !nums.soltos.length && await page.evaluate(() => document.body.dataset.nota === '4,8' && document.body.dataset.avaliacoes === '1.200' && document.body.dataset.anos === '18'), `números da oficina (4,8 · +1.200 · +18) marcados em ${nums.marcados} pontos, nenhum solto fora da marca, e no <body>: trocáveis em scripts/dados-oficina.mjs` + (nums.soltos.length ? ' ' + JSON.stringify(nums.soltos) : ''));
     ok(await page.$$eval('.service-card[id^="svc-"]', cs => cs.length) === 12, 'os 12 cards de serviço têm id estável (#svc-cambio, #svc-freios…) para links de anúncio');
 
     // formulário: telefone curto é barrado com mensagem (o fetch da Edge Function é falso: nada vai para o banco)
@@ -191,10 +228,12 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     await page.click('#fPhone', { clickCount: 3 });
     await page.type('#fPhone', '(12) 99683-0272');
     // anti-spam 1: campo-isca invisível, fora do Tab e do leitor de tela
-    const isca = await page.evaluate(() => { const i = document.getElementById('fEmpresa'), r = i.getBoundingClientRect(); return { tab: i.tabIndex, oculto: i.closest('[aria-hidden="true"]') !== null, fora: r.right < 0 || r.bottom < 0 }; });
+    const isca = await page.evaluate(() => { const i = document.getElementById('fRef'), r = i.getBoundingClientRect(); return { tab: i.tabIndex, oculto: i.closest('[aria-hidden="true"]') !== null, fora: r.right < 0 || r.bottom < 0 }; });
     ok(isca.tab === -1 && isca.oculto && isca.fora, 'campo-isca do formulário fora da tela, do Tab e do leitor de tela');
-    await page.evaluate(() => { document.getElementById('fEmpresa').value = 'robo ltda'; document.querySelector('#leadForm button[type=submit]').click(); });
+    await page.evaluate(() => { document.getElementById('fRef').value = 'robo ltda'; document.querySelector('#leadForm button[type=submit]').click(); });
     ok(!(await page.evaluate(() => window.__aberto)), 'robô que preenche o campo-isca não abre o WhatsApp');
+    // rodada 10: a isca não fecha mais o formulário sozinha (ver qa-r10 › r10-isca); limpa para o pedido de gente logo abaixo
+    await page.evaluate(() => { document.getElementById('leadForm').reset(); });
     // reabre o formulário limpo, preenche como gente e espera: o pedido vai para a Edge Function (falsa aqui)
     await page.evaluate(() => { document.querySelector('[data-open-modal]').click(); });
     await page.type('#fName', 'Teste QA'); await page.type('#fPhone', '12996830272'); await page.select('#fService', 'Pneus');
@@ -269,12 +308,9 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     ok(a11y.h1 === 1 && a11y.lang === 'pt-BR' && a11y.pular, 'um h1, lang pt-BR e atalho para pular ao conteúdo');
     ok(a11y.semNome.length === 0, 'todo botão/link tem nome acessível' + (a11y.semNome.length ? ': ' + a11y.semNome.slice(0, 3).join(' | ') : ''));
     ok(a11y.semRotulo.length === 0, 'todo campo tem rótulo' + (a11y.semRotulo.length ? ': ' + a11y.semRotulo.join(', ') : ''));
-    await page.evaluate(() => document.querySelector('.svc-rev').click());
-    const pop = await page.evaluate(() => ({ vis: !document.getElementById('revPop').hidden, wa: document.getElementById('revPopWa').href, txt: document.getElementById('revPopBody').innerText }));
-    ok(pop.vis && decodeURIComponent(pop.wa).includes('(site/avaliacao-') && !/Local Guide/.test(pop.txt), 'popover de avaliações abre sem depoimento inventado e com WhatsApp rastreável');
-    await page.keyboard.press('Escape');
-    ok(await page.evaluate(() => document.getElementById('revPop').hidden), 'popover fecha com Esc');
-    await page.keyboard.press('Escape');
+    // Rodada 9: o popover "Avaliações" de cada card saiu (repetia a seção #avaliacoes); a seção segue com o Google e o WhatsApp.
+    const aval = await page.evaluate(() => ({ botoes: document.querySelectorAll('.svc-rev, #revPop').length, google: !!document.querySelector('#avaliacoes a[href^="https://www.google.com/maps/"]'), wa: (document.querySelector('#avaliacoes a[href*="wa.me"]') || {}).href || '', txt: document.getElementById('avaliacoes').innerText }));
+    ok(aval.botoes === 0 && aval.google && decodeURIComponent(aval.wa).includes('(site/avaliacao)') && !/Local Guide/.test(aval.txt), 'avaliações: cards sem popover repetido; a seção leva ao Google e ao WhatsApp rastreável, sem depoimento inventado');
   }
 
   // ---- Rodada 4 (14/10/2026) ----
@@ -297,12 +333,14 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     const secao = document.getElementById('servicos').innerText;
     return {
       links: links.length,
-      comServico: links.filter(a => /— .+ \(abre o WhatsApp\)/.test(a.textContent)).length,
+      // rodada 9: o nome lido é "Agende pelo WhatsApp: troca de óleo de câmbio (abre o WhatsApp)", sem travessão e sem a seta
+      comServico: links.filter(a => { const c = a.cloneNode(true); c.querySelectorAll('[aria-hidden="true"]').forEach(e => e.remove()); return /^Agende pelo WhatsApp: [a-zà-ú].+ \(abre o WhatsApp\)$/.test(c.textContent.trim()); }).length,
+      setasLidas: [...document.querySelectorAll('a, button')].filter(a => { const c = a.cloneNode(true); c.querySelectorAll('[aria-hidden="true"]').forEach(e => e.remove()); return /[→←]/.test(c.textContent); }).length,
       passos: document.querySelectorAll('.svc-passos li').length,
       precoOuPrazo: /R\$|\bprazo\b|\bem \d+ (min|minutos|horas|dias)\b/i.test(secao),
     };
   });
-  ok(servicos.links >= 12 && servicos.comServico === servicos.links, `link de cada serviço diz qual é e que abre o WhatsApp (${servicos.comServico}/${servicos.links})`);
+  ok(servicos.links >= 12 && servicos.comServico === servicos.links && servicos.setasLidas === 0, `link de cada serviço diz qual é e que abre o WhatsApp (${servicos.comServico}/${servicos.links}); nenhuma seta → lida em voz alta (${servicos.setasLidas})`);
   ok(servicos.passos === 3 && !servicos.precoOuPrazo, 'serviços: "como funciona" em 3 passos e nenhum preço ou prazo na seção');
   await page.evaluate(() => document.documentElement.classList.remove('cv-off'));
 
@@ -426,7 +464,7 @@ console.log('\n== cabeçalhos de segurança ==');
   const r = await fetch(BASE + '/');
   const h = k => r.headers.get(k) || '';
   const csp = h('content-security-policy');
-  ok(/script-src 'self'(;|$)/.test(csp) && /frame-ancestors/.test(csp) && csp.includes('frame-src https://maps.google.com'), 'CSP com script só do site, frame-ancestors e mapa liberado');
+  ok(/script-src 'self'(;|$)/.test(csp) && /frame-ancestors/.test(csp) && csp.includes('frame-src https://www.google.com'), 'CSP com script só do site, frame-ancestors e mapa liberado');
   ok(csp.includes("connect-src 'self' https://nppfqhavqahapmugnyng.supabase.co"), 'CSP libera só o Supabase da oficina em connect-src (formulário → site-lead)');
   ok(/max-age=[0-9]{8}/.test(h('strict-transport-security')), 'HSTS de 1 ano');
   ok(h('permissions-policy').includes('camera=()') && h('permissions-policy').includes('browsing-topics=()'), 'Permissions-Policy fecha câmera, microfone, localização, pagamento e rastreio');
@@ -549,6 +587,8 @@ for (const w of [375, 1440]) {
   // Convite de 8 s mostra o próximo horário livre; tocar leva ao formulário com ele marcado
   const page = await browser.newPage();
   await page.evaluateOnNewDocument(FETCH_FALSO);
+  // rodada 9: o convite não aparece para quem mandou pedido nas últimas 36 h, e um teste anterior deste mesmo navegador mandou
+  await page.evaluateOnNewDocument(() => { try { localStorage.removeItem('indycar_pedido'); } catch (_) {} });
   await page.setViewport({ width: 375, height: 812, isMobile: true, hasTouch: true });
   await page.goto(BASE + '/', { waitUntil: 'networkidle2', timeout: 45000 });
   await page.waitForSelector('#promoBackdrop.open', { timeout: 15000 }).catch(() => {});
@@ -579,6 +619,16 @@ for (const w of [375, 1440]) {
   await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 45000 });
   const nj = await page.evaluate(() => ({ aviso: !!document.querySelector('noscript') && document.body.innerText.includes('precisa de JavaScript'), caixa: getComputedStyle(document.getElementById('horarios')).display, sw: document.documentElement.scrollWidth <= innerWidth }));
   ok(nj.aviso && nj.caixa === 'none' && nj.sw, 'sem JavaScript: aviso com WhatsApp e telefone, caixa de horários escondida e sem rolagem horizontal');
+  // Rodada 9: sem JavaScript as seções que surgem ao rolar ficavam com opacidade 0 (só o título do topo aparecia), o aviso ficava
+  // atrás do menu fixo e o botão do menu não abria nada
+  const nj2 = await page.evaluate(() => {
+    const opac = (e) => { let o = 1; for (let n = e; n && n !== document.body; n = n.parentElement) o *= parseFloat(getComputedStyle(n).opacity); return o; };
+    const tit = [...document.querySelectorAll('h1, h2')].filter(h => !h.closest('[hidden]'));
+    const av = document.querySelector('.sem-js').getBoundingClientRect();
+    const topo = document.elementFromPoint(av.left + av.width / 2, av.top + 12);
+    return { visiveis: tit.filter(h => opac(h) > 0.9).length, total: tit.length, avisoNaFrente: !!(topo && topo.closest('.sem-js')), menu: getComputedStyle(document.querySelector('.hamburger')).display };
+  });
+  ok(nj2.visiveis === nj2.total && nj2.total >= 8 && nj2.avisoNaFrente && nj2.menu === 'none', 'sem JavaScript: todos os títulos aparecem (' + nj2.visiveis + '/' + nj2.total + '), o aviso fica na frente do menu fixo e o botão do menu, que não abriria, some');
   await page.close();
 }
 {
@@ -618,7 +668,7 @@ for (const w of [375, 1440]) {
   ok(/from = "\/s\/:servico"[\s\S]*?to = "\/#agendar-:servico"/.test(toml) && /from = "\/orcamento"/.test(toml) && /from = "\/horarios"[\s\S]*?to = "\/#horarios"/.test(toml) && /from = "\/indicar"[\s\S]*?minha\/#indique/.test(toml) && /from = "\/minha-indycar"/.test(toml), 'netlify.toml: atalhos /s/<serviço>, /orcamento, /horarios, /indicar e /minha-indycar');
   const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const ld = JSON.parse(/<script type="application\/ld\+json">\s*(\{[\s\S]*?"@type": "AutoRepair"[\s\S]*?\n\})\s*<\/script>/.exec(html)[1]);
-  ok(ld.potentialAction && ld.potentialAction.target.urlTemplate === 'https://indycar-taubate.netlify.app/agendar' && !('priceRange' in ld), 'JSON-LD: ação "Pedir horário" (ReserveAction → /agendar) e sem faixa de preço inventada');
+  ok(ld.potentialAction && ld.potentialAction.target.urlTemplate === 'https://indycar-taubate.netlify.app/#agendar' && !('priceRange' in ld), 'JSON-LD: ação "Pedir horário" (ReserveAction → /#agendar, que o robots.txt não barra) e sem faixa de preço inventada');
   ok(/hreflang="pt-BR"/.test(html) && /geo\.region" content="BR-SP"/.test(html), 'SEO local: hreflang pt-BR e geo.region BR-SP');
   const priv = fs.readFileSync(path.join(ROOT, 'privacidade.html'), 'utf8');
   ok(!/não envia nada para servidor nenhum/.test(priv) && /envia o pedido direto para o sistema da oficina/.test(priv) && /placa/.test(priv) && /horários livres/i.test(priv), 'privacidade diz a verdade: o formulário envia o pedido ao sistema da oficina (placa, horário, hash de rede) e os horários só mostram dia e hora');
@@ -627,7 +677,8 @@ for (const w of [375, 1440]) {
   ok(fs.readFileSync(path.join(ROOT, '404.html'), 'utf8').includes('href="/#horarios"'), '404 oferece os horários livres');
   ok(fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8').includes('<lastmod>2026-10-25</lastmod>'), 'sitemap com lastmod de hoje');
   ok(html.includes('<noscript><p class="sem-js">') && html.includes('href="tel:+551236245957"') && html.includes('href="tel:+5512996830272"'), 'sem JavaScript aparece o aviso com WhatsApp e telefone; o celular tem link "Ligar" (tel:)');
-  ok(toml.includes('Link = "</fontes/archivo-variavel.woff2>') && toml.includes('inter-variavel.woff2>; rel=preload'), 'netlify.toml: cabeçalho Link pré-carrega as duas fontes da primeira dobra');
+  // Rodada 9: a Inter saiu; o cabeçalho pré-carrega só a Archivo e nenhum arquivo do site cita mais a fonte que não existe
+  ok(toml.includes('Link = "</fontes/archivo-variavel.woff2>') && !/inter-variavel/.test(toml + fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8') + fs.readFileSync(path.join(ROOT, 'styles.css'), 'utf8')) && !fs.existsSync(path.join(ROOT, 'fontes', 'inter-variavel.woff2')), 'netlify.toml: cabeçalho Link pré-carrega a Archivo; a Inter saiu do site (nenhum link para fonte que não existe)');
   const urlsServico = (ld.hasOfferCatalog.itemListElement || []).map(o => o.itemOffered.url);
   ok(urlsServico.length === 12 && urlsServico.every(u => /^https:\/\/indycar-taubate\.netlify\.app\/#svc-[a-z-]+$/.test(u)) && urlsServico.every(u => html.includes('id="' + u.split('#')[1] + '"')), 'JSON-LD: cada um dos 12 serviços tem endereço próprio (#svc-…) que existe na página');
   const robots = fs.readFileSync(path.join(ROOT, 'robots.txt'), 'utf8');
@@ -658,6 +709,7 @@ for (const f of ['robots.txt', 'sitemap.xml', 'og-indycar.jpg', 'manifest.webman
 const ignorar = fs.readFileSync(path.join(ROOT, '.netlifyignore'), 'utf8');
 ok(['scripts/**', '.publicacao.zip', 'qa-out/**', 'package.json'].every(p => ignorar.includes(p)), '.netlifyignore exclui testes e sobras locais');
 
+relatarBarrados();
 await browser.close();
 server.close();
 console.log(falhas ? `\n${falhas} falha(s).` : '\nTudo certo.');
